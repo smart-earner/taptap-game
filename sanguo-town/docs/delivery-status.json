@@ -1,0 +1,20 @@
+{
+  "document_version": "0.3",
+  "document_variant": "Mac M4 · 主公决策与分层治理版",
+  "github_delivery": {
+    "repository": "smart-earner/taptap-game",
+    "branch": "main",
+    "directory": "sanguo-town",
+    "format": "text_sources_and_development_fixtures",
+    "commit_reference": "See the Git history of this file; the containing commit SHA is not self-embedded.",
+    "existing_project_files_modified": false,
+    "binary_word_and_original_zip_uploaded": false
+  },
+  "static_checks_passed": 57,
+  "static_check_scope": "document_and_static_fixtures_only",
+  "application_implemented": false,
+  "m4_tested": false,
+  "market_connected": false,
+  "application_acceptance_executed": 0,
+  "application_acceptance_planned": 100
+}

@@ -1,0 +1,802 @@
+[
+  {
+    "id": "AC001",
+    "scope": "P0",
+    "title": "单城太守",
+    "operation": "新档一城，完成首次委任",
+    "expected": "只有太守层，无单城都督；可持续治理",
+    "status": "not_run"
+  },
+  {
+    "id": "AC002",
+    "scope": "P0",
+    "title": "成立辖区",
+    "operation": "拥有两城，任一可用候选任都督",
+    "expected": "城市与军团归属唯一，普通官吏可补太守空缺",
+    "status": "not_run"
+  },
+  {
+    "id": "AC003",
+    "scope": "P0",
+    "title": "都督任太守",
+    "operation": "授权三城和人才池，不逐城手动任人",
+    "expected": "都督按适配与机会成本安排太守，产生实际任命",
+    "status": "not_run"
+  },
+  {
+    "id": "AC004",
+    "scope": "P0",
+    "title": "太守分工",
+    "operation": "给出保供方针，存在可调岗人物",
+    "expected": "城内岗位由太守安排，非每个岗位请示主公",
+    "status": "not_run"
+  },
+  {
+    "id": "AC005",
+    "scope": "P0",
+    "title": "军政双线",
+    "operation": "太守缺粮、野战军团在途",
+    "expected": "太守不越权召回军团；都督按授权协调",
+    "status": "not_run"
+  },
+  {
+    "id": "AC006",
+    "scope": "P0",
+    "title": "人才锁定",
+    "operation": "主公锁定角色与职位后运行自治",
+    "expected": "角色不被抽调；无其他候选时代理兜底",
+    "status": "not_run"
+  },
+  {
+    "id": "AC007",
+    "scope": "P0",
+    "title": "跨城调任",
+    "operation": "调任角色并立即检查两城",
+    "expected": "原职代理接手，新职到任才生效，途中不双岗",
+    "status": "not_run"
+  },
+  {
+    "id": "AC008",
+    "scope": "P0",
+    "title": "任免防抖",
+    "operation": "相近适配分数交替变化",
+    "expected": "不每小时轮换；不靠任免刷经验或额度",
+    "status": "not_run"
+  },
+  {
+    "id": "AC009",
+    "scope": "P0",
+    "title": "辖区交接",
+    "operation": "有在途合同和战役时换都督",
+    "expected": "目标、预算、风险记录和在途职责保留",
+    "status": "not_run"
+  },
+  {
+    "id": "AC010",
+    "scope": "P0",
+    "title": "普通官吏兜底",
+    "operation": "仅六名名将，填三太守一都督三队",
+    "expected": "无名将硬门槛，关键岗位有独立普通角色且不复制名将",
+    "status": "not_run"
+  },
+  {
+    "id": "AC011",
+    "scope": "P0",
+    "title": "三方针差异",
+    "operation": "同起点分别安民、兴商、备战24小时",
+    "expected": "实际岗位／项目／军务有差异，可追溯到授权",
+    "status": "not_run"
+  },
+  {
+    "id": "AC012",
+    "scope": "P0",
+    "title": "换督差异",
+    "operation": "同权限资源，换不同风格负责人",
+    "expected": "合适夹具下路径不同，不要求所有情境强行不同",
+    "status": "not_run"
+  },
+  {
+    "id": "AC013",
+    "scope": "P0",
+    "title": "维持现状",
+    "operation": "所有新提案选择暂不调整",
+    "expected": "现有合法经营持续，无暗中采纳推荐",
+    "status": "not_run"
+  },
+  {
+    "id": "AC014",
+    "scope": "P0",
+    "title": "三卡首屏",
+    "operation": "十个议题同到达",
+    "expected": "首屏至多3卡，其余保留议题且不丢失",
+    "status": "not_run"
+  },
+  {
+    "id": "AC015",
+    "scope": "P0",
+    "title": "全局聚合",
+    "operation": "三城同缺同一种原料",
+    "expected": "优先由都督协调，只生成一条必要升级请示",
+    "status": "not_run"
+  },
+  {
+    "id": "AC016",
+    "scope": "P0",
+    "title": "提案频率",
+    "operation": "连续24模拟小时存在重复建议",
+    "expected": "新常规提案不超过6且不强制凑数",
+    "status": "not_run"
+  },
+  {
+    "id": "AC017",
+    "scope": "P0",
+    "title": "不可行方案",
+    "operation": "卡片展示后资源被其他合法任务占用",
+    "expected": "提交重校验，显示缺口，不部分扣款",
+    "status": "not_run"
+  },
+  {
+    "id": "AC018",
+    "scope": "P0",
+    "title": "决策幂等",
+    "operation": "重复点击同一建城／政策选项",
+    "expected": "只有一次决策和一次项目，不多扣或多发",
+    "status": "not_run"
+  },
+  {
+    "id": "AC019",
+    "scope": "P0",
+    "title": "决策回声",
+    "operation": "完成采用方案的若干动作",
+    "expected": "事实、预测、建议分开，有真实事件链",
+    "status": "not_run"
+  },
+  {
+    "id": "AC020",
+    "scope": "P0",
+    "title": "三城无干预",
+    "operation": "三城24小时不处理新战略事项",
+    "expected": "基础发展和合法物流继续，无必做审批爆炸",
+    "status": "not_run"
+  },
+  {
+    "id": "AC021",
+    "scope": "P0",
+    "title": "唯一国库",
+    "operation": "都督与三太守同时分配资金",
+    "expected": "子额不变成新钱，扣国库仅一次",
+    "status": "not_run"
+  },
+  {
+    "id": "AC022",
+    "scope": "P0",
+    "title": "三类支出",
+    "operation": "同一军务成本尝试换名记经营费用",
+    "expected": "cost_class校验阻止绕过专项上限",
+    "status": "not_run"
+  },
+  {
+    "id": "AC023",
+    "scope": "P0",
+    "title": "周期去重",
+    "operation": "跨4小时边界重启并重复补算",
+    "expected": "经营额度每window_id只授予一次",
+    "status": "not_run"
+  },
+  {
+    "id": "AC024",
+    "scope": "P0",
+    "title": "经营回款",
+    "operation": "周期内卖货后再次采购",
+    "expected": "有真实库存也不能超过本周期许可，后续按规则复核",
+    "status": "not_run"
+  },
+  {
+    "id": "AC025",
+    "scope": "P0",
+    "title": "资本公式",
+    "operation": "T2000 R300 F500 O200 S200 r0.4 K20",
+    "expected": "可授予资本100铜，不凭空发铜",
+    "status": "not_run"
+  },
+  {
+    "id": "AC026",
+    "scope": "P0",
+    "title": "承诺跨期",
+    "operation": "上期订货尚未到货进入新期",
+    "expected": "R仍占现金，老单不重复列入新预算",
+    "status": "not_run"
+  },
+  {
+    "id": "AC027",
+    "scope": "P0",
+    "title": "需求与额度",
+    "operation": "经营上限300但没有采购需求",
+    "expected": "O不锁死全额，不阻碍合法起步建设",
+    "status": "not_run"
+  },
+  {
+    "id": "AC028",
+    "scope": "P0",
+    "title": "内运非收入",
+    "operation": "将粮80由一城调到另一城",
+    "expected": "不计S、不生利润；全势力总粮守恒",
+    "status": "not_run"
+  },
+  {
+    "id": "AC029",
+    "scope": "P0",
+    "title": "保护线",
+    "operation": "军需和资本同时想动民生库存",
+    "expected": "新增任务被拒，必要生产和既有承诺不被抢",
+    "status": "not_run"
+  },
+  {
+    "id": "AC030",
+    "scope": "P0",
+    "title": "零资源恢复",
+    "operation": "铜与实物归零，不开战争联动",
+    "expected": "基础耕作／外采可恢复，不产生永久软锁",
+    "status": "not_run"
+  },
+  {
+    "id": "AC031",
+    "scope": "P0",
+    "title": "货物守恒",
+    "operation": "装粮80，发运、到货、返程",
+    "expected": "每阶段唯一归属，未生产部分不凭空存在",
+    "status": "not_run"
+  },
+  {
+    "id": "AC032",
+    "scope": "P0",
+    "title": "仓容预留",
+    "operation": "两队同时向将满的仓库送货",
+    "expected": "容量足够才整体预留，不爆仓或丢货",
+    "status": "not_run"
+  },
+  {
+    "id": "AC033",
+    "scope": "P0",
+    "title": "运输并发",
+    "operation": "提交5份运单、分配4队",
+    "expected": "最多4活动合同、3运输队；超出等待",
+    "status": "not_run"
+  },
+  {
+    "id": "AC034",
+    "scope": "P0",
+    "title": "外贸上限",
+    "operation": "所有运输队均可外贸且民生需补粮",
+    "expected": "最多2外贸，民生保留调度通道",
+    "status": "not_run"
+  },
+  {
+    "id": "AC035",
+    "scope": "P0",
+    "title": "车队位置",
+    "operation": "到货后马上请求原点新单",
+    "expected": "返程结束前占用，不瞬移；空车调位耗时",
+    "status": "not_run"
+  },
+  {
+    "id": "AC036",
+    "scope": "P0",
+    "title": "外贸完整成本",
+    "operation": "平川货源要求临江的外贸价格",
+    "expected": "计内陆行程及费用，不冒用始发折扣",
+    "status": "not_run"
+  },
+  {
+    "id": "AC037",
+    "scope": "P0",
+    "title": "改道与取消",
+    "operation": "发运后取消或路线暂不可用",
+    "expected": "按阶段安全返还或等待，不复制货物",
+    "status": "not_run"
+  },
+  {
+    "id": "AC038",
+    "scope": "P0",
+    "title": "临江建城守恒",
+    "operation": "发运284单位物资完成建设",
+    "expected": "至少3子运单；消费＋起步库存＝调出量，无新铜500",
+    "status": "not_run"
+  },
+  {
+    "id": "AC039",
+    "scope": "P0",
+    "title": "青石建城守恒",
+    "operation": "发运356单位且未招到新名将",
+    "expected": "至少4子运单，代理上岗；新城不依赖名将",
+    "status": "not_run"
+  },
+  {
+    "id": "AC040",
+    "scope": "P0",
+    "title": "城市据点区别",
+    "operation": "取得渡口经营权但无建城授权",
+    "expected": "只得据点／通行，不生成第四城或太守职位",
+    "status": "not_run"
+  },
+  {
+    "id": "AC041",
+    "scope": "P0",
+    "title": "无战授权",
+    "operation": "启用备战政策但未批战役",
+    "expected": "可准备与训练，不主动开战",
+    "status": "not_run"
+  },
+  {
+    "id": "AC042",
+    "scope": "P0",
+    "title": "军团唯一",
+    "operation": "多城同时申请同一军团",
+    "expected": "一军团最多3队，实体和装备不能复用",
+    "status": "not_run"
+  },
+  {
+    "id": "AC043",
+    "scope": "P0",
+    "title": "条件克制",
+    "operation": "骑兵正冲枪阵与绕侧分别战斗",
+    "expected": "只有条件满足触发，日志与显示一致",
+    "status": "not_run"
+  },
+  {
+    "id": "AC044",
+    "scope": "P0",
+    "title": "有限战役",
+    "operation": "完成若干行动形成通行目标",
+    "expected": "达目标即停止追加战斗，收益来自真实地区状态",
+    "status": "not_run"
+  },
+  {
+    "id": "AC045",
+    "scope": "P0",
+    "title": "失败恢复",
+    "operation": "首次败后有合法不同路线与预算",
+    "expected": "休整／侦察后至多一次有依据替代，不盲重试",
+    "status": "not_run"
+  },
+  {
+    "id": "AC046",
+    "scope": "P0",
+    "title": "失败签名",
+    "operation": "失败后改任务名字或无差异换官",
+    "expected": "仍判同方案，不能重置失败／次数／预算",
+    "status": "not_run"
+  },
+  {
+    "id": "AC047",
+    "scope": "P0",
+    "title": "军需上限",
+    "operation": "费用达到铜150粮150器材4专项上限",
+    "expected": "停止新增军务，收入不能刷新批准额",
+    "status": "not_run"
+  },
+  {
+    "id": "AC048",
+    "scope": "P0",
+    "title": "护送不双奖",
+    "operation": "军团护送同一外贸合同",
+    "expected": "合同收益仅一次，不再领取独立护送100铜",
+    "status": "not_run"
+  },
+  {
+    "id": "AC049",
+    "scope": "P0",
+    "title": "收藏免损",
+    "operation": "产生战败及伤兵后离线返回",
+    "expected": "将领不永久死亡，唯一兵器／神驹保持",
+    "status": "not_run"
+  },
+  {
+    "id": "AC050",
+    "scope": "P0",
+    "title": "战斗复现",
+    "operation": "同快照种子规则线上／离线重放",
+    "expected": "结果和触发日志一致，回放不重新掷骰",
+    "status": "not_run"
+  },
+  {
+    "id": "AC051",
+    "scope": "P0",
+    "title": "三类路径差异",
+    "operation": "查看人物、兵器、坐骑流程",
+    "expected": "关系／修复／驯养有不同前置与成果，非全五次重复",
+    "status": "not_run"
+  },
+  {
+    "id": "AC052",
+    "scope": "P0",
+    "title": "单城全收藏",
+    "operation": "只一城、不战、不联动、不设都督",
+    "expected": "16条核心路径全部可达，无循环依赖",
+    "status": "not_run"
+  },
+  {
+    "id": "AC053",
+    "scope": "P0",
+    "title": "心愿额度",
+    "operation": "批准一条路径后挂机",
+    "expected": "普通步骤续行，总费用受限，不自动换主心愿",
+    "status": "not_run"
+  },
+  {
+    "id": "AC054",
+    "scope": "P0",
+    "title": "材料保护",
+    "operation": "已为修复预留铁料，外贸要买家",
+    "expected": "预留物资不出售；新增采购也不双算",
+    "status": "not_run"
+  },
+  {
+    "id": "AC055",
+    "scope": "P0",
+    "title": "独占装备",
+    "operation": "同名器与坐骑给两个在途角色",
+    "expected": "第二次装备失败，不复制收藏实例",
+    "status": "not_run"
+  },
+  {
+    "id": "AC056",
+    "scope": "P0",
+    "title": "收藏到账",
+    "operation": "离线完成最后修复，反复打开揭晓",
+    "expected": "到账一次，揭晓可重看而非必须领取",
+    "status": "not_run"
+  },
+  {
+    "id": "AC057",
+    "scope": "P0",
+    "title": "重复发现",
+    "operation": "事件命中已完成消息或已有唯一物",
+    "expected": "按明示规则转相关线索或普通资源，原物不销毁",
+    "status": "not_run"
+  },
+  {
+    "id": "AC058",
+    "scope": "P0",
+    "title": "履历归因",
+    "operation": "接管富裕城市后发生收益",
+    "expected": "不把接管前成果或全城收益冒领为个人贡献",
+    "status": "not_run"
+  },
+  {
+    "id": "AC059",
+    "scope": "P0",
+    "title": "闲置培养",
+    "operation": "角色研习或生活数日",
+    "expected": "不掉忠诚、不消失；无每日送礼硬要求",
+    "status": "not_run"
+  },
+  {
+    "id": "AC060",
+    "scope": "P0",
+    "title": "并发槽位",
+    "operation": "同城多个关系／修复／寻访项目",
+    "expected": "执行规定槽位及人手锁，不无限同时免费推进",
+    "status": "not_run"
+  },
+  {
+    "id": "AC061",
+    "scope": "P0",
+    "title": "24小时等价",
+    "operation": "相同治理与军务暂停策略在线／离线",
+    "expected": "经济、预算、角色、合同和战果一致",
+    "status": "not_run"
+  },
+  {
+    "id": "AC062",
+    "scope": "P0",
+    "title": "7天持续治理",
+    "operation": "授予长期施政后离开7天",
+    "expected": "太守都督仍有工作，不受旧8小时／24小时限额",
+    "status": "not_run"
+  },
+  {
+    "id": "AC063",
+    "scope": "P0",
+    "title": "军事离线关闭",
+    "operation": "战役未允许离线续行后退出",
+    "expected": "只完成已启动军务；日常施政继续",
+    "status": "not_run"
+  },
+  {
+    "id": "AC064",
+    "scope": "P0",
+    "title": "军事离线开启",
+    "operation": "战役允许离线续行后补算",
+    "expected": "仍受总次数、预算、对象与风险限制",
+    "status": "not_run"
+  },
+  {
+    "id": "AC065",
+    "scope": "P0",
+    "title": "超期安全休整",
+    "operation": "离开10天再打开",
+    "expected": "正常模拟最多7天，后段不发新周期奖励或扣民生",
+    "status": "not_run"
+  },
+  {
+    "id": "AC066",
+    "scope": "P0",
+    "title": "排空不接链",
+    "operation": "第7天有部分建城物资及一个已开工修复",
+    "expected": "修复可按锁定工时完成；未开工建城不偷启动",
+    "status": "not_run"
+  },
+  {
+    "id": "AC067",
+    "scope": "P0",
+    "title": "时钟变动",
+    "operation": "改时区、夏令时、时间后退／前跳",
+    "expected": "不负收益、不重复周期，异常按上限记录",
+    "status": "not_run"
+  },
+  {
+    "id": "AC068",
+    "scope": "P0",
+    "title": "崩溃恢复",
+    "operation": "在扣款／发运／收藏到账时注入崩溃",
+    "expected": "事务只有已执行或未执行，不半扣半发",
+    "status": "not_run"
+  },
+  {
+    "id": "AC069",
+    "scope": "P0",
+    "title": "坏档导入",
+    "operation": "破坏主档或导入非法版本／重复ID",
+    "expected": "保留有效备份并拒绝危险导入，不静默清档",
+    "status": "not_run"
+  },
+  {
+    "id": "AC070",
+    "scope": "P0",
+    "title": "旧版迁移",
+    "operation": "导入可识别的v0.2夹具",
+    "expected": "原单城都督变太守；不默认授予新的长期花费权限",
+    "status": "not_run"
+  },
+  {
+    "id": "AC071",
+    "scope": "P0",
+    "title": "arm64",
+    "operation": "在目标M4打开正式构建及依赖",
+    "expected": "自有主程序与库原生arm64，不要求Rosetta",
+    "status": "not_run"
+  },
+  {
+    "id": "AC072",
+    "scope": "P0",
+    "title": "焦点与静音",
+    "operation": "在编辑器输入时触发5项游戏成果",
+    "expected": "不抢焦点、不响铃、不系统通知",
+    "status": "not_run"
+  },
+  {
+    "id": "AC073",
+    "scope": "P0",
+    "title": "退出语义",
+    "operation": "关管理窗、关城景、再Command-Q",
+    "expected": "分别关闭／收起／真正退出，自有任务终止",
+    "status": "not_run"
+  },
+  {
+    "id": "AC074",
+    "scope": "P0",
+    "title": "多屏恢复",
+    "operation": "移动至外屏后拔除外屏",
+    "expected": "窗口回有效工作区，pt缩放及内容可读",
+    "status": "not_run"
+  },
+  {
+    "id": "AC075",
+    "scope": "P0",
+    "title": "全屏桌面",
+    "operation": "切Spaces、全屏、Stage Manager",
+    "expected": "默认不侵入全屏，有Dock／菜单栏恢复入口",
+    "status": "not_run"
+  },
+  {
+    "id": "AC076",
+    "scope": "P0",
+    "title": "隐藏能耗",
+    "operation": "隐藏30分钟后检查绘制与规划",
+    "expected": "无城景帧，模拟不依赖绘制，目标CPU有实测证据",
+    "status": "not_run"
+  },
+  {
+    "id": "AC077",
+    "scope": "P0",
+    "title": "三城性能",
+    "operation": "使用三城满负载运行30分钟",
+    "expected": "按第25章口径记录，不拿单城结果替代",
+    "status": "not_run"
+  },
+  {
+    "id": "AC078",
+    "scope": "P0",
+    "title": "7天补算性能",
+    "operation": "20个固定三城存档补算7天",
+    "expected": "记录P95与峰值，目标8秒；不省略规则换速度",
+    "status": "not_run"
+  },
+  {
+    "id": "AC079",
+    "scope": "P0",
+    "title": "辅助体验",
+    "operation": "文字放大、键盘导航、VoiceOver等",
+    "expected": "关键决策不用鼠标悬停或颜色单独表达",
+    "status": "not_run"
+  },
+  {
+    "id": "AC080",
+    "scope": "P0",
+    "title": "发布签名",
+    "operation": "干净Apple Silicon环境启动发行包",
+    "expected": "签名、公证等流程实测；不要求关闭系统保护",
+    "status": "not_run"
+  },
+  {
+    "id": "AC081",
+    "scope": "P0-R",
+    "title": "默认关闭",
+    "operation": "首次运行拒绝两种联动",
+    "expected": "不计数、不连行情，核心完整可玩",
+    "status": "not_run"
+  },
+  {
+    "id": "AC082",
+    "scope": "P0-R",
+    "title": "按键零内容",
+    "operation": "输入测试文字后查内存边界／日志／存档",
+    "expected": "无持久化文字或键顺序，不重建输入",
+    "status": "not_run"
+  },
+  {
+    "id": "AC083",
+    "scope": "P0-R",
+    "title": "白名单与长按",
+    "operation": "切未授权应用、长按修饰键与普通键",
+    "expected": "不计未授权应用，长按重复不刷奖励",
+    "status": "not_run"
+  },
+  {
+    "id": "AC084",
+    "scope": "P0-R",
+    "title": "关闭与安全输入",
+    "operation": "撤销权限、锁屏、安全输入或用户暂停",
+    "expected": "立即停止新计数，不绕过阻断补采",
+    "status": "not_run"
+  },
+  {
+    "id": "AC085",
+    "scope": "P0-R",
+    "title": "分钟去重",
+    "operation": "同分钟有≥10按键与≥45秒专注",
+    "expected": "只得1分钟，日60／余额180／项目20%封顶",
+    "status": "not_run"
+  },
+  {
+    "id": "AC086",
+    "scope": "P0-R",
+    "title": "助力边界",
+    "operation": "尝试给伤害、行军或缺料项目助力",
+    "expected": "不能加战力、加行军或制造物资",
+    "status": "not_run"
+  },
+  {
+    "id": "AC087",
+    "scope": "P0-R",
+    "title": "行情标识",
+    "operation": "展示历史、模拟、无前收或过期报价",
+    "expected": "准确标记；无可信数据则中性故事",
+    "status": "not_run"
+  },
+  {
+    "id": "AC088",
+    "scope": "P0-R",
+    "title": "故事不增负担",
+    "operation": "每日3商号并反复换标的／刷新",
+    "expected": "无新增必做卡，不刷资源，不改军政评分",
+    "status": "not_run"
+  },
+  {
+    "id": "AC089",
+    "scope": "P0-R",
+    "title": "无实盘操作",
+    "operation": "审计行情适配器与完整请求日志",
+    "expected": "无持仓读取、交易上下文、买卖或真实资金",
+    "status": "not_run"
+  },
+  {
+    "id": "AC090",
+    "scope": "P0-R",
+    "title": "令牌和诊断",
+    "operation": "导出存档／日志并扫描内容",
+    "expected": "无凭证、输入内容、默认自选与应用切换明细",
+    "status": "not_run"
+  },
+  {
+    "id": "AC091",
+    "scope": "P0",
+    "title": "无网完整",
+    "operation": "断开全部网络完成主循环",
+    "expected": "治理、物流、军务、收藏与存档正常",
+    "status": "not_run"
+  },
+  {
+    "id": "AC092",
+    "scope": "P0",
+    "title": "不抢注意力",
+    "operation": "从1城扩大到3城，观察必做交互",
+    "expected": "普通管理不按城市数等比例增长",
+    "status": "not_run"
+  },
+  {
+    "id": "AC093",
+    "scope": "P0",
+    "title": "选择理解",
+    "operation": "至少5人体验10张决策卡的一部分",
+    "expected": "探索性记录理由与困惑，不包装为统计市场结论",
+    "status": "not_run"
+  },
+  {
+    "id": "AC094",
+    "scope": "P0",
+    "title": "内容数量",
+    "operation": "检查内容清单与实际入口",
+    "expected": "6人物6名器4坐骑10决策，占位文案不冒充完整剧情",
+    "status": "not_run"
+  },
+  {
+    "id": "AC095",
+    "scope": "P0",
+    "title": "预期不造假",
+    "operation": "对照界面、回放与账本",
+    "expected": "未发生事情写预计／建议，不伪造自治战果",
+    "status": "not_run"
+  },
+  {
+    "id": "AC096",
+    "scope": "P0",
+    "title": "有限长期目标",
+    "operation": "到达3城与收藏阶段终点",
+    "expected": "可稳定维护和观赏，不强制重置或虚售第4城",
+    "status": "not_run"
+  },
+  {
+    "id": "AC097",
+    "scope": "P0",
+    "title": "静态配置校验",
+    "operation": "运行交付的配置校验脚本",
+    "expected": "关键计数、预算与算术过检，明确不是游戏测试",
+    "status": "not_run"
+  },
+  {
+    "id": "AC098",
+    "scope": "P0",
+    "title": "GitHub无敏感数据",
+    "operation": "扫描拟上传目录和差异",
+    "expected": "不含凭证、真实账户、公司资料、存档或字体文件",
+    "status": "not_run"
+  },
+  {
+    "id": "AC099",
+    "scope": "P0",
+    "title": "版本追踪",
+    "operation": "更改规则与旧样例后检查追踪表",
+    "expected": "正文、配置、决策、测试与变更记录同步",
+    "status": "not_run"
+  },
+  {
+    "id": "AC100",
+    "scope": "P0",
+    "title": "交付状态真实",
+    "operation": "核对README、交付记录、构建和验收证据",
+    "expected": "准确区分需求已编写、配置已检查、游戏未实现／未测",
+    "status": "not_run"
+  }
+]

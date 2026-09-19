@@ -1,0 +1,243 @@
+{
+  "scope": "document_and_static_fixtures_only",
+  "checks_passed": 57,
+  "checks": [
+    {
+      "name": "document version matches config",
+      "result": "pass"
+    },
+    {
+      "name": "fixture explicitly not an implementation",
+      "result": "pass"
+    },
+    {
+      "name": "capacity: three cities one district one legion",
+      "result": "pass"
+    },
+    {
+      "name": "three cities have unique ids",
+      "result": "pass"
+    },
+    {
+      "name": "nine world nodes have unique ids",
+      "result": "pass"
+    },
+    {
+      "name": "route endpoints:plain-stone",
+      "result": "pass"
+    },
+    {
+      "name": "route endpoints:plain-river",
+      "result": "pass"
+    },
+    {
+      "name": "route endpoints:river-ferry",
+      "result": "pass"
+    },
+    {
+      "name": "route endpoints:stone-mountain",
+      "result": "pass"
+    },
+    {
+      "name": "policy weights:supply",
+      "result": "pass"
+    },
+    {
+      "name": "policy weights:trade",
+      "result": "pass"
+    },
+    {
+      "name": "policy weights:military",
+      "result": "pass"
+    },
+    {
+      "name": "policy weights:industry",
+      "result": "pass"
+    },
+    {
+      "name": "policy weights:balanced",
+      "result": "pass"
+    },
+    {
+      "name": "periodic operating caps sum correctly",
+      "result": "pass"
+    },
+    {
+      "name": "initial treasury does not violate reserve",
+      "result": "pass"
+    },
+    {
+      "name": "initial labor formula",
+      "result": "pass"
+    },
+    {
+      "name": "city package conserves inventory:river",
+      "result": "pass"
+    },
+    {
+      "name": "city package shipment count:river",
+      "result": "pass"
+    },
+    {
+      "name": "city package conserves inventory:stone",
+      "result": "pass"
+    },
+    {
+      "name": "city package shipment count:stone",
+      "result": "pass"
+    },
+    {
+      "name": "local market buy price exceeds sell",
+      "result": "pass"
+    },
+    {
+      "name": "external wine opportunity contribution = 70",
+      "result": "pass"
+    },
+    {
+      "name": "iron arrived cost = 210",
+      "result": "pass"
+    },
+    {
+      "name": "operating cap can cover example iron purchase",
+      "result": "pass"
+    },
+    {
+      "name": "iron cost saving = 30",
+      "result": "pass"
+    },
+    {
+      "name": "capital allowance example = 100",
+      "result": "pass"
+    },
+    {
+      "name": "neutral fixture grain net = 52",
+      "result": "pass"
+    },
+    {
+      "name": "plain fixture grain net = 82",
+      "result": "pass"
+    },
+    {
+      "name": "stone fixture grain net = 28",
+      "result": "pass"
+    },
+    {
+      "name": "stone fixture wood net = 9.6",
+      "result": "pass"
+    },
+    {
+      "name": "stone fixture iron net = 1.8",
+      "result": "pass"
+    },
+    {
+      "name": "two product gross receipts = 408",
+      "result": "pass"
+    },
+    {
+      "name": "six unique heroes",
+      "result": "pass"
+    },
+    {
+      "name": "six weapons four mounts",
+      "result": "pass"
+    },
+    {
+      "name": "16 core collections",
+      "result": "pass"
+    },
+    {
+      "name": "no duplicate active actor appointments",
+      "result": "pass"
+    },
+    {
+      "name": "seven distinct active office holders",
+      "result": "pass"
+    },
+    {
+      "name": "missing hero seats filled by NPC",
+      "result": "pass"
+    },
+    {
+      "name": "governor not a prefect or active legion leader",
+      "result": "pass"
+    },
+    {
+      "name": "fixture cities match district scope",
+      "result": "pass"
+    },
+    {
+      "name": "city inventory and labor:plain",
+      "result": "pass"
+    },
+    {
+      "name": "city inventory and labor:stone",
+      "result": "pass"
+    },
+    {
+      "name": "city inventory and labor:river",
+      "result": "pass"
+    },
+    {
+      "name": "transport unique position and IDs",
+      "result": "pass"
+    },
+    {
+      "name": "military ceiling and recovery attempts",
+      "result": "pass"
+    },
+    {
+      "name": "appointments never expire by default",
+      "result": "pass"
+    },
+    {
+      "name": "seven-day normal offline cap",
+      "result": "pass"
+    },
+    {
+      "name": "activity opt-in and cap",
+      "result": "pass"
+    },
+    {
+      "name": "100 unique acceptance IDs",
+      "result": "pass"
+    },
+    {
+      "name": "all application tests honestly not run",
+      "result": "pass"
+    },
+    {
+      "name": "90 core and 10 optional acceptance cases",
+      "result": "pass"
+    },
+    {
+      "name": "all acceptance IDs present in full PRD",
+      "result": "pass"
+    },
+    {
+      "name": "ten decision cards present",
+      "result": "pass"
+    },
+    {
+      "name": "seven appendices present",
+      "result": "pass"
+    },
+    {
+      "name": "27 main chapters present",
+      "result": "pass"
+    },
+    {
+      "name": "no raw tool citation markers",
+      "result": "pass"
+    }
+  ],
+  "file_sha256": {
+    "docs/PRD.md": "b2a06a43bab1747c103f745d39de7b866c2861fda70849f969f2ef01d1c72cb6",
+    "spec/prototype-config.json": "75dbfe514a7731dda416ec9dd23d2133ce89867318c00dfbad1a554dd19114b9",
+    "spec/three-city-fixture.json": "91b7eb6f954ac70b2397a16d824b3215d74c7a0addd61d77750777175a224672",
+    "spec/acceptance-cases.json": "d290b44c37f188432b9e2d4732a4a13c67987bf09eb542e875da3bfa9ca429cc"
+  },
+  "game_simulation_tested": false,
+  "m4_tested": false,
+  "application_acceptance_not_run": 100
+}

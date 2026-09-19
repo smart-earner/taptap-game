@@ -1,0 +1,56 @@
+{
+  "document_version": "0.3",
+  "delivery_format": "github_text_sources",
+  "hash_algorithm": "SHA-256",
+  "scope": "All delivered files except this manifest; Word and original ZIP remain separate chat attachments.",
+  "files": {
+    "CHANGELOG.md": {
+      "bytes": 895,
+      "sha256": "4b16586d89d847bc799eff9315364b479e5027d6facf021c9b422589a375060e"
+    },
+    "README.md": {
+      "bytes": 1858,
+      "sha256": "18e15e030fe5f3b32081485a13cade939f1c644e61148035ee6b828b31e1c752"
+    },
+    "docs/ACCEPTANCE.md": {
+      "bytes": 14345,
+      "sha256": "3f2b1f5fa78028c9988178d6dc8c9c831fea07a8c9ebbdb9a28fb2912a8a8a44"
+    },
+    "docs/IMPLEMENTATION_PLAN.md": {
+      "bytes": 5870,
+      "sha256": "0bf1f11cdb0fb20f7aa1f7e6653c96ca4279c34dfb3767ab7a8ee60da3f9ef69"
+    },
+    "docs/PRD.md": {
+      "bytes": 126310,
+      "sha256": "b2a06a43bab1747c103f745d39de7b866c2861fda70849f969f2ef01d1c72cb6"
+    },
+    "docs/REVIEW_NOTES.md": {
+      "bytes": 6123,
+      "sha256": "8656116567c067a4446503e7011e709555af270ba786d4195c06ee960b8bc690"
+    },
+    "docs/delivery-status.json": {
+      "bytes": 746,
+      "sha256": "4f4f2dce0a77ff0e0336bb1fd4e6e102cf9946956a7baaaa7f627d8c329be3bf"
+    },
+    "docs/static-validation.json": {
+      "bytes": 5434,
+      "sha256": "0cdc950a0b8d314e13d0f9a7b23f2fbe294bdb82337a86fae023d5dd2ead5993"
+    },
+    "scripts/validate_spec.py": {
+      "bytes": 7575,
+      "sha256": "ca4dd4f654a382676879850455dd3e04e20e92ac51312eb1e26d649c9c0a6545"
+    },
+    "spec/acceptance-cases.json": {
+      "bytes": 23390,
+      "sha256": "d290b44c37f188432b9e2d4732a4a13c67987bf09eb542e875da3bfa9ca429cc"
+    },
+    "spec/prototype-config.json": {
+      "bytes": 6622,
+      "sha256": "75dbfe514a7731dda416ec9dd23d2133ce89867318c00dfbad1a554dd19114b9"
+    },
+    "spec/three-city-fixture.json": {
+      "bytes": 2984,
+      "sha256": "91b7eb6f954ac70b2397a16d824b3215d74c7a0addd61d77750777175a224672"
+    }
+  }
+}
