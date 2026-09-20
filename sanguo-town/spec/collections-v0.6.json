@@ -1,0 +1,25 @@
+{
+  "spec_version":"0.6.0",
+  "status":"design_contract_not_runtime_implementation",
+  "acquisition":{"source_cash_fraction_bp":4000,"prepare_work_s":60,"handoff_work_s":30,"source_cash_rounding":"floor","completion_cash":"total_minus_source","one_active_wish":true,"no_expiring_offer":true},
+  "weapons":[
+    {"id":"silver-spear","name":"银纹长枪","cash":50,"source_passive_s":600,"repair_work_s":300,"materials_mU":{"wood":2000,"iron":2000},"attributes":{"command":2,"valor":2},"unlock":"workshop_l1","silhouette":"short-silver-spear"},
+    {"id":"dragon-spear","name":"龙胆亮银枪","cash":480,"source_passive_s":14400,"repair_work_s":900,"materials_mU":{"iron":12000,"tools":2000},"attributes":{"command":3,"valor":4},"unlock":"silver_spear_owned","silhouette":"long-spear-blue-tassel"},
+    {"id":"crescent-blade","name":"青龙偃月刀","cash":520,"source_passive_s":21600,"repair_work_s":1080,"materials_mU":{"iron":15000,"planks":2000},"attributes":{"valor":6},"unlock":"silver_spear_owned","silhouette":"crescent-polearm-green-tassel"},
+    {"id":"serpent-spear","name":"丈八蛇矛","cash":480,"source_passive_s":21600,"repair_work_s":1080,"materials_mU":{"iron":12000,"planks":3000},"attributes":{"valor":6},"unlock":"silver_spear_owned","silhouette":"serpent-blade-polearm"},
+    {"id":"qinggang","name":"青釭剑","cash":560,"source_passive_s":28800,"repair_work_s":1200,"materials_mU":{"iron":12000,"tools":3000},"attributes":{"strategy":4,"valor":2},"unlock":"silver_spear_owned","silhouette":"straight-sword-blue-sheath"},
+    {"id":"seven-star","name":"七星宝刀","cash":580,"source_passive_s":36000,"repair_work_s":1500,"materials_mU":{"iron":10000,"tools":4000},"attributes":{"strategy":3,"charisma":3},"unlock":"silver_spear_owned","silhouette":"broad-saber-seven-inlays"}
+  ],
+  "mounts":[
+    {"id":"yellow-horse","name":"黄骠马","cash":120,"source_passive_s":1800,"tame_passive_s":7200,"tame_work_s":300,"materials_mU":{"fodder":6000,"water":6000},"travel_bonus_bp":500,"unlock":"stable_l1","coat":"yellow"},
+    {"id":"red-hare","name":"赤兔","cash":600,"source_passive_s":28800,"tame_passive_s":43200,"tame_work_s":1200,"materials_mU":{"fodder":20000,"water":20000},"travel_bonus_bp":1000,"unlock":"yellow_horse_owned","coat":"red"},
+    {"id":"dilu","name":"的卢","cash":500,"source_passive_s":21600,"tame_passive_s":36000,"tame_work_s":1000,"materials_mU":{"fodder":16000,"water":16000},"travel_bonus_bp":800,"unlock":"yellow_horse_owned","coat":"white-forehead"},
+    {"id":"jueying","name":"绝影","cash":560,"source_passive_s":28800,"tame_passive_s":43200,"tame_work_s":1200,"materials_mU":{"fodder":20000,"water":20000},"travel_bonus_bp":1200,"unlock":"yellow_horse_owned","coat":"black"}
+  ],
+  "mount_care":{"interval_s":2880,"work_s":30,"materials_mU":{"fodder":1000,"water":1000},"during_taming":"included_no_double_charge","missed":"pause_bonus_no_death_no_debt"},
+  "slots":{"weapons_per_person":1,"mounts_per_person":1,"unique_instance_per_item":true,"mount_collection_stalls":4},
+  "discovery_total":{"heroes":6,"weapons":6,"mounts":4,"memorials":1,"total":17},
+  "commander_score":{"minimum_active":30,"base_threshold":55,"active_weight":1,"training_weight":10,"rampart_weight":5,"guanyu_bonus":8,"success_wounded":5,"failure_wounded":12,"zhaoyun_wounded_multiplier_bp":8000,"attempt_cap":2},
+  "governor_trait_multiplier_bp":5000,
+  "same_effect_merge":"maximum_not_sum"
+}
