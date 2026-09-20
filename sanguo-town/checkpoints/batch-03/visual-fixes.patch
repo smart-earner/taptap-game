@@ -1,0 +1,162 @@
+diff --git a/sanguo-town/Sources/SanguoCore/CityGrowth.swift b/sanguo-town/Sources/SanguoCore/CityGrowth.swift
+--- a/sanguo-town/Sources/SanguoCore/CityGrowth.swift
++++ b/sanguo-town/Sources/SanguoCore/CityGrowth.swift
+@@ -141,0 +142,5 @@ public struct CityAppearanceSnapshot: Codable, Equatable, Sendable {
++    // Optional fields keep previously saved growth snapshots readable.
++    public var civic: CivicCity? = nil
++    public var collectedWeapons: Int? = nil
++    public var collectedMounts: Int? = nil
++    public var legionAway: Bool? = nil
+@@ -203 +208 @@ extension WorldState {
+-        return .init(cityID:cityID, name:city.name, time:simulationTime, growthAgeSeconds:growth?.normalGrowthSeconds ?? simulationTime, population:city.population,
++        var snapshot = CityAppearanceSnapshot(cityID:cityID, name:city.name, time:simulationTime, growthAgeSeconds:growth?.normalGrowthSeconds ?? simulationTime, population:city.population,
+@@ -206,0 +212,8 @@ extension WorldState {
++        snapshot.civic = realm?.civic[cityID]
++        if let realm {
++            let owned = CollectionCatalog.all.filter { realm.collections[$0.id]?.completedAt != nil && realm.collections[$0.id]?.cityID == cityID }
++            snapshot.collectedWeapons = owned.filter { $0.kind == .weapon }.count
++            snapshot.collectedMounts = owned.filter { $0.kind == .mount }.count
++            snapshot.legionAway = realm.operation?.goal == .securePass && realm.operation?.source == cityID
++        }
++        return snapshot
+ diff --git a/sanguo-town/Sources/SanguoCore/GrowthValidation.swift b/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
+--- a/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
++++ b/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
+@@ -87,0 +88,5 @@ extension WorldState {
++            if let civic=m.snapshot.civic {
++                try require(civic.levels.count<=8 && civic.levels.keys.allSatisfy{CivicTrack(rawValue:$0) != nil} && civic.levels.values.allSatisfy{(1...3).contains($0)},"成长册街区范围")
++                if let p=civic.project { try require(p.requiredWork>0 && p.work>=0 && p.work<=p.requiredWork && (1...3).contains(p.level),"成长册街区工时") }
++            }
++            try require((0...6).contains(m.snapshot.collectedWeapons ?? 0) && (0...4).contains(m.snapshot.collectedMounts ?? 0),"成长册收藏范围")
+diff --git a/sanguo-town/Sources/SanguoGrowth/GrowthCLI.swift b/sanguo-town/Sources/SanguoGrowth/GrowthCLI.swift
+--- a/sanguo-town/Sources/SanguoGrowth/GrowthCLI.swift
++++ b/sanguo-town/Sources/SanguoGrowth/GrowthCLI.swift
+@@ -12 +12 @@ struct GrowthCLI {
+-    static func seed(_ policy:Policy,legion:Int) throws -> WorldState {
++    static func seed(_ policy:Policy,legion:Int,town:Bool = false) throws -> WorldState {
+@@ -14 +14 @@ struct GrowthCLI {
+-        try GameEngine.apply(.init(id:"governance",expectedRevision:w.revision,action:.acceptDevelopment(policy:policy,investment:.balanced)),to:&w)
++        try GameEngine.apply(.init(id:"governance",expectedRevision:w.revision,action:town ? .realm(.adopt(policy:policy,investment:.balanced)) : .acceptDevelopment(policy:policy,investment:.balanced)),to:&w)
+@@ -29 +29 @@ struct GrowthCLI {
+-        var policy=Policy.balanced,days=30,cadence=3,legion=0,path="dist/growth-preview",matrix=false
++        var policy=Policy.balanced,days=30,cadence=3,legion=0,path="dist/growth-preview",matrix=false,town=false
+@@ -32,0 +33 @@ struct GrowthCLI {
++            if flag=="--town" { town=true;continue }
+@@ -35 +36 @@ struct GrowthCLI {
+-                print("SanguoGrowth [--policy supply|trade|industry|military|balanced] [--days 1...90] [--cadence 1...30] [--legion 0|30|60|90] [--output DIR] [--matrix]")
++                print("SanguoGrowth [--policy supply|trade|industry|military|balanced] [--days 1...90] [--cadence 1...30] [--legion 0|30|60|90] [--output DIR] [--matrix] [--town]")
+@@ -51,2 +52,2 @@ struct GrowthCLI {
+-        if matrix { try runMatrix(out);return }
+-        var w=try seed(policy,legion:legion)
++        if matrix { try runMatrix(out,town:town);return }
++        var w=try seed(policy,legion:legion,town:town)
+@@ -67 +68 @@ struct GrowthCLI {
+-            sections += "<section><h2>\(SVG.escape(entry.0))</h2><p>实际人口 \(entry.1.population) / 住房 \(entry.1.housing)　已建建筑 \(entry.1.buildings.filter(\.isOperating).count)　军团现役 \(entry.1.legionActive)/\(entry.1.legionCapacity)</p>\(svg)</section>"
++            sections += "<section><h2>\(SVG.escape(entry.0))</h2><p>实际人口 \(entry.1.population) / 住房 \(entry.1.housing)　已建建筑 \(entry.1.buildings.filter(\.isOperating).count)　军团现役 \(entry.1.legionActive)/\(entry.1.legionCapacity)　街区改善 \(entry.1.civic?.levelTotal ?? 0)</p>\(svg)</section>"
+@@ -72 +73 @@ struct GrowthCLI {
+-        <main><h1>\(policy.title)：城池一点点长出来</h1><p>growth-0.3 开发切片。以下是同一存档按真实Swift规则加速运行的状态，不是概念图、不是M4录像，也不证明90天内容已平衡。只在开局定策\(legion>0 ? "并批准军团上限" : "")，之后没有逐项点击建设；按\(cadence)天一看推进。普通工程、入住与整军已经实现，代表性工程、跨城物流、战役和完整收藏尚未实现。</p>
++        <main><h1>\(policy.title)：城池一点点长出来</h1><p>\(town ? "town-0.4" : "growth-0.3") 开发切片。以下是同一存档按真实Swift规则加速运行的状态，不是概念图、不是M4录像，也不证明90天内容已平衡。只在开局定策\(legion>0 ? "并批准军团上限" : "")，之后没有逐项点击建设；按\(cadence)天一看推进。普通工程、入住与整军已接入；启用town模式后增加八类街区分阶段改善。此预览不宣称完整战斗、全量物流或90天可玩性已经验收。</p>
+@@ -77 +78 @@ struct GrowthCLI {
+-        print("\(policy.rawValue) \(days)d: \(w.growth!.cities["plain"]!.completedCount) construction completions, population \(w.cities["plain"]!.population), army \(w.growth!.legion?.active ?? 0), treasury \(w.treasury). Real state snapshots exported; not a native GUI recording.")
++        print("\(policy.rawValue) \(days)d: \(w.growth!.cities["plain"]!.completedCount) construction completions, population \(w.cities["plain"]!.population), army \(w.growth!.legion?.active ?? 0), civic \(w.realm?.civicCount ?? 0), treasury \(w.treasury). Real state snapshots exported; not a native GUI recording.")
+@@ -82,0 +84 @@ struct GrowthCLI {
++        let civic:Int
+@@ -84 +86 @@ struct GrowthCLI {
+-    static func runMatrix(_ out:URL) throws {
++    static func runMatrix(_ out:URL,town:Bool) throws {
+@@ -90 +92 @@ struct GrowthCLI {
+-                var w=try seed(policy,legion:60)
++                var w=try seed(policy,legion:60,town:town)
+@@ -101 +103 @@ struct GrowthCLI {
+-                        treasury:w.treasury,proposals:w.growth!.proposals.count,equalToDaily:equal))
++                        treasury:w.treasury,proposals:w.growth!.proposals.count,equalToDaily:equal,civic:w.realm?.civicCount ?? 0))
+@@ -106 +108 @@ struct GrowthCLI {
+-        let report=Report(version:GrowthRules.version,scope:"runtime simulation of the finite single-city slice; not playtesting or full PRD acceptance",rowCount:rows.count,elapsedSeconds:Date().timeIntervalSince(started),rows:rows)
++        let report=Report(version:town ? RealmRules.version : GrowthRules.version,scope:"runtime simulation of the finite single-city slice; not playtesting or full PRD acceptance",rowCount:rows.count,elapsedSeconds:Date().timeIntervalSince(started),rows:rows)
+diff --git a/sanguo-town/Sources/SanguoMac/CityGrowthViews.swift b/sanguo-town/Sources/SanguoMac/CityGrowthViews.swift
+--- a/sanguo-town/Sources/SanguoMac/CityGrowthViews.swift
++++ b/sanguo-town/Sources/SanguoMac/CityGrowthViews.swift
+@@ -19 +19 @@ struct DevelopmentControls: View {
+-                    Button("接受长期治理") { Task { await model.command(.acceptDevelopment(policy:choice,investment:style)) } }
++                    Button("接受长期治理") { Task { await model.command(.realm(.adopt(policy:choice,investment:style))) } }
+@@ -109,0 +110 @@ struct CityMemoryView:View {
++    @State private var selectedCity=""
+@@ -114 +115,6 @@ struct CityMemoryView:View {
+-                if let world=model.world,let growth=world.growth,let city=world.cities.keys.sorted().first {
++                if let world=model.world,let growth=world.growth,let firstCity=world.cities.keys.sorted().first {
++                    let city = world.cities[selectedCity] == nil ? firstCity : selectedCity
++                    Picker("城市",selection:$selectedCity) {
++                        Text("首城").tag("")
++                        ForEach(world.cities.values.sorted{$0.id<$1.id}) { Text($0.name).tag($0.id) }
++                    }.onChange(of:selectedCity) { _,_ in selected="" }
+@@ -119 +125 @@ struct CityMemoryView:View {
+-                    let memory=growth.memories.first{$0.id==selected} ?? growth.memories.first
++                    let memory=growth.memories.first{$0.id==selected && $0.snapshot.cityID==city} ?? growth.memories.first{$0.snapshot.cityID==city}
+@@ -122,0 +129,3 @@ struct CityMemoryView:View {
++                        if memory.pinned && world.realm != nil {
++                            Button("移除此固定快照（不影响城市）") { Task { await model.command(.realm(.removeMemory(memory.id)));selected="" } }
++                        }
+@@ -127 +136 @@ struct CityMemoryView:View {
+-                    Text("只保存游戏内历史状态，不截取桌面。固定快照最多20张；自动纪念最多60张。当前版本没有删除固定项的界面。").font(.caption).foregroundStyle(.secondary)
++                    Text("只保存游戏内历史状态，不截取桌面。固定快照最多20张；自动纪念最多60张。可移除自己固定的快照；自动里程碑不会被此操作删除。").font(.caption).foregroundStyle(.secondary)
+diff --git a/sanguo-town/Sources/SanguoMac/SanguoMacApp.swift b/sanguo-town/Sources/SanguoMac/SanguoMacApp.swift
+--- a/sanguo-town/Sources/SanguoMac/SanguoMacApp.swift
++++ b/sanguo-town/Sources/SanguoMac/SanguoMacApp.swift
+@@ -140 +140 @@ struct Dashboard: View {
+-                Text("growth-0.3：真实施工、太守持续建设、人口与营地成长；完整长周期内容仍在开发。").foregroundStyle(.secondary)
++                Text("town-0.4：城市持续建设、街区逐步改善；你定方向，普通事务交给太守。").foregroundStyle(.secondary)
+@@ -144 +144,2 @@ struct Dashboard: View {
+-                    if world.growth != nil { ConstructionDetails(model:model,world:world) }
++                    RealmPanel(model:model,world:world)
++                    if world.growth != nil { DisclosureGroup("可选：查看施工与地块明细") { ConstructionDetails(model:model,world:world) } }
+@@ -185 +186 @@ struct Dashboard: View {
+-                    Text("本版范围：一城建设／人口／城景／自动整军。跨城物流、战役、完整收藏、代表性工程和完整培养树尚未实现。旧三城演示不是新城取得流程。")
++                    Text("本版为长期养城开发版：地区合作与军务使用简化结算；完整战术战斗、骑乘动画、完整培养分支与现实联动仍未实现。")
+@@ -251 +252 @@ struct TownStrip: View {
+-                ForEach(Array(world.events.filter { ["construction_complete","population","legion_recruit"].contains($0.kind) }.suffix(3).enumerated()),id:\.offset) { _,e in
++                ForEach(Array(world.events.filter { ["construction_complete","population","legion_recruit","civic_complete","collection_acquired","city_joined"].contains($0.kind) }.suffix(3).enumerated()),id:\.offset) { _,e in
+diff --git a/sanguo-town/Sources/SanguoMac/TownScene.swift b/sanguo-town/Sources/SanguoMac/TownScene.swift
+--- a/sanguo-town/Sources/SanguoMac/TownScene.swift
++++ b/sanguo-town/Sources/SanguoMac/TownScene.swift
+@@ -149 +149 @@ final class TownScene: SKScene {
+-            let item: HandItem = director.projection?.isDemo == true && actor.spec.costume == .warrior ? previewItem : .none
++            let item: HandItem = director.projection?.isDemo == true && actor.spec.costume == .warrior ? previewItem : actor.spec.handItem
+diff --git a/sanguo-town/Sources/SanguoPresentation/GrowthTownArt.swift b/sanguo-town/Sources/SanguoPresentation/GrowthTownArt.swift
+--- a/sanguo-town/Sources/SanguoPresentation/GrowthTownArt.swift
++++ b/sanguo-town/Sources/SanguoPresentation/GrowthTownArt.swift
+@@ -26 +26,2 @@ public enum GrowthTownArt {
+-        result.actors=world.people.values.filter{$0.cityID==cityID}.sorted{$0.id<$1.id}.prefix(6).map { person in
++        let travelling = Set(world.realm?.journeys.map(\.personID) ?? [])
++        result.actors=world.people.values.filter{$0.cityID==cityID && !travelling.contains($0.id)}.sorted{$0.id<$1.id}.prefix(6).map { person in
+@@ -28 +29 @@ public enum GrowthTownArt {
+-                      home:home,destination:"gate",work:.idle)
++                      home:home,destination:"gate",work:.idle,handItem:CivicTownArt.equippedHandItem(personID:person.id,world:world))
+@@ -46 +47,6 @@ public enum GrowthTownArt {
+-        if s.legionActive>0,let camp=plan.buildings.first(where:{$0.kind == .barracks && $0.isOperating}) {
++        if let p=s.civic?.project, !p.paused, p.workers>0 {
++            let plot = CivicTownArt.workPlot(p.track, buildings:s.buildings)
++            result.actors.append(.init(id:"civic-"+cityID,name:p.track.title+"施工代表",costume:.artisan,
++                home:"gate",destination:"plot-\(plot)",work:.hammer,representative:true))
++        }
++        if s.legionActive>0, s.legionAway != true,let camp=plan.buildings.first(where:{$0.kind == .barracks && $0.isOperating}) {
+@@ -71,0 +78 @@ public enum GrowthTownArt {
++        a += CivicTownArt.nodes(s)
+diff --git a/sanguo-town/Sources/SanguoPresentation/TownPresentation.swift b/sanguo-town/Sources/SanguoPresentation/TownPresentation.swift
+--- a/sanguo-town/Sources/SanguoPresentation/TownPresentation.swift
++++ b/sanguo-town/Sources/SanguoPresentation/TownPresentation.swift
+@@ -45,0 +46 @@ public struct ActorSpec: Equatable, Sendable, Identifiable {
++    public var handItem: HandItem
+@@ -47 +48 @@ public struct ActorSpec: Equatable, Sendable, Identifiable {
+-                work: Motion = .idle, representative: Bool = false) {
++                work: Motion = .idle, representative: Bool = false, handItem: HandItem = .none) {
+@@ -49 +50 @@ public struct ActorSpec: Equatable, Sendable, Identifiable {
+-        self.destination = destination; self.work = work; self.representative = representative
++        self.destination = destination; self.work = work; self.representative = representative; self.handItem = handItem
+diff --git a/sanguo-town/scripts/build-macos.sh b/sanguo-town/scripts/build-macos.sh
+--- a/sanguo-town/scripts/build-macos.sh
++++ b/sanguo-town/scripts/build-macos.sh
+@@ -21,2 +21,2 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
+-<key>CFBundleShortVersionString</key><string>0.3.0</string>
+-<key>CFBundleVersion</key><string>2</string>
++<key>CFBundleShortVersionString</key><string>0.4.0</string>
++<key>CFBundleVersion</key><string>3</string>
