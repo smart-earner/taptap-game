@@ -55,7 +55,7 @@ public struct TownProjection: Equatable, Sendable {
     public var actors: [ActorSpec]
     public var hasWorkshop: Bool, hasField: Bool, isDemo: Bool
     public var appearance: CityAppearanceSnapshot? = nil
-    public var roadGraph: RoadGraph { appearance == nil ? .town : GrowthTownArt.roads }
+    public var roadGraph: RoadGraph { appearance.map { GrowthTownArt.roads(for:$0) } ?? .town }
     /// Only projects the requested city's real residents. Representatives are never added to WorldState.
     public static func live(_ world: WorldState, cityID: String) -> TownProjection? {
         if world.growth != nil { return GrowthTownArt.projection(world,cityID:cityID) }
@@ -139,7 +139,7 @@ public struct TownDirector: Sendable {
     public var paused = false
     public init() {}
     public mutating func sync(_ next: TownProjection) {
-        let sameCity = projection?.cityID == next.cityID && projection?.isDemo == next.isDemo
+        let sameCity = projection?.cityID == next.cityID && projection?.isDemo == next.isDemo && projection?.appearance?.layoutVersion == next.appearance?.layoutVersion
         let old = sameCity ? actors : [:]
         var replacement: [String: ActorState] = [:]
         for (index, spec) in next.actors.enumerated() {

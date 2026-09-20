@@ -17,6 +17,7 @@ struct RealmPanel: View {
     private var people:[Person] { world.people.values.sorted{$0.id<$1.id} }
     var body: some View {
         if let realm=world.realm {
+            CityIdentityView(model:model,world:world)
             VStack(alignment:.leading,spacing:12) {
                 Text("街区改善 \(realm.civicCount)项 · 已入藏 \(realm.collections.values.filter{$0.completedAt != nil}.count)/16 · 城池 \(world.cities.count)").font(.headline)
                 Text("日常街区由太守推进；以下是可选方向，不是待办清单。不操作也继续原有建设。").font(.caption).foregroundStyle(.secondary)
@@ -106,7 +107,7 @@ struct RealmPanel: View {
         } else if world.growth?.enabled == true {
             GroupBox("继续养好这座城") {
                 Text("启用八类长期街区、收藏与地区合作规则。既有城池、人物和资源保留；不会自动开战或建新城。").font(.caption)
-                Button("启用长期街区发展") { Task { await model.command(.realm(.adopt(policy:world.policy,investment:world.growth?.investment ?? .balanced))) } }
+                Button("启用长期街区发展") { Task { await model.command(.realm(.adoptIdentity(policy:world.policy,investment:world.growth?.investment ?? .balanced))) } }
             }
         }
     }

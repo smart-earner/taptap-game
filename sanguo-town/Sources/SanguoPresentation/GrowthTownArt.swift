@@ -4,6 +4,12 @@ import SanguoCore
 /// Original modular town art driven by actual BuildingInstances; no timer-based city skin swaps.
 public enum GrowthTownArt {
     public static func position(_ plot:Int)->VPoint { .init(65+Double(plot%8)*115,plot<8 ? 190 : 65) }
+    public static func position(_ plot:Int, snapshot:CityAppearanceSnapshot)->VPoint {
+        snapshot.layoutVersion == 2 ? TownLayout.position(plot) : position(plot)
+    }
+    public static func roads(for snapshot:CityAppearanceSnapshot)->RoadGraph {
+        snapshot.layoutVersion == 2 ? TownLayout.roads : roads
+    }
     public static var roads:RoadGraph {
         var points:[String:VPoint] = ["gate":.init(950,40),"upper-end":.init(950,160)]
         var edges:[(String,String)] = [("gate","upper-end")]
@@ -24,9 +30,13 @@ public enum GrowthTownArt {
         let hall=plan.buildings.first{$0.kind == .hall}!
         let home="plot-\(hall.plot)"
         let travelling = Set(world.realm?.journeys.map(\.personID) ?? [])
+        let living=plan.buildings.first{$0.kind == .house && $0.isOperating}
         result.actors=world.people.values.filter{$0.cityID==cityID && !travelling.contains($0.id)}.sorted{$0.id<$1.id}.prefix(6).map { person in
             ActorSpec(id:"person:"+person.id,name:person.name,costume:person.office != nil ? .official : .warrior,
-                      home:home,destination:"gate",work:.idle,handItem:CivicTownArt.equippedHandItem(personID:person.id,world:world))
+                      home:s.layoutVersion == 2 ? "plot-\(living?.plot ?? hall.plot)" : home,
+                      destination:s.layoutVersion == 2 ? home : "gate",
+                      work:s.layoutVersion == 2 ? .read : .idle,
+                      handItem:CivicTownArt.equippedHandItem(personID:person.id,world:world))
         }
         let roles:[(String,BuildingKind,Motion)]=[("grain",.farm,.cultivate),("wine",.tavern,.carry),("tools",.workshop,.hammer)]
         for (key,kind,motion) in roles where plan.lastWorkKinds.contains(key) {
@@ -56,6 +66,7 @@ public enum GrowthTownArt {
         return result
     }
     public static func background(_ s:CityAppearanceSnapshot)->VNode {
+        if s.layoutVersion == 2 { return TownLayout.background(s) }
         var a:[VNode] = [
             .rect("sky",0,0,960,300,"#EBEDE1"),
             .polygon("hills",[(0,268),(100,297),(180,260),(290,289),(420,255),(550,284),(690,264),(800,298),(960,272),(960,0),(0,0)],"#AABCAF",stroke:"none"),
@@ -79,7 +90,7 @@ public enum GrowthTownArt {
         return .init("growth-landscape",children:a)
     }
     public static func building(_ b:BuildingInstance, snapshot:CityAppearanceSnapshot)->VNode {
-        let p=position(b.plot),prefix=b.id
+        let p=position(b.plot,snapshot:snapshot),prefix=b.id
         let project=snapshot.projects.first{$0.buildingID==b.id && $0.live}
         let effective=b.level>0 ? b.level : 1
         let roof=["#7B6F56","#667D73","#4B6B69"][min(2,max(0,effective-1))]
@@ -163,10 +174,10 @@ public enum GrowthTownArt {
     }
     public static func svg(_ snapshot:CityAppearanceSnapshot)->String {
         var body=SVG.node(background(snapshot))
-        for b in snapshot.buildings.sorted(by:{position($0.plot).y>position($1.plot).y}) { body += SVG.node(building(b,snapshot:snapshot)) }
+        for b in snapshot.buildings.sorted(by:{position($0.plot,snapshot:snapshot).y>position($1.plot,snapshot:snapshot).y}) { body += SVG.node(building(b,snapshot:snapshot)) }
         var labels=""
         for b in snapshot.buildings {
-            let p=position(b.plot)
+            let p=position(b.plot,snapshot:snapshot)
             let project=snapshot.projects.first{$0.buildingID==b.id}
             let text=project.map { "\(b.kind.title)·\($0.phaseTitle)" } ?? "\(b.kind.title) \(b.level)级"
             labels += "<text x=\"\(p.x)\" y=\"\(300-p.y+18)\" text-anchor=\"middle\" font-family=\"Noto Sans CJK SC, PingFang SC, sans-serif\" font-size=\"9\" fill=\"#40594d\">\(SVG.escape(text))</text>"

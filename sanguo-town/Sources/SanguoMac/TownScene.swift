@@ -90,7 +90,7 @@ final class TownScene: SKScene {
                 let landscape=VectorSprite(GrowthTownArt.background(appearance));landscape.zPosition = -100
                 addChild(landscape);backgroundArt=landscape
                 for building in appearance.buildings {
-                    let p=GrowthTownArt.position(building.plot)
+                    let p=GrowthTownArt.position(building.plot,snapshot:appearance)
                     let node=VectorSprite(GrowthTownArt.building(building,snapshot:appearance));node.zPosition=CGFloat(500-p.y)
                     addChild(node);growthNodes.append(node)
                     let label=SKLabelNode(fontNamed:"PingFangSC-Regular")

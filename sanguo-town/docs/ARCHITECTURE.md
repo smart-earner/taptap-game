@@ -1,3 +1,25 @@
+# 架构补充 v0.3｜对应PRD v0.5
+
+## 当前增量：town-0.5
+
+在既有单写入模拟和只读表现之间增加三个明确边界，不建立新服务或新的世界状态。
+
+| 文件／实体 | 责任 | 不能做什么 |
+| --- | --- | --- |
+| CityIdentityState | 显式接受版本、每城近期规划事实 | 未确认就升级规则或预算 |
+| CityIdentityPlanner | 合法候选的需求比较与目标深度 | 绕过保护线或预读隐藏结果 |
+| CityIdentityRuntime | 草案采购＋工程预留整体提交、完工归因 | 拒绝候选仍部分扣款 |
+| TownLayout | 16稳定地块的版本化位置与道路 | 改资产、改等级、重画过去 |
+| CityIdentityView | 可展开方向和执行记录 | 新建每日审批队列 |
+
+WorldState schema 4／rules town-0.5要求realm.identity非空；旧schema 3要求为空。CityAppearanceSnapshot.layoutVersion缺省nil，保留旧布局；2代表新分区，未知值拒绝。在建合同、库存、人物和历史快照在既有town存档迁移时原样保留。以原始policyVersion、officialID和完成事件固定规划归属。
+
+调方针只影响后续未承诺计划；历史画面只取快照版本，路由和深度使用同一坐标来源。切换布局时重置表现层路线，避免保留旧坐标造成穿模；不因此改变模拟时间或收益。
+
+本批回归、macOS编译和长周期矩阵证据以BUILD_STATUS／identity-test-report为准；下方为v0.4历史契约，描述“待新增”的部分不代表今天仍未实现。
+
+---
+
 # 架构补充 v0.2｜对应PRD v0.4
 
 日期：2026-09-20。本稿定义下一批实现契约，不表示代码已经迁移。既有完整架构保存在[ARCHITECTURE-v0.1.md](reference/ARCHITECTURE-v0.1.md)。继续采用纯Swift单写入模拟、命令校验、SwiftUI/AppKit入口与SpriteKit表现，不重写已验证核心。

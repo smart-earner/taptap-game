@@ -16,7 +16,7 @@ struct DevelopmentControls: View {
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
                     Picker("城市方向",selection:$choice) { ForEach(Policy.allCases,id:\.self) { Text($0.title).tag($0) } }
-                    Button("接受长期治理") { Task { await model.command(.realm(.adopt(policy:choice,investment:style))) } }
+                    Button("接受长期治理") { Task { await model.command(.realm(.adoptIdentity(policy:choice,investment:style))) } }
                 }.disabled(model.busy)
             } else {
                 HStack {

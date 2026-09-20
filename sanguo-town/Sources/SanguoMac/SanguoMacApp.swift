@@ -137,7 +137,7 @@ struct Dashboard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("一城任太守，多城托都督").font(.largeTitle.bold())
-                Text("town-0.4：城市持续建设、街区逐步改善；你定方向，普通事务交给太守。").foregroundStyle(.secondary)
+                Text("town-0.5：城池分区成长，方向影响街区特色；你定方向，普通事务交给太守。").foregroundStyle(.secondary)
                 if let error = model.errorMessage { Text(error).textSelection(.enabled) }
                 if let world = model.world {
                     DevelopmentControls(model:model,world:world)

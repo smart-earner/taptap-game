@@ -81,6 +81,7 @@ extension WorldState {
         try require(growth.memories.count<=80 && growth.memories.filter(\.pinned).count<=20 && growth.memories.filter{!$0.pinned}.count<=60,"成长册容量")
         try require(Set(growth.memories.map(\.id)).count==growth.memories.count,"成长册ID唯一")
         for m in growth.memories {
+            try require(m.snapshot.layoutVersion == nil || m.snapshot.layoutVersion == 2,"未知历史布局版本")
             try require(m.snapshot.version==1 && m.snapshot.time>=0 && m.snapshot.time<=simulationTime && cities[m.snapshot.cityID] != nil,"成长册历史状态")
             try require((1...200).contains(m.snapshot.population) && m.snapshot.buildings.count<=16 && m.snapshot.projects.count<=2,"成长册内容容量")
             try require(m.snapshot.buildings.allSatisfy{(0..<16).contains($0.plot) && (0...3).contains($0.level)},"成长册建筑范围")

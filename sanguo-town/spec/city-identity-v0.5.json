@@ -1,0 +1,79 @@
+{
+  "version": "0.5",
+  "runtime_version": "town-0.5",
+  "schema": 4,
+  "explicit_migration": true,
+  "default_services": 1,
+  "targets": {
+    "supply": {
+      "water": 3,
+      "homes": 3,
+      "gardens": 3
+    },
+    "trade": {
+      "commerce": 3,
+      "streets": 3,
+      "academy": 3
+    },
+    "industry": {
+      "industry": 3,
+      "water": 3,
+      "streets": 3
+    },
+    "military": {
+      "ramparts": 3,
+      "industry": 3,
+      "streets": 3
+    },
+    "balanced": {
+      "streets": 2,
+      "water": 2,
+      "homes": 2,
+      "commerce": 2
+    }
+  },
+  "prerequisites": {
+    "water": "farm",
+    "homes": "house",
+    "gardens": "house",
+    "commerce": "market",
+    "industry": "workshop",
+    "streets": "hall",
+    "academy": "hall",
+    "ramparts": "hall"
+  },
+  "income_channel": "market",
+  "nominal_days_two_workers": [
+    2,
+    6,
+    12
+  ],
+  "trace_limit_per_city": 12,
+  "layout": {
+    "current": 2,
+    "legacy": null,
+    "plot_count": 16,
+    "ownership_changes_on_layout_upgrade": false
+  },
+  "policy_switch": {
+    "preserve_levels": true,
+    "preserve_active_contracts": true,
+    "repaint_immediately": false,
+    "permanently_exclusive": false
+  },
+  "validation": {
+    "matrix_policies": 5,
+    "cadence_days": [
+      1,
+      3,
+      7
+    ],
+    "checkpoints_days": [
+      30,
+      60,
+      90
+    ],
+    "full_prd_accepted": false,
+    "m4_gui_tested": false
+  }
+}
