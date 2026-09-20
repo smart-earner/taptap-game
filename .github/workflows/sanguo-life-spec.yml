@@ -1,0 +1,44 @@
+name: Sanguo life specification
+on:
+  push:
+    branches: ['docs/sanguo-life-v06-devspec', 'main']
+    paths:
+      - 'sanguo-town/docs/life-v0.6/**'
+      - 'sanguo-town/docs/PRD.md'
+      - 'sanguo-town/spec/*v0.6.json'
+      - 'sanguo-town/scripts/validate_life_spec.py'
+      - '.github/workflows/sanguo-life-spec.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-life-spec-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate design data, not the game engine
+        run: |
+          set -o pipefail
+          python3 --version
+          python3 sanguo-town/scripts/validate_life_spec.py --output dist/life-spec | tee life-spec.log
+      - name: Archive exact tracked documentation and configuration
+        if: always()
+        run: |
+          mkdir -p dist/life-spec
+          cp life-spec.log dist/life-spec/ 2>/dev/null || true
+          git archive --format=zip --output=dist/life-spec/source.zip HEAD sanguo-town/docs sanguo-town/spec sanguo-town/scripts .github/workflows/sanguo-life-spec.yml
+          git rev-parse HEAD > dist/life-spec/commit.txt
+          sha256sum dist/life-spec/source.zip > dist/life-spec/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-life-spec-${{ github.sha }}
+          path: dist/life-spec
+          retention-days: 14
+          if-no-files-found: error
