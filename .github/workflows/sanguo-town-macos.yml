@@ -25,7 +25,7 @@ jobs:
       - name: Preserve versioned sources without credentials or build caches
         run: |
           mkdir -p dist/logs
-          git archive --format=zip --output=dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
+          git -C .. archive --format=zip --output=sanguo-town/dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
       - uses: actions/upload-artifact@v4
         with:
           name: sanguo-source-${{ github.sha }}
