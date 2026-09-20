@@ -5,7 +5,7 @@ extension WorldState {
         guard let growth else { return }
         func require(_ b:Bool,_ s:String) throws { if !b { throw GameError.invalid(s) } }
         try require(Set(growth.cities.keys)==Set(cities.keys),"城建城市归属")
-        try require(growth.reservedCash <= treasury && growth.reservedCash >= 0,"工程和军需现金预留守恒")
+        try require(growth.reservedCash >= 0 && (realm?.reservationCash ?? 0) >= 0 && growth.reservedCash + (realm?.reservationCash ?? 0) <= treasury,"工程和军需现金预留守恒")
         try require((0...1_000_000).contains(growth.finance.capital) && (0...1_000_000).contains(growth.finance.operating),"成长财政额度")
         try require(growth.nextID>0 && growth.policyVersion>=0,"成长版本／序列")
         try require(growth.normalGrowthSeconds>=0 && growth.normalGrowthSeconds<=simulationTime,"正常成长时钟")
@@ -66,6 +66,13 @@ extension WorldState {
                 try require(batch.dueAt>simulationTime && batch.number>0 && legion.active+batch.number<=legion.authorizedCapacity,"军团在训与现役不能重复")
                 reserved[legion.cityID,default:[:]]["grain",default:0]+=batch.grain
                 reserved[legion.cityID,default:[:]]["tools",default:0]+=batch.tools
+            }
+        }
+        if let realm {
+            for (id,civic) in realm.civic {
+                if let p=civic.project {
+                    for (key,cost) in p.materials { reserved[id,default:[:]][key,default:0] += cost-p.used[key,default:0] }
+                }
             }
         }
         for (id,city) in cities { for r in Resource.allCases {

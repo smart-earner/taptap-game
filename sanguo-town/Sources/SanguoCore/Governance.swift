@@ -3,6 +3,7 @@ import Foundation
 public enum Principal: Codable, Equatable, Sendable { case player, person(String) }
 public enum PolicyScope: Codable, Equatable, Sendable { case realm, city(String), district(String) }
 public enum GameAction: Codable, Equatable, Sendable {
+    case realm(RealmAction)
     case setPolicy(scope: PolicyScope, policy: Policy)
     case acceptDevelopment(policy: Policy, investment: InvestmentStyle)
     case pauseDevelopment(Bool)
@@ -46,6 +47,9 @@ enum Governance {
         if principal != .player {
             guard let districtID = city.districtID, world.districts[districtID]?.talentIDs.contains(personID) == true else { throw GameError.denied("人才不在授权池") }
         }
+        guard world.realm?.journeys.contains(where: { $0.personID == personID }) != true else {
+            throw GameError.denied("人物在途，必须到任后才能任职")
+        }
         if city.prefectID == personID { return }
         guard !person.locked && world.people[city.prefectID]?.locked != true else { throw GameError.denied("人物／职位已锁定，请先由主公解锁") }
         guard person.cityID == cityID else { throw GameError.unsupported("跨城调任需旅行与交接，不能瞬移") }
@@ -63,8 +67,9 @@ enum Governance {
             for cityID in district.cityIDs.sorted() {
                 let city = world.cities[cityID]!, current = world.people[city.prefectID]!
                 guard !current.locked && (current.isProxy || world.simulationTime - city.lastAppointment >= 14_400) else { continue }
+                let travelling = Set(world.realm?.journeys.map(\.personID) ?? [])
                 let candidates = district.talentIDs.compactMap { world.people[$0] }.filter {
-                    $0.office == nil && !$0.locked && $0.cityID == cityID && $0.prefectScore >= current.prefectScore + 15
+                    $0.office == nil && !$0.locked && !travelling.contains($0.id) && $0.cityID == cityID && $0.prefectScore >= current.prefectScore + 15
                 }.sorted { $0.prefectScore == $1.prefectScore ? $0.id < $1.id : $0.prefectScore > $1.prefectScore }
                 if let chosen = candidates.first {
                     try appoint(cityID: cityID, personID: chosen.id, principal: .person(district.governorID), world: &world)

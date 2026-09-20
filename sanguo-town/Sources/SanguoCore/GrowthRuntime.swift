@@ -30,7 +30,12 @@ public enum GrowthRuntime {
         prepareBatches(world:&world)
     }
     static func freeCash(_ world: WorldState) -> Int64 {
-        max(0, world.treasury - (world.growth?.reservedCash ?? 0) - GrowthRules.protectedCash - (world.growth?.finance.protectedOperating ?? 0))
+        max(0, world.treasury - (world.growth?.reservedCash ?? 0) - (world.realm?.reservationCash ?? 0) - GrowthRules.protectedCash - (world.growth?.finance.protectedOperating ?? 0))
+    }
+    static func bootstrapCash(_ cityID: String, world: WorldState) -> Int64 {
+        guard world.realm != nil, let plan=world.growth?.cities[cityID] else { return 0 }
+        let funded=plan.buildings.contains { b in b.kind == .market && (b.isOperating || plan.projects.contains { $0.live && $0.buildingID==b.id }) }
+        return funded ? 0 : BuildingCatalog.quote(kind:.market,level:1,repair:false).cash
     }
     static func updateCapacities(_ id: String, world: inout WorldState) {
         guard let plan = world.growth?.cities[id], var city = world.cities[id] else { return }
@@ -88,6 +93,10 @@ public enum GrowthRuntime {
         case .authorizeLegion(let cityID,let capacity,let budget):
             guard principal == .player, world.growth != nil, world.cities[cityID] != nil,
                   [30,60,90].contains(capacity), (0...100_000).contains(budget) else { throw GameError.denied("军团须主公批准合法编制和总预算") }
+            if world.realm != nil,world.growth!.legion == nil,let plan=world.growth!.cities[cityID],plan.level(.barracks)==0 {
+                let occupied=Set(plan.buildings.map(\.plot))
+                guard (0..<16).contains(where:{!occupied.contains($0) && !plan.lockedPlots.contains($0)}) else { throw GameError.denied("此城没有可建营地的空地；请先解除空地锁定或选择另一座城市，不会拆除既有建筑") }
+            }
             if var legion = world.growth!.legion {
                 guard legion.cityID == cityID, capacity >= max(legion.authorizedCapacity, legion.active), budget >= legion.budget else {
                     throw GameError.denied("本版只支持原军团提高编制／总预算；不迁营或删除现役")
@@ -123,7 +132,7 @@ public enum GrowthRuntime {
         }
         guard kind != .hall || isRepair else { throw GameError.denied("府署只能修缮现有实体") }
         let quote = BuildingCatalog.quote(kind:kind,level:target,repair:isRepair)
-        guard world.growth!.finance.capital >= quote.cash, freeCash(world) >= quote.cash else { throw GameError.denied("发展额度或自由国库不足") }
+        guard world.growth!.finance.capital >= quote.cash, freeCash(world) >= quote.cash + (kind == .market ? 0 : bootstrapCash(cityID,world:world)) else { throw GameError.denied("发展额度或自由国库不足") }
         for (key,amount) in quote.materials {
             guard let resource = Resource(rawValue:key), city.inventory.free(resource) >= amount else { throw GameError.denied("材料不足：\(key)") }
         }
@@ -227,6 +236,11 @@ public enum GrowthRuntime {
                 plan.projects[index].status = plan.projects[index].builders > 0 ? .working : .waiting
                 plan.projects[index].reason = plan.projects[index].builders > 0 ? "实际施工中" : "优先保供／等待可用劳力"
             }
+            // The public-works team competes with production and ordinary builders; never creates free workers.
+            if world.realm?.civic[id]?.project != nil {
+                let count = urgent || world.realm!.civic[id]!.project!.paused ? 0 : min(2,max(0,remaining-2))
+                world.realm!.civic[id]!.project!.workers=count;remaining-=count
+            }
             assign(.wood,1); assign(.iron,1)
             let order: [Resource]
             switch world.policy(for:city) {
@@ -239,19 +253,25 @@ public enum GrowthRuntime {
             city.jobs = jobs
             var inputs: [String:Int64] = [:], outputs: [String:Int64] = [:], actual: [String:Int] = [:]
             func addOutput(_ r: Resource,_ amount:Int64) {
-                let made = max(0,min(amount,city.inventory.capacity-city.inventory[r]))
+                let made = max(0,min(amount,city.inventory.capacity-city.inventory[r]-RealmRuntime.incoming(city:id,resource:r,world:world)))
                 if made > 0 { outputs[r.rawValue] = made; actual[r.rawValue] = jobs[r.rawValue,default:0] }
             }
             let farmLevels = plan.buildings.filter { $0.kind == .farm && $0.isOperating }.map(\.level)
+            let civicFarm = world.realm?.civic[id]?.level(.water) ?? 0
             let farmMultiplier = farmLevels.isEmpty ? 100 : farmLevels.reduce(0) { $0+100+($1-1)*25 } / farmLevels.count
-            addOutput(.grain,Int64(jobs["grain",default:0])*5_000*city.grainRatePercent*Int64(farmMultiplier)/10_000)
+            addOutput(.grain,Int64(jobs["grain",default:0])*5_000*city.grainRatePercent*Int64(farmMultiplier)*Int64(100+civicFarm*3)/1_000_000)
             addOutput(.wood,Int64(jobs["wood",default:0])*6_000)
             addOutput(.iron,Int64(jobs["iron",default:0])*2_000*city.ironRatePercent/100)
             let wineSpeed: Int64 = Int64(100 + max(0,plan.level(.tavern)-1)*25)
             let wines = min(Int64(jobs["wine",default:0])*1000*wineSpeed/100,
-                max(0,city.inventory.free(.grain)-city.grainFloor)/5,(city.inventory.capacity-city.inventory[.wine]))
+                max(0,city.inventory.free(.grain)-city.grainFloor)/5,(city.inventory.capacity-city.inventory[.wine]-RealmRuntime.incoming(city:id,resource:.wine,world:world)))
             if wines > 0 { inputs["grain"] = wines*5; addOutput(.wine,wines) }
-            let toolSpeed: Int64 = Int64(100 + max(0,plan.level(.workshop)-1)*25)
+            let civicIndustry: Int = world.realm?.civic[id]?.level(CivicTrack.industry) ?? 0
+            let workshopLevel: Int = plan.level(BuildingKind.workshop)
+            let workshopIncrease: Int = max(0,workshopLevel-1)*25
+            var toolSpeed: Int64 = 100
+            toolSpeed += Int64(workshopIncrease)
+            toolSpeed += Int64(civicIndustry)*3
             let tools = min(Int64(jobs["tools",default:0])*500*toolSpeed/100,city.inventory.free(.wood)/4,city.inventory.free(.iron)/2,city.inventory.capacity-city.inventory[.tools])
             if tools > 0 { inputs["wood"] = tools*4; inputs["iron"] = tools*2; addOutput(.tools,tools) }
             for (key,amount) in inputs { city.inventory.reserved[key,default:0] += amount }
@@ -290,14 +310,15 @@ public enum GrowthRuntime {
                 city.population += 1
                 world.record("population", "\(city.name)有新居民入住，现有\(city.population)人；住房来自已完工民居。")
             }
-            plan.nextPopulationCheck = world.simulationTime+7200
+            plan.nextPopulationCheck = world.simulationTime + 7200*100/Int64(100+(world.realm?.civic[id]?.level(.gardens) ?? 0)*5)
             world.cities[id] = city; world.growth!.cities[id] = plan
         }
     }
     static func sellSurplus(world: inout WorldState) {
         guard world.growth!.enabled else { return }
         let prices: [String:Int64] = ["grain":2,"wood":3,"iron":8,"wine":14,"tools":40]
-        let demand: [String:Int64] = ["grain":100,"wood":60,"iron":30,"wine":60,"tools":20]
+        let commerce=world.realm?.civic.values.map { $0.level(.commerce) }.max() ?? 0
+        let demand: [String:Int64] = world.realm == nil ? ["grain":100,"wood":60,"iron":30,"wine":60,"tools":20] : ["grain":25,"wood":15,"iron":8,"wine":Int64(20+commerce*3),"tools":8]
         for id in world.cities.keys.sorted() {
             guard world.growth!.cities[id]!.level(.market)>0 else { continue }
             for r in Resource.allCases {
@@ -334,7 +355,13 @@ public enum GrowthRuntime {
         func emptyPlot(_ kind:BuildingKind)->Int? {
             let occupied=Set(plan.buildings.map(\.plot)), locked=Set(plan.lockedPlots)
             let preferred=Array((kind.district*4)..<(kind.district*4+4))
-            return (preferred+Array(0..<16)).first { !occupied.contains($0) && !locked.contains($0) }
+            // Reserve sites for essential unique facilities, so cheap housing/farms cannot
+            // permanently crowd out workshops, collection channels or a later optional camp.
+            let reserved:[Int:BuildingKind] = [8:.market,9:.tavern,10:.workshop,12:.station,14:.stable,15:.barracks]
+            let ownSites=reserved.filter{$0.value==kind}.keys.sorted()
+            return (ownSites+preferred+Array(0..<16)).first {
+                !occupied.contains($0) && !locked.contains($0) && (world.realm == nil || reserved[$0]==nil || reserved[$0]==kind)
+            }
         }
         func add(_ kind:BuildingKind,_ why:String) {
             if (!has(kind) || kind.repeatable), let plot=emptyPlot(kind) { choices.append((kind,plot,why)) }
@@ -369,13 +396,16 @@ public enum GrowthRuntime {
         return choices.filter { !plan.lockedPlots.contains($0.1) }
     }
     static func purchaseShortfall(_ id:String, materials:[String:Int64], world:inout WorldState) {
-        let prices:[String:Int64] = ["wood":5,"iron":12,"tools":55]
+        // The mountain agreement establishes a supplier discount at the local depot.
+        // This is a disclosed procurement abstraction, not a fictional completed shipment.
+        let ironPrice:Int64 = world.realm?.completedGoals.contains(RegionalGoal.mountainTrade.rawValue) == true ? 10:12
+        let prices:[String:Int64] = ["wood":5,"iron":ironPrice,"tools":55]
         // Only buy for an affordable selected construction, never arbitrary speculative purchasing.
         for key in materials.keys.sorted() {
             guard let r=Resource(rawValue:key), let price=prices[key] else { continue }
             let city=world.cities[id]!, need=max(0,materials[key]! - city.inventory.free(r))
             let futureOutput=world.growth!.cities[id]!.batch?.outputs[key,default:0] ?? 0
-            let room=max(0,city.inventory.capacity-city.inventory[r]-futureOutput)/1000
+            let room=max(0,city.inventory.capacity-city.inventory[r]-futureOutput-RealmRuntime.incoming(city:id,resource:r,world:world))/1000
             let units=min((need+999)/1000, room, world.growth!.finance.operating/price,freeCash(world)/price)
             if units>0 {
                 let cash=units*price
@@ -386,7 +416,14 @@ public enum GrowthRuntime {
     }
     static func manage(world: inout WorldState) throws {
         guard world.growth!.enabled else { return }
+        RealmRuntime.manage(world:&world)
         for id in world.cities.keys.sorted() {
+            // After the basic town is viable, let a representative project accumulate its budget.
+            // Ongoing construction and production continue; this is not a calendar unlock.
+            if world.realm != nil, let civic=world.realm!.civic[id],civic.project==nil,civic.levelTotal<24,
+               world.growth!.cities[id]!.completedCount>=8,
+               [BuildingKind.market,.tavern,.workshop,.stable,.station].allSatisfy({world.growth!.cities[id]!.level($0)>0}),
+               !(world.growth!.legion?.cityID == id && world.growth!.cities[id]!.level(.barracks)==0) { continue }
             for _ in 0..<2 {
                 guard world.growth!.cities[id]!.projects.filter(\.live).count<2 else { break }
                 let list=candidates(id,world:world)
@@ -396,9 +433,10 @@ public enum GrowthRuntime {
                     let b=plan.buildings.first {$0.plot==plot}
                     let repair=b?.kind == .hall && b?.restored == false
                     let quote=BuildingCatalog.quote(kind:kind,level:repair ? 1 : (b?.level ?? 0)+1,repair:repair)
-                    guard quote.cash <= world.growth!.finance.capital && quote.cash <= freeCash(world) else { continue }
+                    let essentialCash = kind == .market ? 0 : bootstrapCash(id,world:world)
+                    guard quote.cash <= world.growth!.finance.capital && quote.cash + essentialCash <= freeCash(world) else { continue }
                     // Reserve the future construction cash from the procurement freedom.
-                    world.growth!.finance.protectedOperating = quote.cash
+                    world.growth!.finance.protectedOperating = quote.cash + essentialCash
                     purchaseShortfall(id,materials:quote.materials,world:&world)
                     world.growth!.finance.protectedOperating = 0
                     do {
@@ -413,11 +451,12 @@ public enum GrowthRuntime {
                 }
             }
         }
+        RealmRuntime.manage(world:&world)
         startRecruitment(world:&world)
         propose(world:&world)
     }
     static func startRecruitment(world:inout WorldState) {
-        guard var legion=world.growth!.legion, legion.batch==nil else { return }
+        guard var legion=world.growth!.legion, legion.batch==nil, world.realm?.operation?.goal != .securePass, (world.realm?.wounded ?? 0)==0 else { return }
         let plan=world.growth!.cities[legion.cityID]!, city=world.cities[legion.cityID]!
         if legion.active>=legion.authorizedCapacity { legion.pausedReason="已达批准编制，继续有限训练与维护";world.growth!.legion=legion;return }
         let period=world.simulationTime/86_400
@@ -452,7 +491,7 @@ public enum GrowthRuntime {
             if legion.active%30==0 { remember(legion.cityID,title:"军团现役达到\(legion.active)人",key:"legion-\(legion.active)",pinned:false,world:&world) }
         }
         if trainingAllowed && legion.nextTraining<=world.simulationTime {
-            if legion.active>0 && world.cities[legion.cityID]!.inventory.free(.grain)>=world.cities[legion.cityID]!.grainFloor { legion.trainedHours=min(216,legion.trainedHours+1) }
+            if legion.active>0 && world.realm?.operation?.goal != .securePass && world.cities[legion.cityID]!.inventory.free(.grain)>=world.cities[legion.cityID]!.grainFloor { legion.trainedHours=min(216,legion.trainedHours+1) }
             legion.nextTraining=(world.simulationTime/3600+1)*3600
         }
         world.growth!.legion=legion
@@ -494,7 +533,7 @@ public enum GrowthRuntime {
         var draft=world,ticks=0
         while draft.simulationTime<target {
             let now=draft.simulationTime
-            var next=min(target,draft.growth!.nextPlanning,draft.growth!.nextFiscal)
+            var next=RealmRuntime.nextEvent(draft,fallback:min(target,draft.growth!.nextPlanning,draft.growth!.nextFiscal))
             for p in draft.growth!.cities.values {
                 next=min(next,p.nextPopulationCheck,p.batch?.dueAt ?? target)
                 for b in p.projects where b.status == .working && b.builders>0 {
@@ -508,8 +547,10 @@ public enum GrowthRuntime {
             }
             next=max(now,next)
             let delta=next-now
+            RealmRuntime.progress(delta,world:&draft)
             progress(delta,world:&draft);draft.growth!.normalGrowthSeconds+=delta;draft.simulationTime=next
             var changed=finishProjects(world:&draft)
+            RealmRuntime.finish(world:&draft,normal:true)
             if finishBatches(world:&draft) { changed=true; sellSurplus(world:&draft) }
             finishRecruitment(world:&draft)
             population(world:&draft)
@@ -549,8 +590,11 @@ public enum GrowthRuntime {
                 }
             }
             if let b=world.growth!.legion?.batch { due=min(due,b.dueAt);any=true }
+            let realmDue=RealmRuntime.nextEvent(world,fallback:Int64.max,normal:false)
+            if realmDue != Int64.max { due=min(due,realmDue);any=true }
             if !any { break }
-            due=max(next,due);progress(due-next,world:&world);world.simulationTime=due
+            due=max(next,due);RealmRuntime.progress(due-next,world:&world);progress(due-next,world:&world);world.simulationTime=due
+            RealmRuntime.finish(world:&world,normal:false)
             _=finishProjects(world:&world)
             // Complete reserved production outputs but no new batches or routine food demand in the rest segment.
             for id in world.cities.keys.sorted() {
@@ -567,6 +611,11 @@ public enum GrowthRuntime {
         world.growth!.nextFiscal=(world.simulationTime/GrowthRules.fiscalPeriod+1)*GrowthRules.fiscalPeriod
         for id in world.cities.keys.sorted() { world.growth!.cities[id]!.nextPopulationCheck=world.simulationTime+7200 }
         if world.growth!.legion != nil { world.growth!.legion!.nextTraining=world.simulationTime+3600 }
+        if world.realm != nil {
+            world.realm!.nextRecovery=world.simulationTime+3600
+            world.realm!.nextStudy=world.simulationTime+3600
+            world.realm!.nextTrade=(world.simulationTime/7200+1)*7200
+        }
         // On next normal advance, the standing plan resumes without renewing appointments.
     }
 }

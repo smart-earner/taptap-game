@@ -157,6 +157,8 @@ public struct WorldState: Codable, Equatable, Sendable {
     public var events: [DomainEvent] = []
     /// Absent in legacy core-0.1 saves; migration requires explicit player consent.
     public var growth: RealmGrowth? = nil
+    /// Opt-in town-0.4 state; absent in all older save formats.
+    public var realm: RealmDevelopment? = nil
     public init(wallUTC: Int64) { lastWallUTC = wallUTC }
     public func policy(for city: City) -> Policy {
         city.policy ?? city.districtID.flatMap { districts[$0]?.policy } ?? policy

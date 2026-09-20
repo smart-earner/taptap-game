@@ -21,6 +21,8 @@ public enum GameEngine {
         guard world.receipts.count < 10_000 else { throw GameError.invalid("原型命令账本已达上限") }
         var draft = world
         switch command.action {
+        case .realm(let action):
+            try RealmRuntime.handle(action, principal:command.principal, world:&draft)
         case .setPolicy(let scope, let policy):
             switch scope {
             case .realm:
@@ -49,7 +51,7 @@ public enum GameEngine {
             guard !id.isEmpty, id.count <= 80, draft.districts.isEmpty, (2...3).contains(cityIDs.count), Set(cityIDs).count == cityIDs.count,
                   cityIDs.allSatisfy({ draft.cities[$0] != nil && draft.cities[$0]?.districtID == nil }) else { throw GameError.invalid("辖区范围") }
             guard var governor = draft.people[governorID], governor.office == nil, !governor.locked,
-                  cityIDs.contains(governor.cityID) else { throw GameError.denied("都督需空闲、未锁定且已在辖区") }
+                  cityIDs.contains(governor.cityID), draft.realm?.journeys.contains(where: { $0.personID == governorID }) != true else { throw GameError.denied("都督需空闲、未锁定且已在辖区") }
             governor.office = .init(kind: .governor, scope: id, since: draft.simulationTime)
             draft.people[governorID] = governor
             draft.districts[id] = .init(id: id, cityIDs: cityIDs.sorted(), governorID: governorID,

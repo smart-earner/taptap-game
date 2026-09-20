@@ -5,7 +5,7 @@ extension WorldState {
         func require(_ condition: Bool, _ message: String) throws {
             if !condition { throw GameError.invalid(message) }
         }
-        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil), "未知存档／规则版本")
+        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil && realm == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil && realm == nil) || (schemaVersion == 3 && rulesVersion == RealmRules.version && growth != nil && realm != nil), "未知存档／规则版本")
         try require((0...31_536_000_000).contains(simulationTime) && (0...4_000_000_000_000).contains(lastWallUTC), "时钟范围")
         try require((0...1_000_000_000).contains(treasury) && (0...1_000_000_000).contains(revision), "国库／版本范围")
         try require((1...3).contains(cities.count) && districts.count <= 1 && people.count <= 64, "场景容量")
@@ -24,7 +24,7 @@ extension WorldState {
             try require(Set(city.jobs.keys).isSubset(of: resources) && Set(city.jobCapacity.keys).isSubset(of: resources), "未知岗位")
             try require(city.jobCapacity.values.allSatisfy { (0...200).contains($0) }, "岗位容量")
             try require(city.jobs.values.allSatisfy { (0...200).contains($0) }, "岗位人数")
-            try require(city.jobs.values.reduce(0, +) + (growth?.cities[key]?.builders ?? 0) <= city.labor, "超额分配劳力")
+            try require(city.jobs.values.reduce(0, +) + (growth?.cities[key]?.builders ?? 0) + (realm?.civic[key]?.workers ?? 0) <= city.labor, "超额分配劳力")
             try require(city.jobs.allSatisfy { $0.value <= city.jobCapacity[$0.key, default: 0] }, "设施岗位不足")
             try require((0..<6).contains(city.grainRemainder), "口粮余数")
             try require((50...150).contains(city.grainRatePercent) && (50...150).contains(city.ironRatePercent), "城市禀赋")
@@ -56,6 +56,7 @@ extension WorldState {
             }
         }
         if growth != nil { try validateGrowth() }
+        if realm != nil { try validateRealm() }
         for (id, receipt) in receipts {
             try require(!id.isEmpty && id.count <= 80 && receipt.fingerprint.utf8.count <= 4096 && receipt.revision > 0 && receipt.revision <= revision, "命令回执")
         }
