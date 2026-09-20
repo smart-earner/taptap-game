@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import SanguoCore
 import SanguoPresentation
+import SanguoLifeCore
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -88,7 +89,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !waitingForExit else { return .terminateLater }
         waitingForExit = true
         Task {
-            let saved = await AppModel.shared.flushForExit()
+            let oldSaved = await AppModel.shared.flushForExit()
+            let lifeSaved = await LifeModel.shared.flush()
+            let saved = oldSaved && lifeSaved
             waitingForExit = false
             sender.reply(toApplicationShouldTerminate: saved)
         }
@@ -101,7 +104,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct SanguoMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
+    init() {
+        if CommandLine.arguments.contains("--verify-life-config") {
+            do {
+                let r=try LifeRules.loadForApplication()
+                let packaged=Bundle.main.resourceURL.map { FileManager.default.fileExists(atPath:$0.appendingPathComponent("life-rules.json").path) } ?? false
+                print("LIFE_CONFIG \(r.rules) packaged=\(packaged) crops=\(r.crops.count)")
+                exit(packaged ? 0:2)
+            } catch { print(error.localizedDescription);exit(1) }
+        }
+    }
     var body: some Scene {
+        Window("小城志 · 城市生活试验", id: "life") { CityLifeView() }.defaultSize(width: 1200, height: 850)
         Window("小城志 · 我的城", id: "town") {
             TownStrip(model: model).task { await model.start() }
         }.defaultSize(width: 960, height: 450)
@@ -125,6 +139,7 @@ struct TownMenu: View {
     @Environment(\.openWindow) private var openWindow
     var body: some View {
         Text("小城志 · 开发版")
+        Button("城市生活试验（新档）") { openWindow(id: "life") }
         Button("打开主公府") { openWindow(id: "main") }
         Button("显示城市概览") { openWindow(id: "town") }
         Button("城市成长册") { openWindow(id:"memories") }

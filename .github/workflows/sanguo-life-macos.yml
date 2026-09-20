@@ -1,0 +1,62 @@
+name: Sanguo City Life macOS
+on:
+  push:
+    paths: ['sanguo-town/Sources/SanguoLifeCore/**','sanguo-town/Sources/SanguoLifeCLI/**','sanguo-town/Sources/SanguoMac/**','sanguo-town/Tests/SanguoLifeTests/**','sanguo-town/Package.swift','sanguo-town/scripts/build-macos.sh','.github/workflows/sanguo-life-macos.yml']
+  pull_request:
+    paths: ['sanguo-town/Sources/SanguoLifeCore/**','sanguo-town/Sources/SanguoLifeCLI/**','sanguo-town/Sources/SanguoMac/**','sanguo-town/Tests/SanguoLifeTests/**','sanguo-town/Package.swift','sanguo-town/scripts/build-macos.sh','.github/workflows/sanguo-life-macos.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-life-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native:
+    runs-on: macos-15
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+        working-directory: sanguo-town
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Environment and exact source
+        run: |
+          mkdir -p dist/life/logs
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/life/logs/environment.txt
+          test "$(uname -m)" = arm64
+          cmp Sources/SanguoLifeCore/Resources/rules.json spec/city-life-v0.6.json
+          git -C .. archive --format=zip --output=sanguo-town/dist/life/source.zip HEAD sanguo-town
+      - name: Native Debug regression and SDK build
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee dist/life/logs/debug.txt
+          swift build --product SanguoMac 2>&1 | tee dist/life/logs/sdk.txt
+      - name: Release regression
+        run: |
+          set -o pipefail
+          swift test -c release 2>&1 | tee dist/life/logs/release.txt
+      - name: Six-hour food chain and visit-cadence invariance
+        run: |
+          set -o pipefail
+          swift run -c release SanguoLifeCLI --hours 6 --step 3600 > dist/life/six-hours.json
+          swift run -c release SanguoLifeCLI --hours 6 --step 60 > dist/life/six-hours-frequent.json
+          cmp dist/life/six-hours.json dist/life/six-hours-frequent.json
+          swift run -c release SanguoLifeCLI --hours 24 --step 3600 > dist/life/one-day.json
+      - name: Build installed app and verify packaged rules
+        run: |
+          set -o pipefail
+          bash scripts/build-macos.sh 2>&1 | tee dist/life/logs/app-build.txt
+          dist/SanguoTown-Development.app/Contents/MacOS/SanguoMac --verify-life-config | tee dist/life/logs/packaged-config.txt
+          grep 'packaged=true crops=3' dist/life/logs/packaged-config.txt
+          ditto -c -k --keepParent dist/SanguoTown-Development.app dist/life/SanguoTown-Life-Development.zip
+      - name: Preserve artifacts even on failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sanguo-life-${{ github.sha }}
+          path: sanguo-town/dist/life
+          retention-days: 14
+          if-no-files-found: warn
