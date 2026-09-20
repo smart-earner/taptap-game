@@ -139,6 +139,11 @@ public struct CityAppearanceSnapshot: Codable, Equatable, Sendable {
     public var legionCapacity: Int
     public var policy: Policy
     public var workingResources: [String]
+    // Optional fields keep previously saved growth snapshots readable.
+    public var civic: CivicCity? = nil
+    public var collectedWeapons: Int? = nil
+    public var collectedMounts: Int? = nil
+    public var legionAway: Bool? = nil
 }
 public struct CityMemory: Codable, Equatable, Identifiable, Sendable {
     public var id: String
@@ -200,9 +205,17 @@ extension WorldState {
         guard let city = cities[cityID], let plan = growth?.cities[cityID] else { return nil }
         let band = city.inventory[.grain] < city.grainFloor ? 0 : city.inventory[.grain] < city.inventory.capacity / 2 ? 1 : 2
         let legion = growth?.legion?.cityID == cityID ? growth?.legion : nil
-        return .init(cityID:cityID, name:city.name, time:simulationTime, growthAgeSeconds:growth?.normalGrowthSeconds ?? simulationTime, population:city.population,
+        var snapshot = CityAppearanceSnapshot(cityID:cityID, name:city.name, time:simulationTime, growthAgeSeconds:growth?.normalGrowthSeconds ?? simulationTime, population:city.population,
             housing:plan.housing, buildings:plan.buildings.sorted { $0.plot < $1.plot },
             projects:plan.projects.filter(\.live), grainBand:band, legionActive:legion?.active ?? 0,
             legionCapacity:legion?.authorizedCapacity ?? 0, policy:policy(for:city), workingResources:plan.lastWorkKinds)
+        snapshot.civic = realm?.civic[cityID]
+        if let realm {
+            let owned = CollectionCatalog.all.filter { realm.collections[$0.id]?.completedAt != nil && realm.collections[$0.id]?.cityID == cityID }
+            snapshot.collectedWeapons = owned.filter { $0.kind == .weapon }.count
+            snapshot.collectedMounts = owned.filter { $0.kind == .mount }.count
+            snapshot.legionAway = realm.operation?.goal == .securePass && realm.operation?.source == cityID
+        }
+        return snapshot
     }
 }

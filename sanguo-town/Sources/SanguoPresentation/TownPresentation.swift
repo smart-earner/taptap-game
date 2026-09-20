@@ -43,10 +43,11 @@ public struct ActorSpec: Equatable, Sendable, Identifiable {
     public var home: String, destination: String
     public var work: Motion
     public var representative: Bool
+    public var handItem: HandItem
     public init(id: String, name: String, costume: Costume, home: String = "gate", destination: String,
-                work: Motion = .idle, representative: Bool = false) {
+                work: Motion = .idle, representative: Bool = false, handItem: HandItem = .none) {
         self.id = id; self.name = name; self.costume = costume; self.home = home
-        self.destination = destination; self.work = work; self.representative = representative
+        self.destination = destination; self.work = work; self.representative = representative; self.handItem = handItem
     }
 }
 public struct TownProjection: Equatable, Sendable {

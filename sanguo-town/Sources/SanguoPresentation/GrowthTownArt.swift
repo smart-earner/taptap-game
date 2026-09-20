@@ -23,9 +23,10 @@ public enum GrowthTownArt {
         result.appearance=s
         let hall=plan.buildings.first{$0.kind == .hall}!
         let home="plot-\(hall.plot)"
-        result.actors=world.people.values.filter{$0.cityID==cityID}.sorted{$0.id<$1.id}.prefix(6).map { person in
+        let travelling = Set(world.realm?.journeys.map(\.personID) ?? [])
+        result.actors=world.people.values.filter{$0.cityID==cityID && !travelling.contains($0.id)}.sorted{$0.id<$1.id}.prefix(6).map { person in
             ActorSpec(id:"person:"+person.id,name:person.name,costume:person.office != nil ? .official : .warrior,
-                      home:home,destination:"gate",work:.idle)
+                      home:home,destination:"gate",work:.idle,handItem:CivicTownArt.equippedHandItem(personID:person.id,world:world))
         }
         let roles:[(String,BuildingKind,Motion)]=[("grain",.farm,.cultivate),("wine",.tavern,.carry),("tools",.workshop,.hammer)]
         for (key,kind,motion) in roles where plan.lastWorkKinds.contains(key) {
@@ -43,7 +44,12 @@ public enum GrowthTownArt {
         for b in plan.buildings.filter({$0.kind == .house && $0.isOperating}).prefix(max(0,(s.population-8)/8)) {
             result.actors.append(.init(id:"resident-\(b.id)",name:"居民代表",costume:.artisan,home:"plot-\(b.plot)",destination:"gate",work:.idle,representative:true))
         }
-        if s.legionActive>0,let camp=plan.buildings.first(where:{$0.kind == .barracks && $0.isOperating}) {
+        if let p=s.civic?.project, !p.paused, p.workers>0 {
+            let plot = CivicTownArt.workPlot(p.track, buildings:s.buildings)
+            result.actors.append(.init(id:"civic-"+cityID,name:p.track.title+"施工代表",costume:.artisan,
+                home:"gate",destination:"plot-\(plot)",work:.hammer,representative:true))
+        }
+        if s.legionActive>0, s.legionAway != true,let camp=plan.buildings.first(where:{$0.kind == .barracks && $0.isOperating}) {
             result.actors.append(.init(id:"legion-representative",name:"在营\(s.legionActive)人·队列代表",costume:.warrior,
                 home:"plot-\(camp.plot)",destination:"gate",work:.strike,representative:true))
         }
@@ -69,6 +75,7 @@ public enum GrowthTownArt {
                 a.append(.line("grass-\(plot)",[(p.x-12,p.y+10),(p.x-10,p.y+18),(p.x-7,p.y+12)],"#7C9576",width:2))
             }
         }
+        a += CivicTownArt.nodes(s)
         return .init("growth-landscape",children:a)
     }
     public static func building(_ b:BuildingInstance, snapshot:CityAppearanceSnapshot)->VNode {

@@ -146,7 +146,7 @@ final class TownScene: SKScene {
             guard let node = characters[id] else { continue }
             node.position = CGPoint(x:actor.position.x,y:actor.position.y); node.zPosition = CGFloat(actor.depth)
             node.setScale(director.projection?.appearance == nil ? 1 : 0.55)
-            let item: HandItem = director.projection?.isDemo == true && actor.spec.costume == .warrior ? previewItem : .none
+            let item: HandItem = director.projection?.isDemo == true && actor.spec.costume == .warrior ? previewItem : actor.spec.handItem
             node.pose(CharacterRig.pose(motion:actor.motion,time:actor.phaseTime,distance:actor.distance,
                                         facing:actor.facing,item:item,reducedMotion:reducedMotion))
             labels[id]?.position = CGPoint(x:actor.position.x,y:actor.position.y+(director.projection?.appearance == nil ? 80 : 47))

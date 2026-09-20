@@ -137,11 +137,12 @@ struct Dashboard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("一城任太守，多城托都督").font(.largeTitle.bold())
-                Text("growth-0.3：真实施工、太守持续建设、人口与营地成长；完整长周期内容仍在开发。").foregroundStyle(.secondary)
+                Text("town-0.4：城市持续建设、街区逐步改善；你定方向，普通事务交给太守。").foregroundStyle(.secondary)
                 if let error = model.errorMessage { Text(error).textSelection(.enabled) }
                 if let world = model.world {
                     DevelopmentControls(model:model,world:world)
-                    if world.growth != nil { ConstructionDetails(model:model,world:world) }
+                    RealmPanel(model:model,world:world)
+                    if world.growth != nil { DisclosureGroup("可选：查看施工与地块明细") { ConstructionDetails(model:model,world:world) } }
                     GroupBox("主公定策") {
                         Picker("施政方针", selection: Binding(get: { world.policy }, set: { value in Task { await model.choose(value) } })) {
                             ForEach(Policy.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -182,7 +183,7 @@ struct Dashboard: View {
                             ForEach(Array(world.events.suffix(3).enumerated()), id: \.offset) { _, event in Text(event.message) }
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    Text("本版范围：一城建设／人口／城景／自动整军。跨城物流、战役、完整收藏、代表性工程和完整培养树尚未实现。旧三城演示不是新城取得流程。")
+                    Text("本版为长期养城开发版：地区合作与军务使用简化结算；完整战术战斗、骑乘动画、完整培养分支与现实联动仍未实现。")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if model.errorMessage == nil { ProgressView("读取小城…") }
             }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
@@ -248,7 +249,7 @@ struct TownStrip: View {
                 Text(error).padding().textSelection(.enabled)
             } else { ProgressView("读取小城…").padding(40) }
             if let world=model.world,world.growth != nil {
-                ForEach(Array(world.events.filter { ["construction_complete","population","legion_recruit"].contains($0.kind) }.suffix(3).enumerated()),id:\.offset) { _,e in
+                ForEach(Array(world.events.filter { ["construction_complete","population","legion_recruit","civic_complete","collection_acquired","city_joined"].contains($0.kind) }.suffix(3).enumerated()),id:\.offset) { _,e in
                     Text(e.message).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal,14)
                 }
             }

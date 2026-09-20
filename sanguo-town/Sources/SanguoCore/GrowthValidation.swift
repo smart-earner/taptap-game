@@ -85,6 +85,11 @@ extension WorldState {
             try require((1...200).contains(m.snapshot.population) && m.snapshot.buildings.count<=16 && m.snapshot.projects.count<=2,"成长册内容容量")
             try require(m.snapshot.buildings.allSatisfy{(0..<16).contains($0.plot) && (0...3).contains($0.level)},"成长册建筑范围")
             try require((0...90).contains(m.snapshot.legionActive) && m.snapshot.growthAgeSeconds>=0 && m.snapshot.growthAgeSeconds<=growth.normalGrowthSeconds,"成长册成长时钟")
+            if let civic=m.snapshot.civic {
+                try require(civic.levels.count<=8 && civic.levels.keys.allSatisfy{CivicTrack(rawValue:$0) != nil} && civic.levels.values.allSatisfy{(1...3).contains($0)},"成长册街区范围")
+                if let p=civic.project { try require(p.requiredWork>0 && p.work>=0 && p.work<=p.requiredWork && (1...3).contains(p.level),"成长册街区工时") }
+            }
+            try require((0...6).contains(m.snapshot.collectedWeapons ?? 0) && (0...4).contains(m.snapshot.collectedMounts ?? 0),"成长册收藏范围")
         }
         try require(growth.proposals.count<=3 && Set(growth.proposals.map(\.id)).count==growth.proposals.count,"提案去重")
         let times=growth.proposalTimes.sorted()
