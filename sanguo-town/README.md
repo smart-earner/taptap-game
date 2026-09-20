@@ -1,37 +1,45 @@
 # 桌面三国·小城志
 
-**产品规格：PRD v0.4「长期养城·轻决策」｜现有代码：visual-0.2 / core-0.1**
+**town-0.4 开发版｜Mac / Apple Silicon｜PRD v0.4**
 
-城池一点点变好，军团慢慢壮大；玩家只在重要方向上做决定。
+城池逐渐变好，玩家只在重要方向上决定。已实现太守持续建设、真实施工、分阶段街区、军团渐进整备、基础收藏和地区合作；不是全部PRD或正式发行版。
 
-本次是需求重排，不是运行版本升级。优先做真实建设、街区成长、低频决策和自动整军，再扩展多城、培养、收藏与现实联动。60—90日是首轮调参观察范围，不是已通过的长期测试或强制通关期限。
+## 开始
 
-## 阅读入口
-
-- [PRD v0.4：城池成长与轻量玩法](docs/PRD.md)
-- [架构影响与现有代码边界](docs/ARCHITECTURE.md)
-- [重新排序的开发工作包](docs/IMPLEMENTATION_PLAN.md)
-- [40项v0.4验收计划](docs/ACCEPTANCE.md)
-- [设计参数与观察场景](spec/city-growth-v0.4.json)
-- [当前编码状态](docs/BUILD_STATUS.md)
-- [人物动画说明](docs/ANIMATION.md) / [构建说明](docs/DEVELOPMENT.md)
-- [历史PRD v0.3](docs/reference/PRD-v0.3.md)
-
-## 当前可运行内容
-
-基础生产、太守调岗、部分任用与经验、存档，以及2D人物与街景表现已经有源码。真实建筑项目、长期城建、军团养成、30日离线和成长册仍待实现。原70项Swift测试与Mac构建记录是visual-0.2的证据，不代表v0.4验收通过。M4实机交互和能耗仍未测试，开发包未公证。
+需要macOS 15及以上、Swift 6 / Xcode工具链。直接运行与本机打包：
 
 ```sh
-# 在 sanguo-town 目录内
-python3 scripts/validate_spec.py      # v0.4文档/规格检查，不运行游戏
-swift test                          # 现有源码测试，不覆盖新需求
-swift run SanguoCLI --hours 6 --policy trade
-swift run SanguoPreview dist/animation-preview
-# 以下仅macOS：
+cd sanguo-town
+swift test
 swift run SanguoMac
+# 或生成ad-hoc开发.app（未公证）：
 bash scripts/build-macos.sh
 ```
 
-新参数文件不是现有游戏自动加载的配置。现有客户端离线上限仍为7日，本版提出30日目标。旧`spec/prototype-config.json`、`spec/acceptance-cases.json`、`docs/static-validation.json`、`MANIFEST.json`保留历史身份，不作为当前规格或代码校验清单；旧脚本在Git历史中可查。
+进入城市窗口，接受长期治理。已有growth存档可在主公府选择“启用长期街区发展”，资产保留；不要在文件里手改规则版本。主公府中的收藏、人事、地区合作均为可选详情，日常建设无需逐项确认。
 
-默认不采集输入、不联行情，游戏不读取工作文字或真实账户。源码只在本目录；本轮不修改原诗词游戏、Sources、Swift测试和CI工作流。Word阅读版在对话单独交付，Git保存Markdown和规格文件。
+## 文档与证据
+
+- [当前可玩内容与限制](docs/TOWN_0_4.md)
+- [实际开发和测试状态](docs/BUILD_STATUS.md)
+- [分批上传进度](docs/UPLOAD_PROGRESS.md)
+- [PRD](docs/PRD.md) / [架构](docs/ARCHITECTURE.md)
+- [代码](Sources) / [测试](Tests)
+- [151项原生测试、90日矩阵与开发包构建](https://github.com/smart-earner/taptap-game/actions/runs/35509429163)
+
+## 加速验证，不等于真实试玩
+
+```sh
+swift run SanguoGrowth --town --matrix --output dist/town-matrix
+swift run SanguoGrowth --town --days 90 --cadence 3 --legion 60 --output dist/town-preview
+```
+
+浏览器打开`dist/town-preview/city-growth.html`看同一存档各时点城景；不是Mac实机录像。省略`--town`运行旧growth切片，不能混称新版测试。
+
+## 边界
+
+地区战斗目前是有限军力检验，不是完整战术战场；新城通过预付合作合同接纳，不含逐车施工；贸易仅有粮食援助与渡口酒出口，未覆盖全部商品。坐骑已有收藏与配备登记，骑乘动画未完成。完整培养、精修美术、按键和行情仍待开发。没有任何工作文字采集或真实证券下单。
+
+151项是不同运行测试的总数，Debug/Release和不同平台的复验不相加。M4实机GUI、能耗与正式签名公证尚未验收。旧MANIFEST仅记录早期文档上传，不是当前代码校验清单；checkpoint目录只是可追溯备份。
+
+所有游戏源文件在本目录。根目录原诗词游戏不变；`.github/workflows`仅增加本项目的构建与源文件备份任务。

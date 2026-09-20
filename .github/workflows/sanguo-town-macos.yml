@@ -1,9 +1,9 @@
 name: Sanguo Town macOS
 on:
   push:
-    paths: ['sanguo-town/**', '.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','.github/workflows/sanguo-town-macos.yml']
   pull_request:
-    paths: ['sanguo-town/**', '.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','.github/workflows/sanguo-town-macos.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,18 +19,13 @@ jobs:
         working-directory: sanguo-town
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Preserve versioned sources without credentials or build caches
+      - name: Preserve tracked source files
         run: |
           mkdir -p dist/logs
           git -C .. archive --format=zip --output=sanguo-town/dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sanguo-source-${{ github.sha }}
-          path: sanguo-town/dist/source.zip
-          retention-days: 14
       - name: Record actual environment
         run: |
           { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
@@ -44,27 +39,26 @@ jobs:
         run: |
           set -o pipefail
           swift test -c release 2>&1 | tee dist/logs/release-test.txt
-      - name: Long-horizon runtime simulation
+      - name: Town rules long-horizon simulation
         run: |
           set -o pipefail
-          swift run -c release SanguoGrowth --matrix --output dist/growth-matrix 2>&1 | tee dist/logs/growth-matrix.txt
-          swift run -c release SanguoGrowth --days 90 --cadence 3 --legion 60 --output dist/city-growth 2>&1 | tee dist/logs/city-growth.txt
-      - name: Build local development app and reproducible preview
+          swift run -c release SanguoGrowth --town --matrix --output dist/town-matrix 2>&1 | tee dist/logs/town-matrix.txt
+          swift run -c release SanguoGrowth --town --days 90 --cadence 3 --legion 60 --output dist/town-preview 2>&1 | tee dist/logs/town-preview.txt
+      - name: Build local development app
         run: |
           set -o pipefail
           bash scripts/build-macos.sh 2>&1 | tee dist/logs/app-build.txt
-          swift run -c release SanguoPreview dist/animation-preview
           ditto -c -k --keepParent dist/SanguoTown-Development.app dist/SanguoTown-Development.zip
       - name: Preserve logs and development artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: sanguo-macos-${{ github.sha }}
           path: |
             sanguo-town/dist/logs
-            sanguo-town/dist/animation-preview
-            sanguo-town/dist/growth-matrix
-            sanguo-town/dist/city-growth
+            sanguo-town/dist/source.zip
+            sanguo-town/dist/town-matrix
+            sanguo-town/dist/town-preview
             sanguo-town/dist/SanguoTown-Development.zip
           retention-days: 14
           if-no-files-found: warn
