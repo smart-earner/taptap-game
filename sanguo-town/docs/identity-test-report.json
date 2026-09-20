@@ -1,10 +1,12 @@
 {
   "version": "town-0.5",
   "prd_version": "0.5",
-  "verified_source_commit": "c6b16c0d342ce74b708d989baa85dc883a259b13",
+  "verified_source_commit": "19a8ffd9c0a47d0b2a8de74a48df462a2c449f33",
+  "initial_layout_commit": "c6b16c0d342ce74b708d989baa85dc883a259b13",
   "core_integration_commit": "efde7f0e876a1a51012b71cd2a77dad9fe5843fa",
-  "native_run": 35512949802,
-  "native_job": 106083971586,
+  "native_run": 35513614059,
+  "native_job": 106085714194,
+  "initial_native_run": 35512949802,
   "environment": {"os":"macOS 15.7.9 (24G830)","arch":"arm64","xcode":"16.4 (16F6)","swift":"Apple Swift 6.1.2"},
   "distinct_runtime_tests": 178,
   "debug_passed": 178,
@@ -12,19 +14,21 @@
   "existing_tests": 151,
   "new_core_tests": 14,
   "new_presentation_tests": 13,
+  "resume_fix": {"implemented":true,"expanded_existing_test":"repeatedAdoptionDoesNotResetBudget","preserves_policy_budget_contracts":true,"counted_as_extra_test":false},
   "static_spec_checks": 38,
   "native_app_compiled": true,
   "native_app_packaged": true,
   "notarized": false,
   "m4_gui_tested": false,
   "full_prd_accepted": false,
-  "matrix": {"points":45,"policies":5,"cadence_days":[1,3,7],"days":[30,60,90],"same_inputs_equal_to_daily":true,"linux_mac_state_data_equal":true},
+  "matrix": {"points":45,"policies":5,"cadence_days":[1,3,7],"days":[30,60,90],"same_inputs_equal_to_daily":true,"linux_mac_state_data_equal":true,"final_and_initial_native_state_data_equal":true},
   "ninety_day_example": {
     "trade":{"commerce":3,"industry":1,"streets":3,"academy":3,"water":1,"civic_completed":14,"treasury":393268},
     "industry":{"commerce":1,"industry":3,"streets":3,"academy":1,"water":3,"civic_completed":14,"treasury":362066}
   },
-  "local": {"platform":"Linux x86_64","swift":"6.2.1","release_passed":178,"browser":"Chromium, HTML set_content, not M4 native GUI","preview_frames_checked":[0,2,3,4,5,6],"preview_toggle_numbers":true,"javascript_errors":[],"external_requests":[]},
-  "artifact_id": 10605957693,
-  "artifact_sha256": "b20af4c7ebb0fcd6fa352b252392c429433226a958bd20d8f8ceb40d47c1e16a",
-  "notes": "Accelerated deterministic simulation, not a 90-day playtest. Legacy saves and paid projects preserved after explicit consent. Late cash accumulation, ordinary-building convergence and M4 interaction remain unfinished. Subsequent delivery commit updates documentation and read-only CI, not runtime sources."
+  "local": {"platform":"Linux x86_64","swift":"6.2.1","final_release_passed":178,"browser":"Chromium, HTML set_content, not M4 native GUI","preview_frames_checked":[0,2,3,4,5,6],"preview_toggle_numbers":true,"javascript_errors":[],"external_requests":[]},
+  "artifact_id": 10606470547,
+  "artifact_sha256": "aac54adbb75c6eaa88b793fbc5ee291fd7c0c0b3504cb3ed3c4eaa2d4896554c",
+  "initial_preview_artifact_id": 10605957693,
+  "notes": "Final development app includes the pause/resume fix. Preview snapshots remain valid: all 45 state data checkpoints match the initial native run. Accelerated deterministic simulation is not a 90-day playtest. Late cash accumulation, ordinary-building convergence and M4 GUI remain unfinished. The final delivery commit updates documentation and removes temporary write CI, without changing verified runtime sources."
 }
