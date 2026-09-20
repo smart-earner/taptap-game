@@ -1,41 +1,37 @@
 # 桌面三国·小城志
 
-**visual-0.2 · Mac分层人物与街景 / 模拟规则保持core-0.1**
+**产品规格：PRD v0.4「长期养城·轻决策」｜现有代码：visual-0.2 / core-0.1**
 
-一城任太守，多城托都督；你定方向，部属把事情办成。
+城池一点点变好，军团慢慢壮大；玩家只在重要方向上做决定。
 
-已加入文官、武将、工匠三种2D分层造型、行走／转向／工作、道路移动与前后遮挡。正常城景读取实际居城和岗位；“动作样板”独立演示、不改变存档。不是完整游戏，也不是3D角色。
+本次是需求重排，不是运行版本升级。优先做真实建设、街区成长、低频决策和自动整军，再扩展多城、培养、收藏与现实联动。60—90日是首轮调参观察范围，不是已通过的长期测试或强制通关期限。
 
-## 快速入口
+## 阅读入口
 
-- [人物与动画实现、边界和运行方式](docs/ANIMATION.md)
-- [软件架构书](docs/ARCHITECTURE.md)
-- [当前开发状态](docs/BUILD_STATUS.md)
-- [PRD](docs/PRD.md)
-- [构建说明](docs/DEVELOPMENT.md)
-- [源码](Sources) / [测试](Tests)
-- [完整应用验收计划，仍未执行](docs/ACCEPTANCE.md)
+- [PRD v0.4：城池成长与轻量玩法](docs/PRD.md)
+- [架构影响与现有代码边界](docs/ARCHITECTURE.md)
+- [重新排序的开发工作包](docs/IMPLEMENTATION_PLAN.md)
+- [40项v0.4验收计划](docs/ACCEPTANCE.md)
+- [设计参数与观察场景](spec/city-growth-v0.4.json)
+- [当前编码状态](docs/BUILD_STATUS.md)
+- [人物动画说明](docs/ANIMATION.md) / [构建说明](docs/DEVELOPMENT.md)
+- [历史PRD v0.3](docs/reference/PRD-v0.3.md)
 
-## 运行
+## 当前可运行内容
 
-在本目录内使用Swift 6工具链：
+基础生产、太守调岗、部分任用与经验、存档，以及2D人物与街景表现已经有源码。真实建筑项目、长期城建、军团养成、30日离线和成长册仍待实现。原70项Swift测试与Mac构建记录是visual-0.2的证据，不代表v0.4验收通过。M4实机交互和能耗仍未测试，开发包未公证。
 
 ```sh
-swift test
+# 在 sanguo-town 目录内
+python3 scripts/validate_spec.py      # v0.4文档/规格检查，不运行游戏
+swift test                          # 现有源码测试，不覆盖新需求
 swift run SanguoCLI --hours 6 --policy trade
 swift run SanguoPreview dist/animation-preview
-# 用浏览器打开 dist/animation-preview/animation-preview.html
 # 以下仅macOS：
 swift run SanguoMac
 bash scripts/build-macos.sh
 ```
 
-Mac菜单栏选择“显示城市概览”，可切换真实城景／动作样板、暂停动画以及样板兵器。预览HTML使用同一Swift骨架与姿态导出，不是Mac实机录像。开发包未公证。
+新参数文件不是现有游戏自动加载的配置。现有客户端离线上限仍为7日，本版提出30日目标。旧`spec/prototype-config.json`、`spec/acceptance-cases.json`、`docs/static-validation.json`、`MANIFEST.json`保留历史身份，不作为当前规格或代码校验清单；旧脚本在Git历史中可查。
 
-## 验证边界
-
-本地Linux上70项Swift测试通过（原核心40＋表现层30，Debug／Release复验同一套），HTML预览另做浏览器检查。Mac arm64上的同一70项测试也通过，SwiftUI／SpriteKit编译和开发.app打包成功：[实际Actions记录](https://github.com/smart-earner/taptap-game/actions/runs/35484492023)。M4交互、能耗、多屏与正式签名发布仍需实机验证。原100项应用验收没有因此通过。
-
-骑乘、完整战斗动画、收藏装备实际读写与培养树尚未实现；核心建设和物流也仍待开发。人物表现不会改变经济收益或保存新角色。旧MANIFEST.json仅记录最初PRD入库，不能当作当前代码校验清单。
-
-三国代码位于此独立目录；原诗词游戏不变。唯一目录外新增文件是只对三国路径触发的macOS CI工作流，不改原站点或发布流程。
+默认不采集输入、不联行情，游戏不读取工作文字或真实账户。源码只在本目录；本轮不修改原诗词游戏、Sources、Swift测试和CI工作流。Word阅读版在对话单独交付，Git保存Markdown和规格文件。
