@@ -22,9 +22,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Record actual environment
+      - name: Preserve versioned sources without credentials or build caches
         run: |
           mkdir -p dist/logs
+          git archive --format=zip --output=dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sanguo-source-${{ github.sha }}
+          path: sanguo-town/dist/source.zip
+          retention-days: 14
+      - name: Record actual environment
+        run: |
           { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
           test "$(uname -m)" = arm64
       - name: Debug tests and native SDK compilation
@@ -58,5 +66,5 @@ jobs:
             sanguo-town/dist/growth-matrix
             sanguo-town/dist/city-growth
             sanguo-town/dist/SanguoTown-Development.zip
-          retention-days: 7
+          retention-days: 14
           if-no-files-found: warn
