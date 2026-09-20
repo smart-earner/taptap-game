@@ -1,0 +1,28 @@
+{
+  "spec_version":"0.6.0",
+  "status":"design_contract_not_runtime_implementation",
+  "purpose":"Cross-chapter defaults; no hidden implementation choices. Main PRD formulas still apply.",
+  "buffers":{"crop_bed_output_volume_mU":64000,"source_output_volume_mU":24000,"station_input_volume_mU":64000,"station_output_volume_mU":64000,"return_buffer":"exact_volume_of_returning_shipment_exit_only"},
+  "ownership":{"local_cargo":"food_equivalence_counted_once_at_carried_location","outgoing_cargo":"excluded_from_source_city_food_protection_after_pickup","incoming_cargo":"not_ready_food_until_unloaded; exclude from destination protection before arrival","in_process":"input_removed_and_output_equivalent_counted_once_if_committed_to_civilian_meals"},
+  "actors":{"constant_resident_meal_count":"ordinary residents plus settled heroes, not visitors or camp recruits","happiness_population":"constant residents only","late_role_switch_work_s":30,"minimum_rest_s":600,"agent_task_swap":"finish safe cargo handoff before reassignment"},
+  "idle_life":{"priority":95,"max_work_s_per_activity":60,"activity_ids":["return_home","chat_courtyard","look_at_market","rest_bench"],"resource_delta":0,"xp_delta":0,"requires_real_agent":true,"override_production":false},
+  "random":{"algorithm":"FNV-1a-64","offset_basis_decimal":"14695981039346656037","prime_decimal":"1099511628211","encoding":"UTF-8(decimal(worldSeed) + ':' + cityID + ':' + decimal(cycle))","overflow":"wrap_uint64_after_each_multiply","draw":"hash_mod_100","eligible":"cycle_mod_10_equals_0_and_night","threshold_exclusive":25},
+  "prices":{"pig_juvenile_price_includes_external_delivery":true,"normal_resource_trade_fee_included_in_emergency_cap":true,"collection_quote_includes_external_contact_cost":true,"resident_tax_enabled":false,"salary_enabled":false},
+  "attributes":{"facility_smith_carpenter_rate_bp_per_industry_level":200,"road_speed_bp_per_street_level":300,"max_city_trait_bp":1500,"max_total_rate_bp":14000,"new_five_dimension_growth_from_levels":false},
+  "satisfaction":{"garden_cleanliness_points_per_level":5,"rounding":"nearest_integer_half_up","meal_cover_window":4,"first_meal_missing_history":"use_available_closed_windows_only","underfunded_source":"no_debt_no_free_food"},
+  "construction_selection":{"condition_inputs":"read actual state at planner boundary; one candidate per absent or upgradeable building type","priority_rules":[
+    {"priority":0,"condition":"founding hall repair unfinished and not already live","target":"hall_repair"},
+    {"priority":10,"condition":"food cover below 90% for two meals and all current crop beds committed; farm below level3 and city beds below12","target":"farm_upgrade"},
+    {"priority":20,"condition":"population+2 exceeds housing, house count below4 or an existing house below3","target":"house_build_or_upgrade"},
+    {"priority":25,"condition":"market absent and no market project live","target":"market_build"},
+    {"priority":30,"condition":"stock volume including incoming above90% of total capacity","target":"granary_build_or_upgrade"},
+    {"priority":40,"condition":"authorized project requires planks/tools and current production station is absent","target":"workshop_build"},
+    {"priority":50,"condition":"population at least24 or more than4 agents waiting for meal service","target":"tavern_build_or_upgrade"},
+    {"priority":55,"condition":"legion authorized and camp capacity below authorized size","target":"barracks_build_or_upgrade"},
+    {"priority":60,"condition":"current unique wish is mount and stable absent","target":"stable_build"},
+    {"priority":60,"condition":"regional goal authorized or discovered guanyu wish selected; station absent","target":"station_build"}
+  ],"tie_breaker":["lower priority","lower total cash quote","lower total work quote","buildingID"],"no_matching_candidate":"no ordinary project; evaluate civic policy projects and normal production","safety_filter":"funding, raw reserves, actual land, phase materials, labor and authority must all pass"},
+  "collection_bootstrap":{"condition":"discovered active wish requires workshop or tavern missing","priority":60,"rule":"consider the required building only if funding and civilian protection pass; do not automatically change the wish"},
+  "civic_modifiers":{"rice_unlock_water_level":1,"well_slots_by_water_level":[2,2,3,4],"housing_per_home_level":8,"trade_units_per_commerce_level":4,"academy_display_slots_by_level":[0,3,6,9],"academy_extra_xp":0,"guard_detection_per_rampart_level":20},
+  "feature_flags":{"new_city_convoy_L5":false,"full_tactical_battle":false,"breeding":false,"spoilage":false,"real_stock_feed":false,"keyboard_capture":false,"automatic_unique_equipment":false}
+}
