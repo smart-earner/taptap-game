@@ -53,8 +53,11 @@ public struct TownProjection: Equatable, Sendable {
     public var cityID: String, title: String
     public var actors: [ActorSpec]
     public var hasWorkshop: Bool, hasField: Bool, isDemo: Bool
+    public var appearance: CityAppearanceSnapshot? = nil
+    public var roadGraph: RoadGraph { appearance == nil ? .town : GrowthTownArt.roads }
     /// Only projects the requested city's real residents. Representatives are never added to WorldState.
     public static func live(_ world: WorldState, cityID: String) -> TownProjection? {
+        if world.growth != nil { return GrowthTownArt.projection(world,cityID:cityID) }
         guard let city = world.cities[cityID] else { return nil }
         let people = world.people.values.filter { $0.cityID == cityID }.sorted { $0.id < $1.id }
         var actors = people.prefix(8).map { person in
@@ -142,7 +145,7 @@ public struct TownDirector: Sendable {
             guard replacement[spec.id] == nil else { continue }
             // Unchanged actors retain their route/phase across every snapshot refresh.
             if let actor = old[spec.id], actor.spec == spec { replacement[spec.id] = actor }
-            else { replacement[spec.id] = .init(spec, delay: Double(index)*0.8) }
+            else { replacement[spec.id] = .init(spec, delay: Double(index)*0.8, graph:next.roadGraph) }
         }
         actors = replacement; projection = next
     }
@@ -150,6 +153,6 @@ public struct TownDirector: Sendable {
         // No visual catch-up after sleep/occlusion. Economic catch-up belongs solely to GameSession.
         guard !paused, delta.isFinite, delta > 0, delta <= 0.25 else { return }
         visibleTime += delta
-        for id in actors.keys.sorted() { actors[id]?.step(delta) }
+        for id in actors.keys.sorted() { actors[id]?.step(delta, graph:projection?.roadGraph ?? .town) }
     }
 }

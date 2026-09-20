@@ -22,13 +22,13 @@ final class AppModel: ObservableObject {
                 .appendingPathComponent("SanguoTown-Development", isDirectory: true)
             let store = SaveStore(fileURL: directory.appendingPathComponent("world.json"))
             let loaded = try await Task.detached { try store.load() }.value
-            let created = try GameSession(world: loaded ?? Seed.oneCity(wallUTC: Self.now()), persistence: store)
+            let created = try GameSession(world: loaded ?? GrowthRuntime.newGame(wallUTC: Self.now()), persistence: store)
             try await created.save()
             session = created
             await refresh()
             heartbeat = Task { [weak self] in
                 while !Task.isCancelled {
-                    do { try await Task.sleep(for: .seconds(60)) } catch { break }
+                    do { try await Task.sleep(for: .seconds(30)) } catch { break }
                     await self?.refresh()
                 }
             }
@@ -53,6 +53,16 @@ final class AppModel: ObservableObject {
                                          action: .setPolicy(scope: .realm, policy: policy)))
             world = await session.snapshot(); errorMessage = nil
         } catch { errorMessage = error.localizedDescription }
+    }
+    func command(_ action:GameAction) async {
+        guard let session,!busy else { return }
+        busy=true;defer { busy=false }
+        do {
+            try await session.advance(to:Self.now())
+            let current=await session.snapshot()
+            try await session.send(.init(id:UUID().uuidString,expectedRevision:current.revision,action:action))
+            world=await session.snapshot();errorMessage=nil
+        } catch { errorMessage=error.localizedDescription }
     }
     func flushForExit() async -> Bool {
         guard let session else { return true }
@@ -90,12 +100,15 @@ struct SanguoMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
     var body: some Scene {
+        Window("小城志 · 我的城", id: "town") {
+            TownStrip(model: model).task { await model.start() }
+        }.defaultSize(width: 960, height: 450)
         Window("小城志 · 主公府", id: "main") {
             Dashboard(model: model).task { await model.start() }
         }.defaultSize(width: 1000, height: 680)
-        Window("小城志 · 城市概览", id: "town") {
-            TownStrip(model: model).task { await model.start() }
-        }.defaultSize(width: 800, height: 370)
+        Window("小城志 · 城市成长册", id: "memories") {
+            CityMemoryView(model:model).task { await model.start() }
+        }.defaultSize(width:1000,height:700)
         MenuBarExtra("小城志", systemImage: "building.2") { TownMenu(model: model) }
     }
 }
@@ -108,6 +121,7 @@ struct TownMenu: View {
         Text("小城志 · 开发版")
         Button("打开主公府") { openWindow(id: "main") }
         Button("显示城市概览") { openWindow(id: "town") }
+        Button("城市成长册") { openWindow(id:"memories") }
         Button("刷新并保存") { Task { await model.refresh() } }
         Divider()
         Text("无键盘采集 · 无网络联动")
@@ -123,9 +137,11 @@ struct Dashboard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("一城任太守，多城托都督").font(.largeTitle.bold())
-                Text("visual-0.2：已加入分层人物街景；经营规则仍为core-0.1开发切片。").foregroundStyle(.secondary)
+                Text("growth-0.3：真实施工、太守持续建设、人口与营地成长；完整长周期内容仍在开发。").foregroundStyle(.secondary)
                 if let error = model.errorMessage { Text(error).textSelection(.enabled) }
                 if let world = model.world {
+                    DevelopmentControls(model:model,world:world)
+                    if world.growth != nil { ConstructionDetails(model:model,world:world) }
                     GroupBox("主公定策") {
                         Picker("施政方针", selection: Binding(get: { world.policy }, set: { value in Task { await model.choose(value) } })) {
                             ForEach(Policy.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -166,7 +182,7 @@ struct Dashboard: View {
                             ForEach(Array(world.events.suffix(3).enumerated()), id: \.offset) { _, event in Text(event.message) }
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    Text("后续开发：建造与培养项目、跨城物流、军团战斗、收藏路径。三城测试场景请使用命令行演示，不会覆盖本窗口存档。")
+                    Text("本版范围：一城建设／人口／城景／自动整军。跨城物流、战役、完整收藏、代表性工程和完整培养树尚未实现。旧三城演示不是新城取得流程。")
                         .font(.caption).foregroundStyle(.secondary)
                 } else if model.errorMessage == nil { ProgressView("读取小城…") }
             }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
@@ -183,6 +199,7 @@ struct TownStrip: View {
     @State private var paused = false
     @State private var selectedCity = ""
     @State private var item: HandItem = .spear
+    @Environment(\.openWindow) private var openWindow
     private var projection: TownProjection? {
         if demo { return .demo }
         guard let world = model.world else { return nil }
@@ -193,6 +210,8 @@ struct TownStrip: View {
         VStack(spacing: 0) {
             HStack {
                 Text("小城志").font(.headline)
+                Button("发展方向") { openWindow(id:"main") }
+                Button("成长册") { openWindow(id:"memories") }
                 if let world = model.world {
                     Picker("城市", selection: $selectedCity) {
                         Text("首城").tag("")
@@ -203,6 +222,9 @@ struct TownStrip: View {
                 Toggle("动作样板", isOn: $demo).toggleStyle(.switch)
                 Button(paused ? "继续动画" : "暂停动画") { paused.toggle() }
             }.padding(.horizontal, 14).padding(.vertical, 8)
+            if let world=model.world, world.growth?.enabled != true {
+                DevelopmentControls(model:model,world:world).padding(.horizontal,14)
+            }
             if let projection {
                 TownCanvas(projection: projection, paused: paused, reducedMotion: reducedMotion, item: item)
                     .aspectRatio(960.0/300, contentMode: .fit)
@@ -217,7 +239,7 @@ struct TownStrip: View {
                             Text("佩剑").tag(HandItem.sword)
                         }.frame(maxWidth: 220)
                     } else {
-                        Text("\(projection.title) · 读取实际居城与岗位，居民为岗位活动示意").font(.caption)
+                        Text(projection.appearance == nil ? "旧版岗位示意；可在发展方向中确认迁移" : "\(projection.title) · 建筑和施工来自实际存档，居民为活动代表").font(.caption)
                     }
                     Spacer()
                     if reducedMotion { Text("系统减少动态效果：静态展示").font(.caption) }
@@ -225,6 +247,11 @@ struct TownStrip: View {
             } else if let error = model.errorMessage {
                 Text(error).padding().textSelection(.enabled)
             } else { ProgressView("读取小城…").padding(40) }
-        }.frame(minWidth: 640, minHeight: 290)
+            if let world=model.world,world.growth != nil {
+                ForEach(Array(world.events.filter { ["construction_complete","population","legion_recruit"].contains($0.kind) }.suffix(3).enumerated()),id:\.offset) { _,e in
+                    Text(e.message).font(.caption).frame(maxWidth:.infinity,alignment:.leading).padding(.horizontal,14)
+                }
+            }
+        }.padding(.bottom,8).frame(minWidth: 700, minHeight: 310)
     }
 }

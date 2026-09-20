@@ -36,6 +36,11 @@ jobs:
         run: |
           set -o pipefail
           swift test -c release 2>&1 | tee dist/logs/release-test.txt
+      - name: Long-horizon runtime simulation
+        run: |
+          set -o pipefail
+          swift run -c release SanguoGrowth --matrix --output dist/growth-matrix 2>&1 | tee dist/logs/growth-matrix.txt
+          swift run -c release SanguoGrowth --days 90 --cadence 3 --legion 60 --output dist/city-growth 2>&1 | tee dist/logs/city-growth.txt
       - name: Build local development app and reproducible preview
         run: |
           set -o pipefail
@@ -50,6 +55,8 @@ jobs:
           path: |
             sanguo-town/dist/logs
             sanguo-town/dist/animation-preview
+            sanguo-town/dist/growth-matrix
+            sanguo-town/dist/city-growth
             sanguo-town/dist/SanguoTown-Development.zip
           retention-days: 7
           if-no-files-found: warn

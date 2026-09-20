@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 @preconcurrency import SpriteKit
 import SanguoPresentation
+import SanguoCore
 
 /// Persistent SpriteKit nodes: pose updates change joints, not textures or art allocation.
 @MainActor
@@ -71,6 +72,8 @@ final class TownScene: SKScene {
     private var labels: [String: SKLabelNode] = [:]
     private var facilityLabels: [SKLabelNode] = []
     private var lastFrame: TimeInterval?
+    private var growthNodes: [VectorSprite] = []
+    private var previousAppearance: CityAppearanceSnapshot?
     var previewItem: HandItem = .spear
     var reducedMotion = false
     override init() {
@@ -79,8 +82,29 @@ final class TownScene: SKScene {
     }
     required init?(coder:NSCoder) { fatalError("Programmatic scene only") }
     func sync(_ projection:TownProjection) {
-        if director.projection?.cityID != projection.cityID || director.projection?.hasWorkshop != projection.hasWorkshop ||
+        if let appearance=projection.appearance {
+            if previousAppearance != appearance {
+                backgroundArt?.removeFromParent(); tree?.removeFromParent(); tree=nil
+                for n in growthNodes { n.removeFromParent() }; growthNodes=[]
+                for label in facilityLabels { label.removeFromParent() };facilityLabels=[]
+                let landscape=VectorSprite(GrowthTownArt.background(appearance));landscape.zPosition = -100
+                addChild(landscape);backgroundArt=landscape
+                for building in appearance.buildings {
+                    let p=GrowthTownArt.position(building.plot)
+                    let node=VectorSprite(GrowthTownArt.building(building,snapshot:appearance));node.zPosition=CGFloat(500-p.y)
+                    addChild(node);growthNodes.append(node)
+                    let label=SKLabelNode(fontNamed:"PingFangSC-Regular")
+                    let project=appearance.projects.first { $0.buildingID==building.id }
+                    label.text=project.map { "\(building.kind.title)·\($0.phaseTitle)" } ?? "\(building.kind.title) \(building.level)级"
+                    label.fontSize=9;label.fontColor=NSColor(srgbRed:0.24,green:0.34,blue:0.28,alpha:1)
+                    label.position=CGPoint(x:p.x,y:p.y-18);label.zPosition=1000;addChild(label);facilityLabels.append(label)
+                }
+                previousAppearance=appearance
+            }
+        } else if previousAppearance != nil || director.projection?.cityID != projection.cityID || director.projection?.hasWorkshop != projection.hasWorkshop ||
             director.projection?.hasField != projection.hasField || director.projection?.isDemo != projection.isDemo {
+            previousAppearance=nil
+            for n in growthNodes { n.removeFromParent() };growthNodes=[]
             backgroundArt?.removeFromParent(); tree?.removeFromParent()
             for label in facilityLabels { label.removeFromParent() }; facilityLabels = []
             let bg = VectorSprite(TownArt.background(projection)); bg.zPosition = -100; addChild(bg); backgroundArt = bg
@@ -121,10 +145,11 @@ final class TownScene: SKScene {
         for (id,actor) in director.actors {
             guard let node = characters[id] else { continue }
             node.position = CGPoint(x:actor.position.x,y:actor.position.y); node.zPosition = CGFloat(actor.depth)
+            node.setScale(director.projection?.appearance == nil ? 1 : 0.55)
             let item: HandItem = director.projection?.isDemo == true && actor.spec.costume == .warrior ? previewItem : .none
             node.pose(CharacterRig.pose(motion:actor.motion,time:actor.phaseTime,distance:actor.distance,
                                         facing:actor.facing,item:item,reducedMotion:reducedMotion))
-            labels[id]?.position = CGPoint(x:actor.position.x,y:actor.position.y+80)
+            labels[id]?.position = CGPoint(x:actor.position.x,y:actor.position.y+(director.projection?.appearance == nil ? 80 : 47))
         }
     }
 }

@@ -155,6 +155,8 @@ public struct WorldState: Codable, Equatable, Sendable {
     public var districts: [String: District] = [:]
     public var receipts: [String: Receipt] = [:]
     public var events: [DomainEvent] = []
+    /// Absent in legacy core-0.1 saves; migration requires explicit player consent.
+    public var growth: RealmGrowth? = nil
     public init(wallUTC: Int64) { lastWallUTC = wallUTC }
     public func policy(for city: City) -> Policy {
         city.policy ?? city.districtID.flatMap { districts[$0]?.policy } ?? policy

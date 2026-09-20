@@ -3,12 +3,14 @@ import PackageDescription
 
 var products: [Product] = [
     .library(name: "SanguoCore", targets: ["SanguoCore"]),
+    .executable(name:"SanguoGrowth",targets:["SanguoGrowth"]),
     .executable(name: "SanguoCLI", targets: ["SanguoCLI"]),
     .library(name: "SanguoPresentation", targets: ["SanguoPresentation"]),
     .executable(name: "SanguoPreview", targets: ["SanguoPreview"])
 ]
 var targets: [Target] = [
     .target(name: "SanguoCore"),
+    .executableTarget(name:"SanguoGrowth",dependencies:["SanguoCore","SanguoPresentation"]),
     .target(name: "SanguoPresentation", dependencies: ["SanguoCore"]),
     .executableTarget(name: "SanguoPreview", dependencies: ["SanguoPresentation"]),
     .testTarget(name: "SanguoPresentationTests", dependencies: ["SanguoPresentation"]),

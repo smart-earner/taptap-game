@@ -4,6 +4,15 @@ public enum Principal: Codable, Equatable, Sendable { case player, person(String
 public enum PolicyScope: Codable, Equatable, Sendable { case realm, city(String), district(String) }
 public enum GameAction: Codable, Equatable, Sendable {
     case setPolicy(scope: PolicyScope, policy: Policy)
+    case acceptDevelopment(policy: Policy, investment: InvestmentStyle)
+    case pauseDevelopment(Bool)
+    case setInvestment(InvestmentStyle)
+    case lockPlot(cityID: String, plot: Int, locked: Bool)
+    case startBuilding(cityID: String, kind: BuildingKind, plot: Int)
+    case pauseBuilding(cityID: String, projectID: String, paused: Bool)
+    case cancelBuilding(cityID: String, projectID: String)
+    case authorizeLegion(cityID: String, capacity: Int, budget: Int64)
+    case rememberCity(cityID: String)
     case appointPrefect(cityID: String, personID: String)
     case establishDistrict(id: String, cityIDs: [String], governorID: String)
     case setPersonLock(personID: String, locked: Bool)

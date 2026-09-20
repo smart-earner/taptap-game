@@ -35,7 +35,12 @@ public enum GameEngine {
                 guard command.principal == .player || command.principal == .person(district.governorID) else { throw GameError.denied("辖区方针范围") }
                 draft.districts[id]?.policy = policy
             }
-            for id in draft.cities.keys.sorted() { Governance.plan(cityID: id, world: &draft) }
+            if draft.growth == nil {
+                for id in draft.cities.keys.sorted() { Governance.plan(cityID: id, world: &draft) }
+            } else {
+                draft.growth!.policyVersion += 1
+                try GrowthRuntime.manage(world: &draft)
+            }
             draft.record("policy", "施政方针已更新为\(policy.title)，不会因时间经过而到期。")
         case .appointPrefect(let cityID, let personID):
             try Governance.appoint(cityID: cityID, personID: personID, principal: command.principal, world: &draft)
@@ -55,6 +60,8 @@ public enum GameEngine {
             guard command.principal == .player else { throw GameError.denied("只有主公可改人物锁定") }
             guard draft.people[id] != nil else { throw GameError.invalid("未知人物") }
             draft.people[id]?.locked = locked
+        default:
+            try GrowthRuntime.handle(command.action, principal:command.principal, world:&draft)
         }
         draft.revision += 1
         let receipt = Receipt(fingerprint: fingerprint, revision: draft.revision)
@@ -67,6 +74,7 @@ public enum GameEngine {
         try world.validate()
         guard (0...4_000_000_000_000).contains(wallUTC) else { throw GameError.invalid("输入时钟") }
         guard wallUTC > world.lastWallUTC else { return .init(simulatedSeconds: 0, restedSeconds: 0, tickCount: 0) }
+        if world.growth != nil { return try GrowthRuntime.advance(to: wallUTC, world:&world) }
         let elapsed = wallUTC - world.lastWallUTC
         let active = min(elapsed, offlineLimit), target = world.simulationTime + active
         guard target <= 31_536_000_000 else { throw GameError.invalid("模拟时钟已达上限") }
