@@ -1,45 +1,42 @@
 # 桌面三国·小城志
 
-**town-0.4 开发版｜Mac / Apple Silicon｜PRD v0.4**
+**town-0.5 · 城市特色、分区城景与可解释治理｜PRD v0.5**
 
-城池逐渐变好，玩家只在重要方向上决定。已实现太守持续建设、真实施工、分阶段街区、军团渐进整备、基础收藏和地区合作；不是全部PRD或正式发行版。
+城池一点点变好，军团慢慢壮大；玩家只在重要方向上做决定。
 
-## 开始
+这一批实现分项工程前置、五方针街区目标、16地块错落分区、太守事实规划记录与显式版本迁移。既有建筑、街区、人物和收藏保留；改方向只影响之后的投入，不瞬间换皮或拆城。仍是开发版，不是全部PRD已完成。
 
-需要macOS 15及以上、Swift 6 / Xcode工具链。直接运行与本机打包：
+## 入口
+
+- [PRD v0.5](docs/PRD.md) / [架构增量](docs/ARCHITECTURE.md)
+- [本版玩法、入口与边界](docs/CITY_IDENTITY.md)
+- [当前开发状态](docs/BUILD_STATUS.md) / [实际测试结果](docs/identity-test-report.json)
+- [开发优先级](docs/IMPLEMENTATION_PLAN.md) / [分批交付记录](docs/UPLOAD_PROGRESS.md)
+- [源代码](Sources) / [运行测试](Tests) / [构建说明](docs/DEVELOPMENT.md)
+
+## 使用
 
 ```sh
 cd sanguo-town
 swift test
+python3 scripts/validate_spec.py
+swift run -c release SanguoGrowth --identity --matrix --output dist/identity-matrix
+swift run -c release SanguoGrowth --identity --policy trade --days 90 --cadence 3 --legion 60 --output dist/identity-preview
+# 以下要求macOS SDK：
 swift run SanguoMac
-# 或生成ad-hoc开发.app（未公证）：
 bash scripts/build-macos.sh
 ```
 
-进入城市窗口，接受长期治理。已有growth存档可在主公府选择“启用长期街区发展”，资产保留；不要在文件里手改规则版本。主公府中的收藏、人事、地区合作均为可选详情，日常建设无需逐项确认。
+新开局接受长期治理后采用新规则。旧存档保留原规则，进入主公府可明确确认升级；不自动重建存档。当前城市布局采用版本2，旧历史留影继续采用原布局。改方向与查看规划位于一个可展开面板，不是新的每日待办。
 
-## 文档与证据
+命令行`--identity`为town-0.5；`--town`为旧town-0.4；都不指定为growth-0.3。不要用旧版本的结果代替新版测试。HTML展示实际状态，不是M4录像。
 
-- [当前可玩内容与限制](docs/TOWN_0_4.md)
-- [实际开发和测试状态](docs/BUILD_STATUS.md)
-- [分批上传进度](docs/UPLOAD_PROGRESS.md)
-- [PRD](docs/PRD.md) / [架构](docs/ARCHITECTURE.md)
-- [代码](Sources) / [测试](Tests)
-- [151项原生测试、90日矩阵与开发包构建](https://github.com/smart-earner/taptap-game/actions/runs/35509429163)
+## 验证与限制
 
-## 加速验证，不等于真实试玩
+[原生验证 run 35512949802](https://github.com/smart-earner/taptap-game/actions/runs/35512949802)：macOS 15.7.9 arm64／Xcode16.4／Swift6.1.2，Debug178项与Release同一178项通过，45个长期检查点、38项静态规格核对通过，开发.app已构建。被测源码为`c6b16c0d342ce74b708d989baa85dc883a259b13`；后续交付提交仅补文档与只读CI。
 
-```sh
-swift run SanguoGrowth --town --matrix --output dist/town-matrix
-swift run SanguoGrowth --town --days 90 --cadence 3 --legion 60 --output dist/town-preview
-```
+已有151项回归＋本次27项（特色规则14、布局兼容13），不能将Debug、Release、多平台复验相加。Linux Release178项及45点结果与Mac一致。M4 GUI、多屏、能耗、签名公证与完整产品体验仍未验收。
 
-浏览器打开`dist/town-preview/city-growth.html`看同一存档各时点城景；不是Mac实机录像。省略`--town`运行旧growth切片，不能混称新版测试。
+后期现金积累、普通建筑组合趋同、通用物流、自动跨城人事、完整战斗、骑乘及现实联动仍待完善。更换多个方针可以逐步建设综合城，不宣称路线永久互斥。固定方针的发展结果已有实际差异。
 
-## 边界
-
-地区战斗目前是有限军力检验，不是完整战术战场；新城通过预付合作合同接纳，不含逐车施工；贸易仅有粮食援助与渡口酒出口，未覆盖全部商品。坐骑已有收藏与配备登记，骑乘动画未完成。完整培养、精修美术、按键和行情仍待开发。没有任何工作文字采集或真实证券下单。
-
-151项是不同运行测试的总数，Debug/Release和不同平台的复验不相加。M4实机GUI、能耗与正式签名公证尚未验收。旧MANIFEST仅记录早期文档上传，不是当前代码校验清单；checkpoint目录只是可追溯备份。
-
-所有游戏源文件在本目录。根目录原诗词游戏不变；`.github/workflows`仅增加本项目的构建与源文件备份任务。
+三国代码独立放在本目录；原诗词游戏页面与代码不改。临时写入型集成工作流已移除，日常CI只读构建和导出，不会自动改写主分支。

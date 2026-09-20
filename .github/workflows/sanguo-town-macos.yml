@@ -1,9 +1,9 @@
 name: Sanguo Town macOS
 on:
   push:
-    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','sanguo-town/spec/city-identity-v0.5.json','sanguo-town/docs/PRD.md','.github/workflows/sanguo-town-macos.yml']
   pull_request:
-    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','sanguo-town/spec/city-identity-v0.5.json','sanguo-town/docs/PRD.md','.github/workflows/sanguo-town-macos.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,10 +26,12 @@ jobs:
         run: |
           mkdir -p dist/logs
           git -C .. archive --format=zip --output=sanguo-town/dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
-      - name: Record actual environment
+      - name: Record actual environment and check current specification
         run: |
+          set -o pipefail
           { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
           test "$(uname -m)" = arm64
+          python3 scripts/validate_spec.py | tee dist/logs/spec-check.json
       - name: Debug tests and native SDK compilation
         run: |
           set -o pipefail
@@ -39,11 +41,11 @@ jobs:
         run: |
           set -o pipefail
           swift test -c release 2>&1 | tee dist/logs/release-test.txt
-      - name: Town rules long-horizon simulation
+      - name: Current identity rules long-horizon simulation
         run: |
           set -o pipefail
-          swift run -c release SanguoGrowth --town --matrix --output dist/town-matrix 2>&1 | tee dist/logs/town-matrix.txt
-          swift run -c release SanguoGrowth --town --days 90 --cadence 3 --legion 60 --output dist/town-preview 2>&1 | tee dist/logs/town-preview.txt
+          swift run -c release SanguoGrowth --identity --matrix --output dist/identity-matrix 2>&1 | tee dist/logs/identity-matrix.txt
+          swift run -c release SanguoGrowth --identity --days 90 --cadence 3 --legion 60 --output dist/identity-preview 2>&1 | tee dist/logs/identity-preview.txt
       - name: Build local development app
         run: |
           set -o pipefail
@@ -57,8 +59,8 @@ jobs:
           path: |
             sanguo-town/dist/logs
             sanguo-town/dist/source.zip
-            sanguo-town/dist/town-matrix
-            sanguo-town/dist/town-preview
+            sanguo-town/dist/identity-matrix
+            sanguo-town/dist/identity-preview
             sanguo-town/dist/SanguoTown-Development.zip
           retention-days: 14
           if-no-files-found: warn
