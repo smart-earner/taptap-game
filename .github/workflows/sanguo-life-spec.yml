@@ -6,7 +6,7 @@ on:
       - 'sanguo-town/docs/life-v0.6/**'
       - 'sanguo-town/docs/PRD.md'
       - 'sanguo-town/spec/*v0.6.json'
-      - 'sanguo-town/scripts/validate_life_spec.py'
+      - 'sanguo-town/scripts/validate_life_*.py'
       - '.github/workflows/sanguo-life-spec.yml'
   workflow_dispatch:
 permissions:
@@ -27,6 +27,7 @@ jobs:
           set -o pipefail
           python3 --version
           python3 sanguo-town/scripts/validate_life_spec.py --output dist/life-spec | tee life-spec.log
+          python3 sanguo-town/scripts/validate_life_contracts.py --output dist/life-spec | tee -a life-spec.log
       - name: Archive exact tracked documentation and configuration
         if: always()
         run: |
