@@ -76,6 +76,12 @@ final class TownScene: SKScene {
     private var previousAppearance: CityAppearanceSnapshot?
     var previewItem: HandItem = .spear
     var reducedMotion = false
+    var desktopMode = false {
+        didSet {
+            previousAppearance = nil
+            backgroundColor = desktopMode ? .clear : NSColor(srgbRed:0.65,green:0.71,blue:0.57,alpha:1)
+        }
+    }
     override init() {
         super.init(size:CGSize(width:TownArt.width,height:TownArt.height))
         scaleMode = .aspectFit; backgroundColor = NSColor(srgbRed:0.65,green:0.71,blue:0.57,alpha:1)
@@ -87,7 +93,7 @@ final class TownScene: SKScene {
                 backgroundArt?.removeFromParent(); tree?.removeFromParent(); tree=nil
                 for n in growthNodes { n.removeFromParent() }; growthNodes=[]
                 for label in facilityLabels { label.removeFromParent() };facilityLabels=[]
-                let landscape=VectorSprite(GrowthTownArt.background(appearance));landscape.zPosition = -100
+                let landscape=VectorSprite(desktopMode ? DesktopTownArt.background(appearance) : GrowthTownArt.background(appearance));landscape.zPosition = -100
                 addChild(landscape);backgroundArt=landscape
                 for building in appearance.buildings {
                     let p=GrowthTownArt.position(building.plot,snapshot:appearance)
@@ -131,6 +137,8 @@ final class TownScene: SKScene {
                 labels[id] = label; addChild(label)
             }
         }
+        for label in facilityLabels { label.isHidden = desktopMode }
+        for label in labels.values { label.isHidden = desktopMode }
         displayActors()
     }
     func resetFrameClock() { lastFrame = nil }
@@ -161,6 +169,13 @@ final class TownSKView: SKView {
     private var sleeping = false
     private var closing = false
     var manuallyPaused = false
+    var desktopMode = false {
+        didSet {
+            allowsTransparency = desktopMode
+            townScene.desktopMode = desktopMode
+            refreshRendering()
+        }
+    }
     override init(frame:CGRect) {
         super.init(frame:frame)
         preferredFramesPerSecond = 30; ignoresSiblingOrder = false
@@ -192,9 +207,12 @@ final class TownSKView: SKView {
     @objc private func resumeScene(_ note:Notification) { sleeping = false; townScene.resetFrameClock(); refreshRendering() }
     @objc private func willClose(_ note:Notification) { closing = true; refreshRendering() }
     func refreshRendering() {
-        preferredFramesPerSecond = ProcessInfo.processInfo.isLowPowerModeEnabled ? 15 : 30
-        let visible = window.map { $0.isVisible && !$0.isMiniaturized && $0.occlusionState.contains(.visible) } ?? false
-        let pause = manuallyPaused || townScene.reducedMotion || sleeping || closing || !visible || isHiddenOrHasHiddenAncestor || NSApp.isHidden
+        preferredFramesPerSecond = DesktopPlacement.fps(desktop:desktopMode,lowPower:ProcessInfo.processInfo.isLowPowerModeEnabled)
+        let visible = window.map { $0.isVisible && !$0.isMiniaturized } ?? false
+        let pause = DesktopPlacement.paused(desktop:desktopMode,visible:visible,onSpace:window?.isOnActiveSpace ?? false,
+            occluded:!(window?.occlusionState.contains(.visible) ?? false),
+            hidden:closing || isHiddenOrHasHiddenAncestor || NSApp.isHidden,sleeping:sleeping,
+            manual:manuallyPaused,reduceMotion:townScene.reducedMotion)
         if isPaused != pause { townScene.resetFrameClock(); isPaused = pause }
     }
     func tearDown() {

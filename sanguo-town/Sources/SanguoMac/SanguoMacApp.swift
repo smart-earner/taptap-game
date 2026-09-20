@@ -6,7 +6,7 @@ import SanguoPresentation
 @MainActor
 final class AppModel: ObservableObject {
     static let shared = AppModel()
-    @Published private(set) var world: WorldState?
+    @Published private(set) var world: WorldState? { didSet { DesktopPresenter.shared.sync(world) } }
     @Published private(set) var busy = false
     @Published var errorMessage: String?
     private var session: GameSession?
@@ -75,9 +75,11 @@ final class AppModel: ObservableObject {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var waitingForExit = false
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Task { await AppModel.shared.start() }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didWake),
             name: NSWorkspace.didWakeNotification, object: nil)
     }
+    func applicationWillTerminate(_ notification: Notification) { DesktopPresenter.shared.shutdown() }
     @objc private func didWake(_ notification: Notification) {
         Task { await AppModel.shared.refresh() }
     }
@@ -109,12 +111,16 @@ struct SanguoMacApp: App {
         Window("小城志 · 城市成长册", id: "memories") {
             CityMemoryView(model:model).task { await model.start() }
         }.defaultSize(width:1000,height:700)
+        Window("小城志 · 桌面城景设置", id:"desktop-settings") {
+            DesktopSettingsView(model:model)
+        }.defaultSize(width:640,height:640)
         MenuBarExtra("小城志", systemImage: "building.2") { TownMenu(model: model) }
     }
 }
 
 @MainActor
 struct TownMenu: View {
+    @ObservedObject private var desktop = DesktopPresenter.shared
     @ObservedObject var model: AppModel
     @Environment(\.openWindow) private var openWindow
     var body: some View {
@@ -122,6 +128,16 @@ struct TownMenu: View {
         Button("打开主公府") { openWindow(id: "main") }
         Button("显示城市概览") { openWindow(id: "town") }
         Button("城市成长册") { openWindow(id:"memories") }
+        Divider()
+        Button(desktop.preferences.enabled ? "隐藏桌面城景" : "开启桌面融入模式") {
+            desktop.update { $0.enabled.toggle() }
+        }
+        Button("桌面城景设置…") { openWindow(id:"desktop-settings") }
+        if desktop.preferences.enabled {
+            Button(desktop.preferences.animate ? "暂停桌面动画" : "继续桌面动画") {
+                desktop.update { $0.animate.toggle() }
+            }
+        }
         Button("刷新并保存") { Task { await model.refresh() } }
         Divider()
         Text("无键盘采集 · 无网络联动")
@@ -194,6 +210,7 @@ struct Dashboard: View {
 
 @MainActor
 struct TownStrip: View {
+    @Environment(\.dismissWindow) private var dismissWindow
     @ObservedObject var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reducedMotion
     @State private var demo = false
@@ -211,6 +228,10 @@ struct TownStrip: View {
         VStack(spacing: 0) {
             HStack {
                 Text("小城志").font(.headline)
+                Button("融入桌面") {
+                    DesktopPresenter.shared.update { $0.enabled = true }
+                    dismissWindow(id:"town")
+                }.disabled(demo || projection?.appearance == nil)
                 Button("发展方向") { openWindow(id:"main") }
                 Button("成长册") { openWindow(id:"memories") }
                 if let world = model.world {

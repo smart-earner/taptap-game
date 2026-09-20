@@ -19,7 +19,9 @@ var targets: [Target] = [
 ]
 #if os(macOS)
 products.append(.executable(name: "SanguoMac", targets: ["SanguoMac"]))
-targets.append(.executableTarget(name: "SanguoMac", dependencies: ["SanguoCore", "SanguoPresentation"]))
+targets.append(.target(name: "SanguoDesktopHost", dependencies: ["SanguoPresentation"]))
+targets.append(.testTarget(name: "SanguoDesktopHostTests", dependencies: ["SanguoDesktopHost", "SanguoPresentation"]))
+targets.append(.executableTarget(name: "SanguoMac", dependencies: ["SanguoCore", "SanguoPresentation", "SanguoDesktopHost"]))
 #endif
 let package = Package(name: "SanguoTown", platforms: [.macOS(.v15)],
                       products: products, targets: targets, swiftLanguageModes: [.v6])
