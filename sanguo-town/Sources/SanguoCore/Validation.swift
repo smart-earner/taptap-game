@@ -5,7 +5,7 @@ extension WorldState {
         func require(_ condition: Bool, _ message: String) throws {
             if !condition { throw GameError.invalid(message) }
         }
-        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil && realm == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil && realm == nil) || (schemaVersion == 3 && rulesVersion == RealmRules.version && growth != nil && realm != nil), "未知存档／规则版本")
+        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil && realm == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil && realm == nil) || (schemaVersion == 3 && rulesVersion == RealmRules.version && growth != nil && realm != nil && realm?.identity == nil) || (schemaVersion == 4 && rulesVersion == CityIdentityRules.version && growth != nil && realm?.identity != nil), "未知存档／规则版本")
         try require((0...31_536_000_000).contains(simulationTime) && (0...4_000_000_000_000).contains(lastWallUTC), "时钟范围")
         try require((0...1_000_000_000).contains(treasury) && (0...1_000_000_000).contains(revision), "国库／版本范围")
         try require((1...3).contains(cities.count) && districts.count <= 1 && people.count <= 64, "场景容量")
@@ -57,6 +57,7 @@ extension WorldState {
         }
         if growth != nil { try validateGrowth() }
         if realm != nil { try validateRealm() }
+        if realm?.identity != nil { try CityIdentityRuntime.validate(self) }
         for (id, receipt) in receipts {
             try require(!id.isEmpty && id.count <= 80 && receipt.fingerprint.utf8.count <= 4096 && receipt.revision > 0 && receipt.revision <= revision, "命令回执")
         }

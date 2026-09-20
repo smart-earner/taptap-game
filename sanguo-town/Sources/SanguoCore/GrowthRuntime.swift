@@ -420,7 +420,8 @@ public enum GrowthRuntime {
         for id in world.cities.keys.sorted() {
             // After the basic town is viable, let a representative project accumulate its budget.
             // Ongoing construction and production continue; this is not a calendar unlock.
-            if world.realm != nil, let civic=world.realm!.civic[id],civic.project==nil,civic.levelTotal<24,
+            if world.realm?.identity != nil && CityIdentityPlanner.reserveForCivic(city:id,world:world) { continue }
+            if world.realm?.identity == nil, world.realm != nil, let civic=world.realm!.civic[id],civic.project==nil,civic.levelTotal<24,
                world.growth!.cities[id]!.completedCount>=8,
                [BuildingKind.market,.tavern,.workshop,.stable,.station].allSatisfy({world.growth!.cities[id]!.level($0)>0}),
                !(world.growth!.legion?.cityID == id && world.growth!.cities[id]!.level(.barracks)==0) { continue }

@@ -3,6 +3,10 @@ import Foundation
 public enum RealmRuntime {
     static func handle(_ action:RealmAction, principal:Principal, world:inout WorldState) throws {
         guard principal == .player else { throw GameError.denied("此项长期发展授权由主公决定") }
+        if case .adoptIdentity(let policy,let investment) = action {
+            try CityIdentityRuntime.adopt(policy:policy,investment:investment,world:&world)
+            return
+        }
         if case .adopt(let policy,let investment) = action {
             // The enclosing command saves a complete candidate atomically. Never resets existing balances.
             try GrowthRuntime.handle(.acceptDevelopment(policy:policy,investment:investment),principal:principal,world:&world)
@@ -21,7 +25,7 @@ public enum RealmRuntime {
         }
         guard world.realm != nil else { throw GameError.denied("请先接受长期街区发展") }
         switch action {
-        case .adopt: break
+        case .adopt, .adoptIdentity: break
         case .collection(let id):
             if let id {
                 guard let item=CollectionCatalog.item(id),world.realm!.collections[id]?.completedAt == nil else { throw GameError.invalid("未知或已经获得的收藏") }
@@ -109,6 +113,7 @@ public enum RealmRuntime {
                 world.realm!.civic[id]!.levels[p.track.rawValue]=p.level
                 world.realm!.civic[id]!.completedAt["\(p.track.rawValue)-\(p.level)"]=world.simulationTime
                 world.realm!.civic[id]!.project=nil
+                CityIdentityRuntime.completed(city:id,project:p,world:&world)
                 if p.track == .homes { world.growth!.cities[id]!.initialHousing+=4 }
                 world.record("civic_complete","\(world.cities[id]!.name)：\(p.track.title)第\(p.level)阶段完成，街区和服务实际改善。")
                 GrowthRuntime.remember(id,title:"\(p.track.title)·\(p.level)",key:"civic-\(id)-\(p.track.rawValue)-\(p.level)",pinned:false,world:&world)
@@ -177,6 +182,7 @@ public enum RealmRuntime {
     static func manage(world:inout WorldState) {
         guard world.realm != nil,world.growth!.enabled else { return }
         startCollection(world:&world)
+        if world.realm?.identity != nil { CityIdentityRuntime.manage(world:&world); return }
         for id in world.cities.keys.sorted() {
             guard world.realm!.civic[id]?.project==nil,world.growth!.cities[id]!.completedCount>=6,
                   [BuildingKind.market,.tavern,.workshop,.stable,.station].allSatisfy({world.growth!.cities[id]!.level($0)>0}) else { continue }

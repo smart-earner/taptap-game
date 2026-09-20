@@ -144,6 +144,8 @@ public struct CityAppearanceSnapshot: Codable, Equatable, Sendable {
     public var collectedWeapons: Int? = nil
     public var collectedMounts: Int? = nil
     public var legionAway: Bool? = nil
+    /// Layout belongs to the historical snapshot, not to the current policy or renderer.
+    public var layoutVersion: Int? = nil
 }
 public struct CityMemory: Codable, Equatable, Identifiable, Sendable {
     public var id: String
@@ -210,6 +212,7 @@ extension WorldState {
             projects:plan.projects.filter(\.live), grainBand:band, legionActive:legion?.active ?? 0,
             legionCapacity:legion?.authorizedCapacity ?? 0, policy:policy(for:city), workingResources:plan.lastWorkKinds)
         snapshot.civic = realm?.civic[cityID]
+        snapshot.layoutVersion = realm?.identity == nil ? nil : 2
         if let realm {
             let owned = CollectionCatalog.all.filter { realm.collections[$0.id]?.completedAt != nil && realm.collections[$0.id]?.cityID == cityID }
             snapshot.collectedWeapons = owned.filter { $0.kind == .weapon }.count

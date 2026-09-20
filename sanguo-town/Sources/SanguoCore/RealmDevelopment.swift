@@ -184,10 +184,13 @@ public struct RealmDevelopment: Codable, Equatable, Sendable {
     public var routeIncome: Int64 = 0
     public var civicCashSpent: Int64 = 0
     public var regionalCashSpent: Int64 = 0
+    /// Nil keeps legacy town-0.4 planning and appearance unchanged until consent.
+    public var identity: CityIdentityState? = nil
     public var reservationCash: Int64 { civic.values.compactMap(\.project).reduce(0){$0+$1.cash-$1.spent} }
     public var civicCount: Int { civic.values.reduce(0){$0+$1.levelTotal} }
 }
 public enum RealmAction: Codable, Equatable, Sendable {
+    case adoptIdentity(policy:Policy,investment:InvestmentStyle)
     case adopt(policy:Policy,investment:InvestmentStyle)
     case collection(String?)
     case equip(item:String,person:String?)
