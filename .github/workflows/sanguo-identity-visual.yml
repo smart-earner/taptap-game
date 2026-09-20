@@ -1,0 +1,62 @@
+name: Sanguo city identity native integration
+on:
+  push:
+    branches: [feat/sanguo-city-identity]
+    paths: ['sanguo-town/checkpoints/town-0.5/**', '.github/workflows/sanguo-identity-visual.yml']
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-identity-visual
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: contains(github.event.head_commit.message, 'stage(identity-visual):')
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Apply fixed reviewed batch, never modify main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = feat/sanguo-city-identity
+          python3 sanguo-town/checkpoints/town-0.5/apply-reviewed.py
+      - name: Native tests, SDK build, PRD consistency and real long-horizon simulation
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/identity/logs
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/identity/logs/environment.txt
+          test "$(uname -m)" = arm64
+          python3 scripts/validate_identity_spec.py | tee dist/identity/logs/spec-check.json
+          swift test 2>&1 | tee dist/identity/logs/debug.txt
+          swift test -c release 2>&1 | tee dist/identity/logs/release.txt
+          swift build --product SanguoMac 2>&1 | tee dist/identity/logs/mac-build.txt
+          swift run -c release SanguoGrowth --identity --matrix --output dist/identity/matrix 2>&1 | tee dist/identity/logs/matrix.txt
+          swift run -c release SanguoGrowth --identity --policy trade --days 90 --cadence 3 --legion 60 --output dist/identity/trade 2>&1 | tee dist/identity/logs/trade.txt
+          swift run -c release SanguoGrowth --identity --policy industry --days 90 --cadence 3 --legion 60 --output dist/identity/industry 2>&1 | tee dist/identity/logs/industry.txt
+          bash scripts/build-macos.sh 2>&1 | tee dist/identity/logs/app-build.txt
+          ditto -c -k --keepParent dist/SanguoTown-Development.app dist/identity/SanguoTown-Development.zip
+      - name: Commit verified files to feature branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r path; do git add -- "$path"; done < /tmp/identity-commit-paths.txt
+          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = 18
+          git fetch origin "$GITHUB_REF_NAME"
+          test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(sanguo): integrate natural town layout and city identity with PRD v0.5'
+          git push origin HEAD:"$GITHUB_REF_NAME"
+          git rev-parse HEAD > sanguo-town/dist/identity/verified-commit.txt
+          git archive --format=zip HEAD sanguo-town .github/workflows > sanguo-town/dist/identity/verified-source.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: city-identity-${{ github.sha }}
+          path: sanguo-town/dist/identity
+          retention-days: 14
