@@ -167,7 +167,9 @@ public enum LifeEngine {
             }
             var did=false
             switch role {
-            case "farmer": did=farm(ai,state:&s,rules:r)
+            case "farmer":
+                did=farm(ai,state:&s,rules:r)
+                if !did {did=recipe("mulch",ai:ai,state:&s,rules:r)}
             case "porter","warehouse": did=haul(ai,state:&s,rules:r)
             case "cook":
                 if s.stock("kitchen","meal")+s.pendingOutput("kitchen","meal")<max(48,s.population*3) {did=recipe("cook",ai:ai,state:&s,rules:r)}
@@ -230,6 +232,7 @@ public enum LifeEngine {
         for site in s.fields.keys.sorted() {
             if let field=s.fields[site],let crop=r.crop(field.crop) { for key in crop.inputs.keys.sorted() { demands.append((site,key,crop.inputs[key]!)) } }
         }
+        demands.append(("field","fodder",r.targets["fieldFodder",default:16]))
         if s.constructionCount<r.construction.maxCount { demands += [("construction","wood",12),("construction","stone",6)] }
         demands += [("warehouse","wood",60),("warehouse","grain",s.population*4),("warehouse","vegetable",32),("warehouse","fodder",32)]
         for (destination,key,target) in demands {
@@ -244,6 +247,7 @@ public enum LifeEngine {
                 if key=="paddy" {return site=="field" || site=="garden"}
                 if key=="water" {return ["warehouse","well"].contains(site)}
                 if key=="wood" {return ["warehouse","forest"].contains(site)}
+                if key=="fodder" {return ["mill","warehouse"].contains(site)}
                 if key=="seed" {return site=="warehouse"}
                 return site=="warehouse"
             }.filter{s.free($0,key)>0}.sorted {a,b in
