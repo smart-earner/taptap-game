@@ -2,6 +2,8 @@
 import PackageDescription
 
 var products: [Product] = [
+    .library(name: "SanguoLifeCore", targets: ["SanguoLifeCore"]),
+    .executable(name: "SanguoLifeCLI", targets: ["SanguoLifeCLI"]),
     .library(name: "SanguoCore", targets: ["SanguoCore"]),
     .executable(name:"SanguoGrowth",targets:["SanguoGrowth"]),
     .executable(name: "SanguoCLI", targets: ["SanguoCLI"]),
@@ -9,6 +11,9 @@ var products: [Product] = [
     .executable(name: "SanguoPreview", targets: ["SanguoPreview"])
 ]
 var targets: [Target] = [
+    .target(name: "SanguoLifeCore", resources: [.process("Resources")]),
+    .executableTarget(name: "SanguoLifeCLI", dependencies: ["SanguoLifeCore"]),
+    .testTarget(name: "SanguoLifeTests", dependencies: ["SanguoLifeCore"]),
     .target(name: "SanguoCore"),
     .executableTarget(name:"SanguoGrowth",dependencies:["SanguoCore","SanguoPresentation"]),
     .target(name: "SanguoPresentation", dependencies: ["SanguoCore"]),
@@ -21,7 +26,7 @@ var targets: [Target] = [
 products.append(.executable(name: "SanguoMac", targets: ["SanguoMac"]))
 targets.append(.target(name: "SanguoDesktopHost", dependencies: ["SanguoPresentation"]))
 targets.append(.testTarget(name: "SanguoDesktopHostTests", dependencies: ["SanguoDesktopHost", "SanguoPresentation"]))
-targets.append(.executableTarget(name: "SanguoMac", dependencies: ["SanguoCore", "SanguoPresentation", "SanguoDesktopHost"]))
+targets.append(.executableTarget(name: "SanguoMac", dependencies: ["SanguoCore", "SanguoPresentation", "SanguoDesktopHost", "SanguoLifeCore"]))
 #endif
 let package = Package(name: "SanguoTown", platforms: [.macOS(.v15)],
                       products: products, targets: targets, swiftLanguageModes: [.v6])
