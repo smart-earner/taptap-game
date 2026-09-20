@@ -1,0 +1,55 @@
+name: Sanguo Town macOS
+on:
+  push:
+    paths: ['sanguo-town/**', '.github/workflows/sanguo-town-macos.yml']
+  pull_request:
+    paths: ['sanguo-town/**', '.github/workflows/sanguo-town-macos.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-macos-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos-arm64:
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: sanguo-town
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Record actual environment
+        run: |
+          mkdir -p dist/logs
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
+          test "$(uname -m)" = arm64
+      - name: Debug tests and native SDK compilation
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee dist/logs/debug-test.txt
+          swift build --product SanguoMac 2>&1 | tee dist/logs/macos-build.txt
+      - name: Release tests
+        run: |
+          set -o pipefail
+          swift test -c release 2>&1 | tee dist/logs/release-test.txt
+      - name: Build local development app and reproducible preview
+        run: |
+          set -o pipefail
+          bash scripts/build-macos.sh 2>&1 | tee dist/logs/app-build.txt
+          swift run -c release SanguoPreview dist/animation-preview
+          ditto -c -k --keepParent dist/SanguoTown-Development.app dist/SanguoTown-Development.zip
+      - name: Preserve logs and development artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanguo-macos-${{ github.sha }}
+          path: |
+            sanguo-town/dist/logs
+            sanguo-town/dist/animation-preview
+            sanguo-town/dist/SanguoTown-Development.zip
+          retention-days: 7
+          if-no-files-found: warn

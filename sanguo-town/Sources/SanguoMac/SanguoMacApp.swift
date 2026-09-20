@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import SanguoCore
+import SanguoPresentation
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -94,7 +95,7 @@ struct SanguoMacApp: App {
         }.defaultSize(width: 1000, height: 680)
         Window("小城志 · 城市概览", id: "town") {
             TownStrip(model: model).task { await model.start() }
-        }.defaultSize(width: 640, height: 240)
+        }.defaultSize(width: 800, height: 370)
         MenuBarExtra("小城志", systemImage: "building.2") { TownMenu(model: model) }
     }
 }
@@ -122,7 +123,7 @@ struct Dashboard: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("一城任太守，多城托都督").font(.largeTitle.bold())
-                Text("core-0.1 开发切片：生产、分工与存档已接通；不是完整游戏。").foregroundStyle(.secondary)
+                Text("visual-0.2：已加入分层人物街景；经营规则仍为core-0.1开发切片。").foregroundStyle(.secondary)
                 if let error = model.errorMessage { Text(error).textSelection(.enabled) }
                 if let world = model.world {
                     GroupBox("主公定策") {
@@ -177,16 +178,53 @@ struct Dashboard: View {
 @MainActor
 struct TownStrip: View {
     @ObservedObject var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reducedMotion
+    @State private var demo = false
+    @State private var paused = false
+    @State private var selectedCity = ""
+    @State private var item: HandItem = .spear
+    private var projection: TownProjection? {
+        if demo { return .demo }
+        guard let world = model.world else { return nil }
+        let cityID = world.cities[selectedCity] != nil ? selectedCity : world.cities.keys.sorted().first ?? ""
+        return TownProjection.live(world, cityID: cityID)
+    }
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("桌面三国 · 小城志").font(.title2.bold())
-            if let world = model.world, let city = world.cities.values.sorted(by: { $0.id < $1.id }).first {
-                Text("\(city.name) · \(world.people[city.prefectID]?.name ?? "代理太守")正在处理城务")
-                Text("\(world.policy(for: city).title)方针 · 粮食\(city.inventory[.grain] / 1000) · 人口\(city.population)")
-                Text(world.events.last?.message ?? "部属将在经营批次到期时处理生产。")
-                    .font(.caption).lineLimit(3)
-            }
-            Text("当前为数据窗口；像素街景尚未制作。").font(.caption).foregroundStyle(.secondary)
-        }.padding(20).frame(minWidth: 440, minHeight: 160, alignment: .leading)
+        VStack(spacing: 0) {
+            HStack {
+                Text("小城志").font(.headline)
+                if let world = model.world {
+                    Picker("城市", selection: $selectedCity) {
+                        Text("首城").tag("")
+                        ForEach(world.cities.values.sorted { $0.id < $1.id }) { Text($0.name).tag($0.id) }
+                    }.frame(maxWidth: 180).disabled(demo)
+                }
+                Spacer()
+                Toggle("动作样板", isOn: $demo).toggleStyle(.switch)
+                Button(paused ? "继续动画" : "暂停动画") { paused.toggle() }
+            }.padding(.horizontal, 14).padding(.vertical, 8)
+            if let projection {
+                TownCanvas(projection: projection, paused: paused, reducedMotion: reducedMotion, item: item)
+                    .aspectRatio(960.0/300, contentMode: .fit)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(projection.title)，\(projection.actors.count)个可见角色。动画只作展示，不改变产出。")
+                HStack {
+                    if demo {
+                        Text("演示角色／工坊，不读取或写入存档").font(.caption)
+                        Picker("武将试装", selection: $item) {
+                            Text("无兵器").tag(HandItem.none)
+                            Text("长枪").tag(HandItem.spear)
+                            Text("佩剑").tag(HandItem.sword)
+                        }.frame(maxWidth: 220)
+                    } else {
+                        Text("\(projection.title) · 读取实际居城与岗位，居民为岗位活动示意").font(.caption)
+                    }
+                    Spacer()
+                    if reducedMotion { Text("系统减少动态效果：静态展示").font(.caption) }
+                }.padding(.horizontal, 14).padding(.vertical, 8)
+            } else if let error = model.errorMessage {
+                Text(error).padding().textSelection(.enabled)
+            } else { ProgressView("读取小城…").padding(40) }
+        }.frame(minWidth: 640, minHeight: 290)
     }
 }
