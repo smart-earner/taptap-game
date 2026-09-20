@@ -1,0 +1,152 @@
+{
+  "fixture_version": 1,
+  "purpose": "Same starting point for three policies; no simulation executed",
+  "treasury": 2000,
+  "policy_id": "balanced",
+  "seed": 19092026,
+  "districts": [
+    {
+      "id": "east",
+      "governor": "hero-zhuge",
+      "cities": [
+        "plain",
+        "stone",
+        "river"
+      ],
+      "legions": [
+        "legion-east-01"
+      ]
+    }
+  ],
+  "cities": [
+    {
+      "id": "plain",
+      "population": 16,
+      "labor": 12,
+      "prefect": "hero-xunyu",
+      "readiness": 30,
+      "resources": {
+        "grain": 400,
+        "wood": 200,
+        "iron": 80,
+        "wine": 40,
+        "equipment": 10
+      },
+      "inventory_capacity_each": 1000,
+      "slots_used": 8
+    },
+    {
+      "id": "stone",
+      "population": 16,
+      "labor": 12,
+      "prefect": "npc-stone-prefect",
+      "readiness": 30,
+      "resources": {
+        "grain": 400,
+        "wood": 200,
+        "iron": 80,
+        "wine": 40,
+        "equipment": 10
+      },
+      "inventory_capacity_each": 1000,
+      "slots_used": 8
+    },
+    {
+      "id": "river",
+      "population": 16,
+      "labor": 12,
+      "prefect": "hero-lusu",
+      "readiness": 30,
+      "resources": {
+        "grain": 400,
+        "wood": 200,
+        "iron": 80,
+        "wine": 40,
+        "equipment": 10
+      },
+      "inventory_capacity_each": 1000,
+      "slots_used": 8
+    }
+  ],
+  "appointments": [
+    {
+      "office": "city_prefect",
+      "scope": "plain",
+      "holder": "hero-xunyu",
+      "state": "active"
+    },
+    {
+      "office": "city_prefect",
+      "scope": "stone",
+      "holder": "npc-stone-prefect",
+      "state": "active"
+    },
+    {
+      "office": "city_prefect",
+      "scope": "river",
+      "holder": "hero-lusu",
+      "state": "active"
+    },
+    {
+      "office": "regional_governor",
+      "scope": "east",
+      "holder": "hero-zhuge",
+      "state": "active"
+    },
+    {
+      "office": "legion_commander",
+      "scope": "legion-east-01",
+      "holder": "hero-zhaoyun",
+      "state": "active"
+    },
+    {
+      "office": "legion_leader",
+      "scope": "legion-east-01",
+      "holder": "hero-guanyu",
+      "state": "active"
+    },
+    {
+      "office": "legion_leader",
+      "scope": "legion-east-01",
+      "holder": "hero-zhangfei",
+      "state": "active"
+    }
+  ],
+  "transport_teams": [
+    {
+      "id": "transport-1",
+      "location": "plain",
+      "state": "idle",
+      "capacity": 100
+    },
+    {
+      "id": "transport-2",
+      "location": "stone",
+      "state": "idle",
+      "capacity": 100
+    },
+    {
+      "id": "transport-3",
+      "location": "river",
+      "state": "idle",
+      "capacity": 100
+    }
+  ],
+  "legions": [
+    {
+      "id": "legion-east-01",
+      "district_id": "east",
+      "station": "plain",
+      "leaders": [
+        "hero-zhaoyun",
+        "hero-guanyu",
+        "hero-zhangfei"
+      ],
+      "soldiers_per_team": [
+        30,
+        30,
+        30
+      ]
+    }
+  ]
+}

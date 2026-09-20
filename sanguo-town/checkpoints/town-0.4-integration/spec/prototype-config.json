@@ -1,0 +1,366 @@
+{
+  "document_version": "0.3",
+  "rule_version": "0.3-design-1",
+  "status": "design_fixture_not_game_implementation",
+  "platform": {
+    "target": "macOS Apple Silicon arm64",
+    "minimum_deployment_target": "15.0",
+    "actual_m4_tested": false
+  },
+  "capacity": {
+    "cities": 3,
+    "districts": 1,
+    "legions": 1,
+    "city_slots": 16,
+    "transport_teams": 3,
+    "active_contracts": 4,
+    "external_trade_teams": 2,
+    "cargo_per_shipment": 100,
+    "heroes": 6,
+    "weapons": 6,
+    "mounts": 4,
+    "world_nodes": 9
+  },
+  "policy": {
+    "weights_order": [
+      "supply",
+      "industry",
+      "trade",
+      "military",
+      "talent"
+    ],
+    "presets": {
+      "supply": [
+        40,
+        20,
+        15,
+        10,
+        15
+      ],
+      "trade": [
+        20,
+        15,
+        40,
+        10,
+        15
+      ],
+      "military": [
+        25,
+        20,
+        10,
+        35,
+        10
+      ],
+      "industry": [
+        20,
+        40,
+        10,
+        15,
+        15
+      ],
+      "balanced": [
+        25,
+        25,
+        20,
+        15,
+        15
+      ]
+    },
+    "window_seconds": 14400,
+    "operating_per_city": 300,
+    "operating_realm_max": 900,
+    "reinvestment_ratio": 0.4,
+    "capital_window_max": 400,
+    "capital_carry_max": 200,
+    "treasury_floor_per_city": 150
+  },
+  "initial": {
+    "cities": [
+      "plain"
+    ],
+    "treasury": 500,
+    "population": 8,
+    "labor": 6,
+    "transport_teams": 1,
+    "startup_capital_allowance": 300,
+    "resources": {
+      "grain": 200,
+      "wood": 80,
+      "iron": 30,
+      "wine": 0,
+      "equipment": 4
+    }
+  },
+  "cities": [
+    {
+      "id": "plain",
+      "name": "平川城",
+      "multipliers": {
+        "grain": 1.25,
+        "wood": 1,
+        "iron": 1,
+        "wine": 1,
+        "equipment": 1
+      }
+    },
+    {
+      "id": "stone",
+      "name": "青石城",
+      "multipliers": {
+        "grain": 0.8,
+        "wood": 1,
+        "iron": 1.25,
+        "wine": 1,
+        "equipment": 1.1
+      }
+    },
+    {
+      "id": "river",
+      "name": "临江城",
+      "multipliers": {
+        "grain": 1,
+        "wood": 1,
+        "iron": 1,
+        "wine": 1,
+        "equipment": 1
+      },
+      "external_freight_multiplier": 0.8
+    }
+  ],
+  "city_packages": {
+    "river": {
+      "copper": 800,
+      "build_seconds": 7200,
+      "outgoing": {
+        "grain": 160,
+        "wood": 100,
+        "iron": 20,
+        "equipment": 4
+      },
+      "consumed": {
+        "grain": 60,
+        "wood": 70,
+        "iron": 10,
+        "equipment": 4
+      },
+      "starting_stock": {
+        "grain": 100,
+        "wood": 30,
+        "iron": 10,
+        "equipment": 0
+      },
+      "minimum_shipments": 3
+    },
+    "stone": {
+      "copper": 1000,
+      "build_seconds": 10800,
+      "outgoing": {
+        "grain": 200,
+        "wood": 120,
+        "iron": 30,
+        "equipment": 6
+      },
+      "consumed": {
+        "grain": 100,
+        "wood": 80,
+        "iron": 20,
+        "equipment": 6
+      },
+      "starting_stock": {
+        "grain": 100,
+        "wood": 40,
+        "iron": 10,
+        "equipment": 0
+      },
+      "minimum_shipments": 4
+    }
+  },
+  "markets": {
+    "local_sell": {
+      "grain": 2,
+      "wood": 3,
+      "iron": 8,
+      "wine": 14,
+      "equipment": 40
+    },
+    "local_buy": {
+      "grain": 3,
+      "wood": 5,
+      "iron": 12,
+      "wine": 20,
+      "equipment": 55
+    },
+    "offers": [
+      {
+        "id": "south-wine",
+        "direction": "sell",
+        "cargo": "wine",
+        "units": 20,
+        "unit_price": 18,
+        "freight": 10,
+        "round_trip_seconds": 1800,
+        "refresh_seconds": 7200,
+        "max_batches": 1
+      },
+      {
+        "id": "mountain-iron",
+        "direction": "buy",
+        "cargo": "iron",
+        "units": 20,
+        "unit_price": 10,
+        "freight": 10,
+        "round_trip_seconds": 2400,
+        "refresh_seconds": 7200,
+        "max_batches": 1
+      }
+    ]
+  },
+  "routes": [
+    {
+      "id": "plain-stone",
+      "a": "plain",
+      "b": "stone",
+      "one_way_seconds": 1200
+    },
+    {
+      "id": "plain-river",
+      "a": "plain",
+      "b": "river",
+      "one_way_seconds": 900
+    },
+    {
+      "id": "river-ferry",
+      "a": "river",
+      "b": "south_ferry",
+      "one_way_seconds": 900
+    },
+    {
+      "id": "stone-mountain",
+      "a": "stone",
+      "b": "white_stone_camp",
+      "one_way_seconds": 1200
+    }
+  ],
+  "world_nodes": [
+    "plain",
+    "stone",
+    "river",
+    "north_grain_route",
+    "south_ferry",
+    "white_stone_camp",
+    "fallen_horse_slope",
+    "pine_camp",
+    "river_camp"
+  ],
+  "characters": [
+    {
+      "id": "hero-zhaoyun",
+      "name": "赵云",
+      "abilities": [
+        65,
+        74,
+        58,
+        92
+      ]
+    },
+    {
+      "id": "hero-lusu",
+      "name": "鲁肃",
+      "abilities": [
+        78,
+        82,
+        94,
+        60
+      ]
+    },
+    {
+      "id": "hero-zhuge",
+      "name": "诸葛亮",
+      "abilities": [
+        90,
+        94,
+        72,
+        82
+      ]
+    },
+    {
+      "id": "hero-guanyu",
+      "name": "关羽",
+      "abilities": [
+        62,
+        76,
+        65,
+        94
+      ]
+    },
+    {
+      "id": "hero-zhangfei",
+      "name": "张飞",
+      "abilities": [
+        58,
+        62,
+        60,
+        92
+      ]
+    },
+    {
+      "id": "hero-xunyu",
+      "name": "荀彧",
+      "abilities": [
+        92,
+        90,
+        70,
+        55
+      ]
+    }
+  ],
+  "collections": {
+    "weapons": [
+      "银纹长枪",
+      "龙胆亮银枪",
+      "青龙偃月刀",
+      "丈八蛇矛",
+      "青釭剑",
+      "七星宝刀"
+    ],
+    "mounts": [
+      "黄骠马",
+      "赤兔",
+      "的卢",
+      "绝影"
+    ]
+  },
+  "campaign": {
+    "max_actions": 4,
+    "alternative_attempts_after_failure": 1,
+    "default_risk": "medium",
+    "readiness_floor": 30,
+    "default_military_offline_continuation": false,
+    "sample_budget": {
+      "copper": 150,
+      "grain": 150,
+      "equipment": 4
+    }
+  },
+  "attention": {
+    "headline_cards": 3,
+    "proposal_interval_seconds": 14400,
+    "proposal_max_24h": 6
+  },
+  "offline": {
+    "normal_cap_seconds": 604800,
+    "civil_continuation_after_consent": true,
+    "pause_cycle_allocation_during_rest": true,
+    "appointments_expire": false
+  },
+  "activity": {
+    "enabled_by_default": false,
+    "daily_minutes": 60,
+    "balance_minutes": 180,
+    "project_fraction_limit": 0.2
+  },
+  "acceptance": {
+    "cases": 100,
+    "application_cases_run": 0
+  }
+}

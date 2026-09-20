@@ -1,0 +1,30 @@
+name: Sanguo source snapshot
+on:
+  push:
+    branches: ['feat/sanguo-city-growth']
+    paths:
+      - 'sanguo-town/checkpoints/**'
+      - '.github/workflows/sanguo-source-snapshot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Archive tracked project sources only
+        run: |
+          mkdir -p /tmp/sanguo-source
+          git archive --format=tar.gz --output=/tmp/sanguo-source/source.tar.gz HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
+          git rev-parse HEAD > /tmp/sanguo-source/commit.txt
+          sha256sum /tmp/sanguo-source/source.tar.gz > /tmp/sanguo-source/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sanguo-source-${{ github.sha }}
+          path: /tmp/sanguo-source
+          retention-days: 7
+          if-no-files-found: error

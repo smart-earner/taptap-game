@@ -1,0 +1,21 @@
+{
+  "document_version": "0.4",
+  "design_variant": "长期养城·轻决策",
+  "source_base_commit": "f0fd158d0a52e096c551231803a9ddd67be820f8",
+  "target_repository": "smart-earner/taptap-game",
+  "target_branch": "main",
+  "directory": "sanguo-town",
+  "delivery_scope": "documentation_and_specification_only",
+  "runtime_source_modified": false,
+  "runtime_visual_version": "visual-0.2",
+  "runtime_rules": "core-0.1",
+  "runtime_offline_days": 7,
+  "target_offline_days": 30,
+  "static_checks_passed": 47,
+  "application_cases_planned": 40,
+  "application_cases_executed": 0,
+  "long_cycle_simulation_run": false,
+  "m4_tested_in_this_change": false,
+  "word_in_chat_not_git": true,
+  "commit_reference": "See containing Git commit; SHA is not self-embedded."
+}

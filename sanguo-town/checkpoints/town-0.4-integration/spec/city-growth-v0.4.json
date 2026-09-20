@@ -1,0 +1,185 @@
+{
+  "document_version": "0.4",
+  "status": "design_target_not_runtime_configuration",
+  "runtime_unchanged": {
+    "visual_version": "visual-0.2",
+    "simulation_rules": "core-0.1",
+    "current_offline_days": 7
+  },
+  "priority": [
+    "visible_city_growth",
+    "low_player_burden",
+    "gradual_legion_growth",
+    "people_and_collections",
+    "optional_real_world_link"
+  ],
+  "capacity": {
+    "cities": 3,
+    "districts": 1,
+    "field_legions": 1,
+    "plots_per_city": 16,
+    "building_types": 10,
+    "neighborhoods_per_city": 4,
+    "ordinary_construction_slots": 2,
+    "landmark_slots": 1,
+    "shared_labor": true,
+    "heroes": 6,
+    "weapons": 6,
+    "mounts": 4,
+    "transport_teams": 3,
+    "active_contracts": 4,
+    "foreign_trade_teams": 2
+  },
+  "attention": {
+    "onboarding_required_confirmations_max": 2,
+    "post_onboarding_mandatory_daily_actions": 0,
+    "proposal_min_interval_hours": 72,
+    "proposal_rolling_window_hours": 168,
+    "proposal_max_per_window": 2,
+    "featured_cards": 1,
+    "independent_pending_themes": 3,
+    "no_reply": "continue_current_policy",
+    "quota_scope": "whole_faction",
+    "appointments_expire": false,
+    "policy_expires": false
+  },
+  "pacing": {
+    "normal_real_to_sim_ratio": 1,
+    "observation_days": [
+      30,
+      60,
+      90
+    ],
+    "first_visible_construction_change_minutes_target": 10,
+    "meaningful_change_gap_hours_target": [
+      24,
+      48
+    ],
+    "calendar_unlocks": false,
+    "forced_reset": false,
+    "duration_ranges_minutes": {
+      "first_repair": [
+        5,
+        15
+      ],
+      "early_building": [
+        30,
+        180
+      ],
+      "mid_upgrade": [
+        360,
+        1440
+      ],
+      "late_block": [
+        1440,
+        4320
+      ],
+      "landmark": [
+        4320,
+        14400
+      ]
+    }
+  },
+  "construction_phase_boundaries": [
+    0,
+    0.15,
+    0.45,
+    0.8,
+    1.0
+  ],
+  "construction_invariants": [
+    "phase_uses_effective_work",
+    "paused_work_does_not_advance",
+    "operation_requires_committed_completion",
+    "all_slots_share_labor",
+    "visuals_do_not_mutate_resources"
+  ],
+  "legion": {
+    "authorized_capacity_steps": [
+      0,
+      30,
+      60,
+      90
+    ],
+    "auto_recruit_train_within_approval": true,
+    "new_legion_requires_approval": true,
+    "military_expedition_offline_default": false,
+    "max_campaign_actions": 4,
+    "changed_retry_after_failure": 1,
+    "heroes_per_legion_max": 3
+  },
+  "offline": {
+    "target_normal_cap_days": 30,
+    "beyond_cap": "safe_rest_and_only_precommitted_finite_drain",
+    "restart_does_not_duplicate": true
+  },
+  "city_memory": {
+    "automatic_checkpoint_days": [
+      0,
+      7,
+      30,
+      60,
+      90
+    ],
+    "automatic_limit": 60,
+    "pinned_limit": 20,
+    "capture_scope": "game_state_render_only",
+    "uses_historical_state": true,
+    "capture_awards_resources": false
+  },
+  "characters": {
+    "base_attributes": [
+      "command",
+      "valor",
+      "strategy",
+      "administration",
+      "charisma"
+    ],
+    "professions": [
+      "governance",
+      "coordination",
+      "military",
+      "diplomacy"
+    ],
+    "daily_manual_training_required": false
+  },
+  "finance": {
+    "review_hours": 4,
+    "reinvestment_presets": {
+      "cautious": 0.25,
+      "balanced": 0.4,
+      "active": 0.6
+    },
+    "single_treasury": true,
+    "internal_transfer_is_income": false
+  },
+  "test_plan": {
+    "policy_profiles": [
+      "supply",
+      "trade",
+      "industry",
+      "military",
+      "balanced"
+    ],
+    "view_interval_days": [
+      1,
+      3,
+      7
+    ],
+    "observation_days": [
+      30,
+      60,
+      90
+    ],
+    "same_decisions_permissions_seed": true,
+    "application_status": "not_run",
+    "m4_status": "not_run",
+    "economy_simulation_status": "not_run"
+  },
+  "performance_targets_not_measurements": {
+    "offline_30d_p95_seconds": 10,
+    "headless_90d_seconds": 60,
+    "visible_fps_cap": 30,
+    "low_energy_fps_cap": 15
+  }
+}

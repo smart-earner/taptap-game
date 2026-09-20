@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-19",
+  "rules_version": "core-0.1",
+  "toolchain": "Swift 6.2.1",
+  "platform": "x86_64-unknown-linux-gnu",
+  "debug_tests_passed": 40,
+  "release_tests_passed": 40,
+  "distinct_runtime_tests": 40,
+  "legacy_static_checks_passed": 57,
+  "mac_source_syntax_parsed": true,
+  "mac_sdk_typecheck": false,
+  "m4_tested": false,
+  "app_bundle_built": false,
+  "remote_ci_run": false,
+  "original_application_acceptance_executed": 0,
+  "files_sha256": {
+    "Package.swift": "b5abbf6c8356a62461c3a6d3778592112957398c83333a548ea251275dec05a2",
+    "Sources/SanguoCLI/CLI.swift": "ef3abd8e6460a4cee2bcf83fd9d3ef5edcff97179fc1f0b61ccbe5372813c38f",
+    "Sources/SanguoCore/BudgetLedger.swift": "d39adbb1ce9cf15fe2deeb39d239e2609459c52914e5b3253da5c321eb43ff8f",
+    "Sources/SanguoCore/Domain.swift": "ecb32c22018befd93dfc99c6aabcc59a41b1bb30de84e64a02a967cbdf939e83",
+    "Sources/SanguoCore/Economy.swift": "b831ae83d6b43b33947c339854a85ebb5bc34339a95cc6d93712b02262916b69",
+    "Sources/SanguoCore/GameEngine.swift": "306886a24f1f0e1bc1a9a08e218494809a8c6d83a050d089d5ff7e9f468fd839",
+    "Sources/SanguoCore/Governance.swift": "41cc8d40c170b4996c887447369198cbeb6f19ff44b3a6f0dc7a6ed90c0ef9b9",
+    "Sources/SanguoCore/Persistence.swift": "0bbbe75fa5c9244f9cfcbe9f98313baf81c6942b6f9e871c86cc4613d324b044",
+    "Sources/SanguoCore/Seed.swift": "eb3c0993b9091140f7cabbb0cf38b2233eff850f049786936ca070559cb5bad8",
+    "Sources/SanguoCore/Validation.swift": "8aa696eb01a190f6c5a9ce50d075a4bf7e21e79fd8d75abdb2d0b84796c3fae7",
+    "Sources/SanguoMac/SanguoMacApp.swift": "c5cf6dca06b6763a51447a6f8ae9772a0a2e8e7db8f47a55b86ac671693ec8cc",
+    "Tests/SanguoCoreTests/CoreTests.swift": "a5dec1d725bc415d0ba5422c152d696cae53eb80a458fe4b2ccf78068667d68c",
+    "scripts/build-macos.sh": "a4a4d533e690d191bc4e81ceab3bbc6b3e8b5710da84bdacee4c056a5f1396a4"
+  }
+}
