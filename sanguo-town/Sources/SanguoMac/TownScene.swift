@@ -73,7 +73,7 @@ final class TownScene: SKScene {
     private var lastFrame: TimeInterval?
     var previewItem: HandItem = .spear
     var reducedMotion = false
-    init() {
+    override init() {
         super.init(size:CGSize(width:TownArt.width,height:TownArt.height))
         scaleMode = .aspectFit; backgroundColor = NSColor(srgbRed:0.65,green:0.71,blue:0.57,alpha:1)
     }
