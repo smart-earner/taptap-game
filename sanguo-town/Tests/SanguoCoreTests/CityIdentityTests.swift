@@ -44,6 +44,15 @@ struct CityIdentityTests {
         var w=try game();try days(3,&w);let finance=w.growth!.finance
         try send(.realm(.adoptIdentity(policy:.trade,investment:.active)),&w)
         #expect(w.growth!.finance==finance)
+        try send(.pauseDevelopment(true),&w)
+        #expect(w.growth!.enabled == false)
+        let pausedBudget=w.growth!.finance, policy=w.policy, projects=w.growth!.cities
+        try send(.realm(.adoptIdentity(policy:.military,investment:.active)),&w)
+        #expect(w.growth!.enabled == true)
+        #expect(w.growth!.finance==pausedBudget && w.policy==policy && w.growth!.cities==projects)
+        let started=w.simulationTime
+        try GameEngine.advance(to:w.lastWallUTC+86_400,world:&w)
+        #expect(w.simulationTime>started)
     }
     @Test func goalsKeepAllBasicServicesButSpecializeDepth() {
         for policy in Policy.allCases {

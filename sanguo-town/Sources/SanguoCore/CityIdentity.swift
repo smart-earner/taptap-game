@@ -154,7 +154,12 @@ public enum CityIdentityRuntime {
         if world.realm == nil {
             try RealmRuntime.handle(.adopt(policy: policy, investment: investment), principal: .player, world: &world)
         }
-        guard world.realm?.identity == nil else { return }
+        guard world.realm!.identity == nil else {
+            // Reusing the consent action from the paused-governance panel resumes the
+            // existing plan; it must not reset the budget, policy or paid contracts.
+            world.growth!.enabled = true
+            return
+        }
         world.policy = policy
         world.growth!.enabled = true
         world.growth!.investment = investment

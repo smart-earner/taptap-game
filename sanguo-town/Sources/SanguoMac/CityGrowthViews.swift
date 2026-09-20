@@ -15,8 +15,12 @@ struct DevelopmentControls: View {
                 Text(world.growth == nil ? "旧开发存档：确认后迁移到真实建筑与30日离线规则。原人物与资源保留，岗位示意不当作已付费建筑。" : "先定一个方向，太守持续建设。无每日任务；30日正常离线补算。暂停治理只暂停新增项目。")
                     .font(.caption).foregroundStyle(.secondary)
                 HStack {
-                    Picker("城市方向",selection:$choice) { ForEach(Policy.allCases,id:\.self) { Text($0.title).tag($0) } }
-                    Button("接受长期治理") { Task { await model.command(.realm(.adoptIdentity(policy:choice,investment:style))) } }
+                    if world.realm?.identity == nil {
+                        Picker("城市方向",selection:$choice) { ForEach(Policy.allCases,id:\.self) { Text($0.title).tag($0) } }
+                    } else {
+                        Text("按原有方针继续，不刷新预算或重开工程").font(.caption)
+                    }
+                    Button(world.realm?.identity == nil ? "接受长期治理" : "恢复原有治理") { Task { await model.command(.realm(.adoptIdentity(policy:choice,investment:style))) } }
                 }.disabled(model.busy)
             } else {
                 HStack {
