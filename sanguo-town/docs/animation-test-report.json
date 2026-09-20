@@ -1,0 +1,58 @@
+{
+  "version": "visual-0.2",
+  "simulation_rules": "core-0.1",
+  "code_commit": "0dfb09fbc36523b6afd85b2a97cea1fe80b01d51",
+  "local": {
+    "platform": "Linux x86_64",
+    "swift": "6.2.1",
+    "debug_tests_passed": 70,
+    "release_tests_passed": 70,
+    "distinct_tests": 70,
+    "core_tests": 40,
+    "presentation_tests": 30,
+    "browser": {
+      "browser": "headless Chromium on Linux, not SpriteKit/M4",
+      "javascript_errors": [],
+      "external_network_requests": 0,
+      "seek_frames_checked": [
+        0,
+        20,
+        100,
+        160,
+        220,
+        300,
+        359
+      ],
+      "pause_freezes_frames": true,
+      "resume_moves_character": true,
+      "reduced_motion_default_paused": true
+    }
+  },
+  "native_ci": {
+    "run_id": 35484492023,
+    "job_id": 106008248522,
+    "url": "https://github.com/smart-earner/taptap-game/actions/runs/35484492023",
+    "status": "success",
+    "commit": "0dfb09fbc36523b6afd85b2a97cea1fe80b01d51",
+    "os": "macOS 15.7.9 (24G830)",
+    "architecture": "arm64",
+    "xcode": "16.4 (16F6)",
+    "swift": "Apple Swift 6.1.2",
+    "debug_tests_passed": 70,
+    "release_tests_passed": 70,
+    "native_client_compiled": true,
+    "development_app_built": true,
+    "developer_id_notarized": false,
+    "artifact_id": 10596948150,
+    "artifact_sha256": "c936d83dedff7f13f2275d3f811271d68b55dc57d9d1e354b1bf8d5720536757"
+  },
+  "not_verified": [
+    "M4 physical device",
+    "native GUI interaction",
+    "energy usage",
+    "riding animation",
+    "complete application acceptance"
+  ],
+  "application_acceptance_passed_by_this_batch": 0,
+  "first_native_failure_fixed": "TownScene inherited initializer now explicitly uses override; initial failed run 35484317414 is retained in Actions."
+}
