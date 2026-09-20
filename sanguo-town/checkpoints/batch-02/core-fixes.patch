@@ -1,0 +1,162 @@
+diff --git a/sanguo-town/Sources/SanguoCore/Domain.swift b/sanguo-town/Sources/SanguoCore/Domain.swift
+--- a/sanguo-town/Sources/SanguoCore/Domain.swift
++++ b/sanguo-town/Sources/SanguoCore/Domain.swift
+@@ -159,2 +159,4 @@
+     public var growth: RealmGrowth? = nil
++    /// Opt-in town-0.4 state; absent in all older save formats.
++    public var realm: RealmDevelopment? = nil
+     public init(wallUTC: Int64) { lastWallUTC = wallUTC }
+diff --git a/sanguo-town/Sources/SanguoCore/GameEngine.swift b/sanguo-town/Sources/SanguoCore/GameEngine.swift
+--- a/sanguo-town/Sources/SanguoCore/GameEngine.swift
++++ b/sanguo-town/Sources/SanguoCore/GameEngine.swift
+@@ -23,2 +23,4 @@
+         switch command.action {
++        case .realm(let action):
++            try RealmRuntime.handle(action, principal:command.principal, world:&draft)
+         case .setPolicy(let scope, let policy):
+@@ -51,3 +53,3 @@
+             guard var governor = draft.people[governorID], governor.office == nil, !governor.locked,
+-                  cityIDs.contains(governor.cityID) else { throw GameError.denied("都督需空闲、未锁定且已在辖区") }
++                  cityIDs.contains(governor.cityID), draft.realm?.journeys.contains(where: { $0.personID == governorID }) != true else { throw GameError.denied("都督需空闲、未锁定且已在辖区") }
+             governor.office = .init(kind: .governor, scope: id, since: draft.simulationTime)
+diff --git a/sanguo-town/Sources/SanguoCore/Governance.swift b/sanguo-town/Sources/SanguoCore/Governance.swift
+--- a/sanguo-town/Sources/SanguoCore/Governance.swift
++++ b/sanguo-town/Sources/SanguoCore/Governance.swift
+@@ -5,2 +5,3 @@
+ public enum GameAction: Codable, Equatable, Sendable {
++    case realm(RealmAction)
+     case setPolicy(scope: PolicyScope, policy: Policy)
+@@ -48,2 +49,5 @@
+         }
++        guard world.realm?.journeys.contains(where: { $0.personID == personID }) != true else {
++            throw GameError.denied("人物在途，必须到任后才能任职")
++        }
+         if city.prefectID == personID { return }
+@@ -65,4 +69,5 @@
+                 guard !current.locked && (current.isProxy || world.simulationTime - city.lastAppointment >= 14_400) else { continue }
++                let travelling = Set(world.realm?.journeys.map(\.personID) ?? [])
+                 let candidates = district.talentIDs.compactMap { world.people[$0] }.filter {
+-                    $0.office == nil && !$0.locked && $0.cityID == cityID && $0.prefectScore >= current.prefectScore + 15
++                    $0.office == nil && !$0.locked && !travelling.contains($0.id) && $0.cityID == cityID && $0.prefectScore >= current.prefectScore + 15
+                 }.sorted { $0.prefectScore == $1.prefectScore ? $0.id < $1.id : $0.prefectScore > $1.prefectScore }
+diff --git a/sanguo-town/Sources/SanguoCore/GrowthRuntime.swift b/sanguo-town/Sources/SanguoCore/GrowthRuntime.swift
+--- a/sanguo-town/Sources/SanguoCore/GrowthRuntime.swift
++++ b/sanguo-town/Sources/SanguoCore/GrowthRuntime.swift
+@@ -34,2 +34,7 @@
+     }
++    static func bootstrapCash(_ cityID: String, world: WorldState) -> Int64 {
++        guard world.realm != nil, let plan=world.growth?.cities[cityID] else { return 0 }
++        let funded=plan.buildings.contains { b in b.kind == .market && (b.isOperating || plan.projects.contains { $0.live && $0.buildingID==b.id }) }
++        return funded ? 0 : BuildingCatalog.quote(kind:.market,level:1,repair:false).cash
++    }
+     static func updateCapacities(_ id: String, world: inout WorldState) {
+@@ -129,3 +134,3 @@
+         let quote = BuildingCatalog.quote(kind:kind,level:target,repair:isRepair)
+-        guard world.growth!.finance.capital >= quote.cash, freeCash(world) >= quote.cash else { throw GameError.denied("发展额度或自由国库不足") }
++        guard world.growth!.finance.capital >= quote.cash, freeCash(world) >= quote.cash + (kind == .market ? 0 : bootstrapCash(cityID,world:world)) else { throw GameError.denied("发展额度或自由国库不足") }
+         for (key,amount) in quote.materials {
+@@ -261,3 +266,3 @@
+             let wines = min(Int64(jobs["wine",default:0])*1000*wineSpeed/100,
+-                max(0,city.inventory.free(.grain)-city.grainFloor)/5,(city.inventory.capacity-city.inventory[.wine]))
++                max(0,city.inventory.free(.grain)-city.grainFloor)/5,(city.inventory.capacity-city.inventory[.wine]-RealmRuntime.incoming(city:id,resource:.wine,world:world)))
+             if wines > 0 { inputs["grain"] = wines*5; addOutput(.wine,wines) }
+@@ -430,5 +435,6 @@
+                     let quote=BuildingCatalog.quote(kind:kind,level:repair ? 1 : (b?.level ?? 0)+1,repair:repair)
+-                    guard quote.cash <= world.growth!.finance.capital && quote.cash <= freeCash(world) else { continue }
++                    let essentialCash = kind == .market ? 0 : bootstrapCash(id,world:world)
++                    guard quote.cash <= world.growth!.finance.capital && quote.cash + essentialCash <= freeCash(world) else { continue }
+                     // Reserve the future construction cash from the procurement freedom.
+-                    world.growth!.finance.protectedOperating = quote.cash
++                    world.growth!.finance.protectedOperating = quote.cash + essentialCash
+                     purchaseShortfall(id,materials:quote.materials,world:&world)
+diff --git a/sanguo-town/Sources/SanguoCore/GrowthValidation.swift b/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
+--- a/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
++++ b/sanguo-town/Sources/SanguoCore/GrowthValidation.swift
+@@ -7,3 +7,3 @@
+         try require(Set(growth.cities.keys)==Set(cities.keys),"城建城市归属")
+-        try require(growth.reservedCash <= treasury && growth.reservedCash >= 0,"工程和军需现金预留守恒")
++        try require(growth.reservedCash >= 0 && (realm?.reservationCash ?? 0) >= 0 && growth.reservedCash + (realm?.reservationCash ?? 0) <= treasury,"工程和军需现金预留守恒")
+         try require((0...1_000_000).contains(growth.finance.capital) && (0...1_000_000).contains(growth.finance.operating),"成长财政额度")
+@@ -70,2 +70,9 @@
+         }
++        if let realm {
++            for (id,civic) in realm.civic {
++                if let p=civic.project {
++                    for (key,cost) in p.materials { reserved[id,default:[:]][key,default:0] += cost-p.used[key,default:0] }
++                }
++            }
++        }
+         for (id,city) in cities { for r in Resource.allCases {
+diff --git a/sanguo-town/Sources/SanguoCore/RealmDevelopment.swift b/sanguo-town/Sources/SanguoCore/RealmDevelopment.swift
+--- a/sanguo-town/Sources/SanguoCore/RealmDevelopment.swift
++++ b/sanguo-town/Sources/SanguoCore/RealmDevelopment.swift
+@@ -165,2 +165,3 @@
+     public var training: Int
++    public var fortificationLevel: Int = 0
+ }
+diff --git a/sanguo-town/Sources/SanguoCore/RealmRuntime.swift b/sanguo-town/Sources/SanguoCore/RealmRuntime.swift
+--- a/sanguo-town/Sources/SanguoCore/RealmRuntime.swift
++++ b/sanguo-town/Sources/SanguoCore/RealmRuntime.swift
+@@ -61,4 +61,4 @@
+                 let proxy="npc-\(source)-relief"
+-                if world.people[proxy] == nil { world.people[proxy] = .init(id:proxy,name:"\(world.cities[source]!.name)代理官吏",cityID:source,isProxy:true) }
+-                guard world.people[proxy]!.office == nil || world.cities[source]!.prefectID == proxy else { throw GameError.denied("代理官吏正在其他岗位") }
++                if world.people[proxy] == nil { guard world.people.count < 64 else { throw GameError.denied("人物容量不足，不能生成交接代理") }; world.people[proxy] = .init(id:proxy,name:"\(world.cities[source]!.name)代理官吏",cityID:source,isProxy:true) }
++                guard (world.people[proxy]!.office == nil || world.cities[source]!.prefectID == proxy) && !world.realm!.journeys.contains(where:{$0.personID==proxy}) else { throw GameError.denied("代理官吏正在其他岗位") }
+                 guard id != proxy else { throw GameError.denied("代理留守，不参加跨城调任") }
+@@ -212,3 +212,8 @@
+         let step=item.stages[p.stage],city=world.cities[p.cityID]!
+-        guard GrowthRuntime.freeCash(world)>=step.cash,step.materials.allSatisfy({city.inventory.free(Resource(rawValue:$0.key)!)-$0.value >= ($0.key=="grain" ? city.grainFloor : 0)}) else { return }
++        // Optional collecting must not consume the last cash needed to open the first market.
++        // Otherwise the town has no sales channel and can never finance the next stage.
++        let plan = world.growth!.cities[p.cityID]!
++        let marketFunded = plan.buildings.contains { b in b.kind == .market && (b.isOperating || plan.projects.contains { $0.live && $0.buildingID == b.id }) }
++        let bootstrapReserve: Int64 = marketFunded ? 0 : BuildingCatalog.quote(kind:.market,level:1,repair:false).cash
++        guard GrowthRuntime.freeCash(world)>=step.cash+bootstrapReserve,step.materials.allSatisfy({city.inventory.free(Resource(rawValue:$0.key)!)-$0.value >= ($0.key=="grain" ? city.grainFloor : 0)}) else { return }
+         world.treasury-=step.cash;p.spent+=step.cash
+@@ -233,5 +238,5 @@
+             let amount=min(100_000,demand.inventory.capacity-demand.inventory[.grain]-pending)
+-            guard amount>0,GrowthRuntime.freeCash(world)>=2,world.growth!.finance.operating>=2 else { continue }
+-            let time=travel(source,dest,world)
+-            world.treasury-=2;world.growth!.finance.operatingSpent+=2;world.growth!.finance.operating-=2
++            let time=travel(source,dest,world), fee=max(1,(time+599)/600)
++            guard amount>0,GrowthRuntime.freeCash(world)>=fee,world.growth!.finance.operating>=fee else { continue }
++            world.treasury-=fee;world.growth!.finance.operatingSpent+=fee;world.growth!.finance.operating-=fee
+             world.cities[source]!.inventory[.grain]-=amount
+@@ -243,5 +248,8 @@
+             if let id=world.cities.keys.sorted().first(where:{ id in world.cities[id]!.inventory.free(.wine)>=25_000 && !world.realm!.trips.contains(where:{$0.source==id}) }),GrowthRuntime.freeCash(world)>=10,world.growth!.finance.operating>=10 {
+-                world.cities[id]!.inventory[.wine]-=20_000;world.treasury-=10;world.growth!.finance.operatingSpent+=10;world.growth!.finance.operating-=10
++                let inland = id == "river" ? 0 : travel(id,"river",world)
++                let fee = 10 + max(0,(inland+599)/600)
++                guard GrowthRuntime.freeCash(world)>=fee, world.growth!.finance.operating>=fee else { return }
++                world.cities[id]!.inventory[.wine]-=20_000;world.treasury-=fee;world.growth!.finance.operatingSpent+=fee;world.growth!.finance.operating-=fee
+                 let tripID="export-\(world.growth!.nextID)";world.growth!.nextID+=1
+-                world.realm!.trips.append(.init(id:tripID,source:id,destination:"external-river",resource:.wine,quantity:20_000,arriveAt:world.simulationTime+900,returnAt:world.simulationTime+1800,externalReceipt:360))
++                world.realm!.trips.append(.init(id:tripID,source:id,destination:"external-river",resource:.wine,quantity:20_000,arriveAt:world.simulationTime+inland+900,returnAt:world.simulationTime+2*(inland+900),externalReceipt:360))
+             }
+@@ -267,3 +275,3 @@
+         for (key,v) in goal.materials { world.cities[source]!.inventory.amounts[key,default:0]-=v }
+-        world.realm!.operation = .init(goal:goal,source:source,dueAt:world.simulationTime+goal.hours*3600,strength:legion?.active ?? 0,training:legion?.trainingLevel ?? 0)
++        world.realm!.operation = .init(goal:goal,source:source,dueAt:world.simulationTime+goal.hours*3600,strength:legion?.active ?? 0,training:legion?.trainingLevel ?? 0,fortificationLevel:world.realm!.civic[source]?.level(.ramparts) ?? 0)
+         world.realm!.operationAttempts[goal.rawValue,default:0]+=1
+@@ -274,3 +282,3 @@
+         if op.goal == .securePass {
+-            let score=op.strength+op.training*10+(world.realm!.civic[op.source]?.level(.ramparts) ?? 0)*5
++            let score=op.strength+op.training*10+op.fortificationLevel*5
+             let win=score>=55
+diff --git a/sanguo-town/Sources/SanguoCore/RealmValidation.swift b/sanguo-town/Sources/SanguoCore/RealmValidation.swift
+--- a/sanguo-town/Sources/SanguoCore/RealmValidation.swift
++++ b/sanguo-town/Sources/SanguoCore/RealmValidation.swift
+@@ -56,3 +56,3 @@
+         try check(Set(realm.completedGoals).count==realm.completedGoals.count && realm.completedGoals.allSatisfy{RegionalGoal(rawValue:$0) != nil},"地区目标唯一")
+-        if let op=realm.operation { try check(op.dueAt>simulationTime && cities[op.source] != nil && (0...90).contains(op.strength) && (0...3).contains(op.training),"地区区专项时间／地点／快照")
++        if let op=realm.operation { try check(op.dueAt>simulationTime && cities[op.source] != nil && (0...90).contains(op.strength) && (0...3).contains(op.training) && (0...3).contains(op.fortificationLevel),"地区区专项时间／地点／快照")
+             if op.goal == .securePass { try check(growth?.legion != nil && op.strength>=30,"军事快照须有真实军团") } }
+diff --git a/sanguo-town/Sources/SanguoCore/Validation.swift b/sanguo-town/Sources/SanguoCore/Validation.swift
+--- a/sanguo-town/Sources/SanguoCore/Validation.swift
++++ b/sanguo-town/Sources/SanguoCore/Validation.swift
+@@ -7,3 +7,3 @@
+         }
+-        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil && realm == nil) || (schemaVersion == 3 && rulesVersion == RealmRules.version && growth != nil && realm != nil), "未知存档／规则版本")
++        try require((schemaVersion == 1 && rulesVersion == Self.currentRules && growth == nil && realm == nil) || (schemaVersion == 2 && rulesVersion == GrowthRules.version && growth != nil && realm == nil) || (schemaVersion == 3 && rulesVersion == RealmRules.version && growth != nil && realm != nil), "未知存档／规则版本")
+         try require((0...31_536_000_000).contains(simulationTime) && (0...4_000_000_000_000).contains(lastWallUTC), "时钟范围")

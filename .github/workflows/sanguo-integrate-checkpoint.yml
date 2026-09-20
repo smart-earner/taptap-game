@@ -1,0 +1,63 @@
+name: Sanguo verified checkpoint integration
+on:
+  push:
+    branches: ['feat/sanguo-city-growth']
+    paths:
+      - 'sanguo-town/checkpoints/batch-02/**'
+      - '.github/workflows/sanguo-integrate-checkpoint.yml'
+permissions:
+  contents: read
+jobs:
+  integrate:
+    if: github.repository == 'smart-earner/taptap-game' && github.ref == 'refs/heads/feat/sanguo-city-growth'
+    runs-on: macos-15
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+      - name: Prepare reviewed batch (never modify main)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:sanguo-town/checkpoints/town-0.4-integration/Sources)" = 16850560e7c99196669bd0d44064c48b45fe422c
+          cp -R sanguo-town/checkpoints/town-0.4-integration/Sources/. sanguo-town/Sources/
+          git apply --check sanguo-town/checkpoints/batch-02/core-fixes.patch
+          git apply sanguo-town/checkpoints/batch-02/core-fixes.patch
+          cp sanguo-town/checkpoints/batch-02/RealmTests.swift sanguo-town/Tests/SanguoCoreTests/RealmTests.swift
+          mkdir -p /tmp/town-batch-02
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } > /tmp/town-batch-02/environment.txt
+      - name: Native clean build and complete regression
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift test 2>&1 | tee /tmp/town-batch-02/debug-tests.log
+          swift test -c release 2>&1 | tee /tmp/town-batch-02/release-tests.log
+          swift build -c release --product SanguoMac 2>&1 | tee /tmp/town-batch-02/macos-build.log
+      - name: Save only verified source files on development branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- sanguo-town/Sources/SanguoCore sanguo-town/Tests/SanguoCoreTests/RealmTests.swift
+          python3 - <<'PY'
+          import subprocess
+          paths=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert paths and all(p.startswith('sanguo-town/Sources/SanguoCore/') or p=='sanguo-town/Tests/SanguoCoreTests/RealmTests.swift' for p in paths), paths
+          PY
+          test "$(git ls-remote origin refs/heads/feat/sanguo-city-growth | cut -f1)" = "$GITHUB_SHA"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(sanguo): integrate verified town-0.4 core and 24 regression tests'
+          git push origin HEAD:refs/heads/feat/sanguo-city-growth
+          git rev-parse HEAD > /tmp/town-batch-02/verified-commit.txt
+          git archive --format=tar.gz --output=/tmp/town-batch-02/source.tar.gz HEAD sanguo-town
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: town-batch-02-${{ github.sha }}
+          path: /tmp/town-batch-02
+          retention-days: 7
+          if-no-files-found: error
