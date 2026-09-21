@@ -1,0 +1,24 @@
+{
+  "capacity": 8,
+  "purchasePrice": 20,
+  "deliverySeconds": 300,
+  "growthSegments": 6,
+  "segmentSeconds": 2880,
+  "feedPerSegment": 250,
+  "careWorkSeconds": 30,
+  "butcherWorkSeconds": 90,
+  "meatPerAnimal": 8000,
+  "purchasePeriodSeconds": 21600,
+  "pastureCash": 60,
+  "pastureWorkSeconds": 1800,
+  "pastureMaterials": {
+    "wood": 8000,
+    "stone": 4000
+  },
+  "butcherCash": 40,
+  "butcherBenchWorkSeconds": 900,
+  "butcherMaterials": {
+    "wood": 3000,
+    "stone": 2000
+  }
+}

@@ -113,6 +113,7 @@ public struct LifeWorld: Codable, Equatable, Sendable {
     public var recruits: [String:LifeRecruit] = [:]
     public var wish: String? = nil
     public var owned: [String] = ["xunyu"]
+    public var husbandry: LifeHusbandry? = nil // Absent in v1; explicit opt-in upgrades the isolated save.
     public var prefect = "xunyu"
     public var happiness = 70
     public var foodCoverage = 10000
@@ -144,7 +145,8 @@ public enum LifeMap {
         "barracks":.init(1600,700),"farm":.init(360,720),"well":.init(740,610),
         "trees":.init(200,900),"quarry":.init(390,160),"mine":.init(180,160),"gate":.init(1570,210),
         "field-0":.init(250,380),"field-1":.init(420,380),"field-2":.init(250,510),"field-3":.init(420,510),
-        "seal":.init(1190,745),"ration":.init(1500,610)]
+        "seal":.init(1190,745),"ration":.init(1500,610),
+        "pasture":.init(500,810),"butcher":.init(650,500)]
     public static func point(_ id:String) -> LifePoint { places[id] ?? places["hall"]! }
     public static func path(_ from:String,_ to:String) -> [LifePoint] {
         let a=point(from),b=point(to)

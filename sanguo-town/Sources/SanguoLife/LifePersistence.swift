@@ -36,7 +36,7 @@ public struct LifeSaveStore: LifePersistence, Sendable {
         try bytes.write(to:url,options:.atomic)
     }
 }
-public enum LifeCommand: Sendable {case policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String)}
+public enum LifeCommand: Sendable {case policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String),husbandry(herdTarget:Int,purchaseLimit:Int64),pauseHusbandry(Bool)}
 /// Serial actor publishes a candidate only after persistence succeeds.
 public actor LifeSession {
     private var engine:LifeRuntime
@@ -54,6 +54,8 @@ public actor LifeSession {
     public func send(_ command:LifeCommand) throws {
         var draft=engine
         switch command {
+        case .husbandry(let target,let limit):try draft.authorizeHusbandry(herdTarget:target,purchaseLimit:limit)
+        case .pauseHusbandry(let pause):try draft.pauseHusbandry(pause)
         case .policy(let p):try draft.setPolicy(p)
         case .seal:try draft.requestSeal()
         case .recruit(let id):try draft.requestRecruit(id)

@@ -8,6 +8,7 @@ extension LifeRuntime {
         planFoodSupply()
         planStations(finishingOnly:false)
         planFields(harvestOnly:false)
+        planHusbandry()
         planProjects()
         planRecruitment()
         planGathering()
@@ -32,9 +33,6 @@ extension LifeRuntime {
                 // Water is an actual service trip, not a hidden resource inventory.
                 tail.append(.init(kind:"work",seconds:c.water_work_s))
                 if let task=assign(kind:"water",job:"farmer",subject:id,at:"well",work:0,tail:tail) {
-                    let r=Int64(world.tasks[task]!.rate)
-                    let last=world.tasks[task]!.steps.count-1
-                    world.tasks[task]!.steps[last].seconds=max(1,(c.water_work_s*10000+r-1)/r)
                     world.fields[id]!.taskID=task;world.fields[id]!.state=f.state=="water1" ? "watering1":"watering2"
                 }
             } else if !harvestOnly && f.state=="empty" && world.amount(.grain)<Int64(world.agents.count*2000) {
@@ -49,7 +47,7 @@ extension LifeRuntime {
         let inFlight=world.tasks.values.filter{$0.kind=="haul" && $0.target==target && $0.resource==resource}.reduce(Int64(0)){$0+$1.quantity}
         let needed=max(0,quantity-inFlight)
         guard needed>0 else{return false}
-        let valid=Set(["warehouse","trees","mine","quarry","kitchen-out","forge-out","ration-out"]+Array(world.fields.keys))
+        let valid=Set(["warehouse","trees","mine","quarry","kitchen-out","forge-out","ration-out","meat-out","pasture-in"]+Array(world.fields.keys))
         let sources=world.storages.keys.filter{$0 != target && valid.contains($0) && world.amount(resource,at:$0,free:true)>0}.sorted { a,b in
             let da=LifeMap.length(LifeMap.path(world.storages[a]!.node,destination.node)),db=LifeMap.length(LifeMap.path(world.storages[b]!.node,destination.node))
             return da==db ? a<b:da<db
@@ -82,7 +80,7 @@ extension LifeRuntime {
             if need>0 {for _ in 0..<3{if !haul(.meal,quantity:need,to:key){break}}}
         }
         if world.stations["kitchen"]!.phase=="idle" && world.amount(.meal)<Int64(world.agents.count*2000) {
-            let useMeat=world.policy != "military" && world.amount(.meat)>=2000
+            let useMeat=prefersHeartyMeal && world.amount(.meat)>=2000
             let r=catalog.recipe(useMeat ? "cook_meat":"cook_basic")!
             supply(r.input_mU,to:"kitchen-in")
         }
@@ -98,7 +96,7 @@ extension LifeRuntime {
             guard !finishingOnly,s.phase=="idle" else{continue}
             var recipeID:String?
             if id=="kitchen",world.amount(.meal)<Int64(world.agents.count*2000) {
-                recipeID=world.policy != "military" && world.amount(.meat,at:s.input)>=2000 ? "cook_meat":"cook_basic"
+                recipeID=prefersHeartyMeal && world.amount(.meat,at:s.input)>=2000 ? "cook_meat":"cook_basic"
             }
             if id=="forge",world.buildings["workshop",default:0]>0,world.amount(.tools)<6000 {recipeID="forge"}
             if id=="ration",world.rationTarget>world.amount(.rations),world.foodEquivalent()>=Int64(world.agents.count*4000+16000) {recipeID="ration_plain"}

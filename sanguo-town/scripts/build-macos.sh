@@ -9,7 +9,7 @@ swift build -c release --product SanguoMac --arch arm64
 BIN="$(swift build -c release --show-bin-path --arch arm64)"
 APP="$ROOT/dist/SanguoTown-Development.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/Life072"
-cp "$ROOT/Sources/SanguoLife/Resources/catalog.json" "$APP/Contents/Resources/Life072/catalog.json"
+cp "$ROOT/Sources/SanguoLife/Resources/"*.json "$APP/Contents/Resources/Life072/"
 cp "$BIN/SanguoMac" "$APP/Contents/MacOS/SanguoMac"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -20,7 +20,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>小城志开发版</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.7.2</string>
-<key>CFBundleVersion</key><string>5</string>
+<key>CFBundleVersion</key><string>6</string>
 <key>LSMinimumSystemVersion</key><string>15.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

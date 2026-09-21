@@ -15,3 +15,22 @@ with tempfile.TemporaryDirectory() as tmp:
     else:
         target.parent.mkdir(parents=True,exist_ok=True);target.write_text(text)
     print('Runtime catalog: 8 resources, 4 recipes, 30 heroes, 22 skills; exact resolved data.')
+
+# The new optional chain has one frozen, versioned configuration.
+husbandry=json.loads((root/'spec/husbandry-v2.json').read_text())
+pig=cfg['pig']
+assert husbandry['purchasePrice']==pig['price_including_delivery']
+assert husbandry['deliverySeconds']==pig['delivery_s']
+assert husbandry['growthSegments']==pig['segments']
+assert husbandry['segmentSeconds']==pig['segment_growth_s']
+assert husbandry['feedPerSegment']==pig['feed_mU']['grain']
+assert husbandry['careWorkSeconds']==pig['care_work_s']
+assert husbandry['butcherWorkSeconds']==pig['butcher_s']
+assert husbandry['meatPerAnimal']==pig['meat_mU']
+htext=json.dumps(husbandry,ensure_ascii=False,indent=2)+'\n'
+hpath=root/'Sources/SanguoLife/Resources/husbandry.json'
+if '--check' in sys.argv:
+    assert hpath.read_text()==htext,'Bundled husbandry rules differ from source'
+else:
+    hpath.write_text(htext)
+print('Husbandry rules: 6 segments, exact feed and paid animal provenance; 8 resource IDs unchanged.')

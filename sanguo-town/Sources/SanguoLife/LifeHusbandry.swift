@@ -90,6 +90,8 @@ public struct LifeHusbandry: Codable, Equatable, Sendable {
     public var lifetimePurchaseSpent: Int64 = 0
     public var purchasedCount = 0
     public var processedCount = 0
+    public var consumedFeed: Int64 = 0
+    public var recentMeals: [Bool] = [] // Last eight completed kitchen batches.
     public var animals: [String: LifePig] = [:]
     public var lastReason = "等待牧栏与肉食台"
 

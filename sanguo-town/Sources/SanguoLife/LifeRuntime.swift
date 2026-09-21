@@ -44,6 +44,7 @@ public struct LifeRuntime: Sendable {
     }
     func nextEvent() -> Int64 {
         var n=world.nextPlan
+        if let d=husbandryNextEvent() {n=min(n,d)}
         for t in world.tasks.values {n=min(n,t.due)}
         for f in world.fields.values {if let d=f.due {n=min(n,d)}}
         for s in world.stations.values {if let d=s.due {n=min(n,d)}}
@@ -61,6 +62,7 @@ public struct LifeRuntime: Sendable {
         }}
         for id in world.stations.keys.sorted() {if world.stations[id]?.due==world.time {world.stations[id]!.due=nil;world.stations[id]!.phase="finish"}}
         for id in world.recruits.keys.sorted() {if world.recruits[id]?.due==world.time {world.recruits[id]!.due=nil;world.recruits[id]!.state="finish"}}
+        settleHusbandry()
         updateMeals()
         if world.time==world.nextPlan {plan();world.nextPlan+=30}
     }
@@ -113,7 +115,11 @@ public struct LifeRuntime: Sendable {
             let r=rate(a,job:job);var steps:[LifeStep]=[]
             if let m=move(a.node,node){steps.append(m)}
             if work>0 {steps.append(.init(kind:"work",seconds:max(1,(work*10000+Int64(r)-1)/Int64(r))))}
-            steps+=tail
+            steps += tail.map { step in
+                var s=step
+                if s.kind=="work" {s.seconds=max(1,(s.seconds*10000+Int64(r)-1)/Int64(r))}
+                return s
+            }
             if steps.isEmpty {continue}
             let duration=steps.reduce(Int64(0)){$0+$1.seconds}
             if only==nil && (phase+duration>2160 || (a.serviceSeconds+duration>1920 && a.busyCycle==world.cycle)){continue}
@@ -158,6 +164,7 @@ public struct LifeRuntime: Sendable {
                     world.stations[task.subject]!.foodInProcess=catalog.recipe(recipe)!.output_mU["meal",default:0]
                 }
             }
+            beginHusbandryStep(id)
             return
         }
         world.tasks[id]=nil;world.agents[task.worker]!.taskID=nil
@@ -165,6 +172,7 @@ public struct LifeRuntime: Sendable {
     }
     mutating func finishTask(_ t:LifeTask) {
         switch t.kind {
+        case "pig_receive","pig_care","pig_process": finishHusbandryTask(t)
         case "export":
             world.treasury+=t.contribution;world.counters["external_transactions",default:0]+=1
             world.record("trade","商旅交货返城，实际回款\(t.contribution)铜；居民吃饭不产生铜钱。")
@@ -196,6 +204,10 @@ public struct LifeRuntime: Sendable {
             for key in r.output_mU.keys.sorted(){world.add(LifeResource(rawValue:key)!,quantity:r.output_mU[key]!,at:s.output,quality:r.meal_quality ?? "basic",origin:t.id,production:true)}
             world.stations[t.subject]!.phase="idle";world.stations[t.subject]!.recipe=nil;world.stations[t.subject]!.taskID=nil;world.stations[t.subject]!.outputSpace=0;world.stations[t.subject]!.foodInProcess=0
             world.counters[r.id+"_completed",default:0]+=1
+            if r.job=="cook",world.husbandry != nil {
+                world.husbandry!.recentMeals.append(r.id=="cook_meat")
+                if world.husbandry!.recentMeals.count>8 {world.husbandry!.recentMeals.removeFirst()}
+            }
             world.record("cooking",r.job=="cook" ? "\(world.agents[t.worker]!.name)做出一锅饭菜，等待送到住区。":"工坊完成\(r.id)，成品等待交付。")
         case "build":
             world.projects[t.subject]!.completedWork+=t.contribution;world.projects[t.subject]!.allocatedWork-=t.contribution
@@ -218,6 +230,6 @@ public struct LifeRuntime: Sendable {
     }
     public func label(_ location:String) -> String {
         if location.hasPrefix("field"){return "田边"};if location.hasPrefix("project"){return "工地"}
-        return ["warehouse":"粮仓","kitchen-in":"厨房","kitchen-out":"厨房出餐台","home-meals":"住宅餐点","hall-meals":"官署餐点","trees":"林地","quarry":"采石点","mine":"矿点","forge-in":"工坊","forge-out":"工坊","recruit":"官署接待点","ration-in":"制粮台","ration-out":"军粮架"][location] ?? location
+        return ["warehouse":"粮仓","kitchen-in":"厨房","kitchen-out":"厨房出餐台","home-meals":"住宅餐点","hall-meals":"官署餐点","trees":"林地","quarry":"采石点","mine":"矿点","forge-in":"工坊","forge-out":"工坊","recruit":"官署接待点","ration-in":"制粮台","ration-out":"军粮架","pasture-in":"牧栏料槽","meat-out":"肉食台"][location] ?? location
     }
 }
