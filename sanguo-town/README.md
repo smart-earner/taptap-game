@@ -1,46 +1,44 @@
 # 桌面三国·小城志
 
-> 人物设计已更新为PRD v0.7.1：政治、智力、武力、统率＋每将1—5个标准技能引用；详见[能力规范](docs/life-v0.7/06A_ATTRIBUTE_AND_SKILL_SYSTEM.md)。这次是规格与Python参考结算更新，Swift游戏仍town-0.5＋desktop-0.1，尚未接入新能力系统。
+**最新研发范围：PRD v0.7.2｜当前可运行：town-0.5＋desktop-0.1**
 
-**最新研发规格：PRD v0.7.1｜当前可运行：town-0.5＋desktop-0.1**
+城池一点点变好，军团慢慢壮大；玩家只作重要方向、人事和扩张决定。
 
-城池一点点变好，军团慢慢壮大；玩家只作方向、重要用人和重大扩张决定。
+## 最新规格：减少系统，增加可收集内容
 
-## 阅读最新完整PRD
+首版从17种物资收敛为8种，从4作物/10配方收敛为2作物/4配方；首批武将30名，但技能库仍22项、效果原语仍7种。开局仍荀彧＋15居民，不送满30将。
 
-- **[PRD v0.7完整入口](docs/PRD.md)**：十章规范、四份JSON及明确的开发验收。
-- [城市成长与建设](docs/life-v0.7/01_CITY_GROWTH.md)：容量、入住、服务与需求驱动升级。
-- [农牧加工](docs/life-v0.7/02_PRODUCTION.md) / [工种与物流](docs/life-v0.7/03_AGENTS_AND_LOGISTICS.md) / [饭食与财政](docs/life-v0.7/04_FOOD_AND_ECONOMY.md)。
-- [太守、都督和三城](docs/life-v0.7/05_GOVERNANCE_AND_REGION.md) / [六将、收藏和军团](docs/life-v0.7/06_HEROES_COLLECTION_AND_ARMY.md)。
-- [四条特色工程与常驻内容](docs/life-v0.7/07_CONTENT_AND_PROGRESSION.md) / [全桌面、美术和交互](docs/life-v0.7/08_DESKTOP_UI_AND_ART.md)。
-- [工程、迁移和72项验收](docs/life-v0.7/09_ENGINEERING_AND_ACCEPTANCE.md) / [规格验证状态](docs/life-v0.7/VALIDATION.md)。
-
-v0.7是下一版完整开发依据，不是对已实现软件改一个版本号。真实任务生产、全桌面生活地图、昼夜作息、饭食满意度、新武将效果及逐车新城仍需按V1—V5实际实现。所有新应用验收尚未运行，不能沿用旧201项运行测试给新规则背书。
+- **[当前PRD入口](docs/PRD.md)**：明确新规范覆盖范围与继承机制，避免新旧资源混用。
+- **[收敛规范与完整30将表](docs/SLIM_V0_7_2.md)**：资源、工序、材料替换、食物、30将四维和技能、六种招募模板。
+- [资源范围数据](spec/slim-v0.7.2.json) / [30将数据](spec/heroes-v0.7.2.json)。
+- [继承的四维与标准技能公式](docs/life-v0.7/06A_ATTRIBUTE_AND_SKILL_SYSTEM.md)。
 
 ```sh
 cd sanguo-town
-python3 scripts/validate_prd_v07.py --output dist/prd-v07
-python3 scripts/check_prd_v07_delivery.py --output dist/prd-v07
+python3 scripts/build_slim_v072.py --output dist/slim-v072
+python3 scripts/test_slim_v072.py --output dist/slim-v072
 ```
 
-以上输出完整阅读HTML/Markdown、数值和跨章报告、独立容量参照与NOT_RUN应用验收计划。不是Swift游戏仿真。旧v0.6入口原文归档，历史规格CI固定检出其原提交，避免混用新旧文档。
+生成器产出四份resolved配置及manifest；旧0.7.1配置保留原字节，作为SHA-256校验的输入，不再直接作为新生活版运行数据。未知材料或基线变化拒绝生成。不得把设计材料替换率套到玩家已有存档上。
 
-## 当前客户端
+本轮16项配置与Python参考测试通过；[只读CI run35556875019](https://github.com/smart-earner/taptap-game/actions/runs/35556875019)成功。覆盖8资源/4配方、30人/29路线、原6人不变、同数据改名能力一致、1—5技能、库存与床位等。没有执行新生活城市引擎、30人美术、长期平衡或M4能耗测试。
 
-[桌面模式原型的使用与边界](docs/PRD_DESKTOP_MODE.md) / [已实现状态](docs/BUILD_STATUS.md) / [实际桌面测试报告](docs/desktop-test-report.json)。
+**这不是客户端更新。** 本轮未修改Sources、Tests或Package.swift，未接入新的资源链和武将系统。新增24人的图像、角色展示与原生接入仍有工作量，不能以目录完成代替游戏完成。
 
-现有desktop-0.1显示透明、无标题栏、鼠标穿透的局部桌面城景，不改壁纸，普通窗口在前，菜单栏管理。首次默认关闭，普通城景按钮“融入桌面”可开启；屏幕、关注城市、大小、位置在设置中调节。它还不是v0.7的完整1920×1080参考生活地图。
+## 当前客户端及其历史证据
+
+[桌面模式使用与边界](docs/PRD_DESKTOP_MODE.md) / [已实现状态](docs/BUILD_STATUS.md) / [原桌面测试报告](docs/desktop-test-report.json)。
+
+现有desktop-0.1是透明、无标题栏、鼠标穿透的局部桌面城景，不修改壁纸，工作窗口在前，菜单栏管理。首次默认关闭，可在普通城景中点击“融入桌面”。它尚未变成新PRD中的完整生活地图。
 
 ```sh
-# macOS 15及以上、Apple Silicon和Swift6 / Xcode SDK：
+# 以下要求macOS 15及以上、Apple Silicon和Swift6/Xcode SDK：
 swift run SanguoMac
 bash scripts/build-macos.sh
-# 核心回归（并不验证新PRD尚未实现的规则）：
+# 既有游戏回归，不验证新PRD未实现部分：
 swift test
 ```
 
-现有运行源码验证为`abaaed75c66861dcb4542a242f312d330439eb95`及其未更改的后续文档提交。[原生测试run35516594162](https://github.com/smart-earner/taptap-game/actions/runs/35516594162)验证了当时的201项测试和Mac开发包；不是本轮新生活层的测试结果。
+历史[Mac run35516594162](https://github.com/smart-earner/taptap-game/actions/runs/35516594162)验证了当时的201项测试与开发包，不是本次新资源/30将运行验收。开发包ad-hoc签名、未公证；用户M4上的真实Finder、多屏、Spaces、台前调度、睡眠和能耗未完成实机验收。未接入键盘或行情采集。
 
-用户M4上的真实Finder点击、多屏、Spaces、台前调度、睡眠及能耗仍未完成验收。开发包ad-hoc签名、未公证。桌面原型受透明图标层遮挡报告影响，不保证被工作窗口覆盖时零渲染；可手动暂停。未接入键盘或行情采集。
-
-本次只有PRD、配置与规格脚本/只读CI更新，没有修改Swift运行代码和原诗词游戏。不要以旧的演示包代替新生活版交付。
+本轮工作限定在三国设计、配置、检查脚本及只读规格工作流；原诗词游戏不变。
