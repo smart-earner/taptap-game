@@ -1,0 +1,39 @@
+{
+  "spec_version":"0.7.0",
+  "city_id":"plain",
+  "status":"design_fixture_not_runtime_save",
+  "source":"declared_founding_settlement_assets",
+  "agent_id_prefix":"plain-",
+  "hero":{"id":"plain-xunyu","person_id":"xunyu","home_id":"plain-house-1","bed_id":"bed-16","initial_node":"plot-0","role":"prefect"},
+  "ordinary_agents":[
+    {"id":"plain-r01","name":"阿禾","role":"farmer","bed_id":"bed-01"},
+    {"id":"plain-r02","name":"谷生","role":"farmer","bed_id":"bed-02"},
+    {"id":"plain-r03","name":"林生","role":"logger","bed_id":"bed-03"},
+    {"id":"plain-r04","name":"石安","role":"miner","bed_id":"bed-04"},
+    {"id":"plain-r05","name":"禾娘","role":"cook","bed_id":"bed-05"},
+    {"id":"plain-r06","name":"阿担","role":"porter","bed_id":"bed-06"},
+    {"id":"plain-r07","name":"阿车","role":"porter","bed_id":"bed-07"},
+    {"id":"plain-r08","name":"阿运","role":"porter","bed_id":"bed-08"},
+    {"id":"plain-r09","name":"木成","role":"builder","bed_id":"bed-09"},
+    {"id":"plain-r10","name":"筑安","role":"builder","bed_id":"bed-10"},
+    {"id":"plain-r11","name":"仓平","role":"clerk","bed_id":"bed-11"},
+    {"id":"plain-r12","name":"井清","role":"handyman","bed_id":"bed-12"},
+    {"id":"plain-r13","name":"卫平","role":"guard_day","bed_id":"bed-13"},
+    {"id":"plain-r14","name":"夜安","role":"guard_night","bed_id":"bed-14"},
+    {"id":"plain-r15","name":"阿勤","role":"flex","bed_id":"bed-15"}
+  ],
+  "ordinary_defaults":{"attributes":{"command":50,"valor":50,"strategy":50,"administration":50,"charisma":50},"home_id":"plain-house-1","initial_node":"plot-1","origin":"founding","skill_xp":0,"active_task_id":null},
+  "locations":[
+    {"id":"plain-public-kitchen-input","type":"station_input","capacity_volume":64,"stock_mU":{"grain":8000,"water":8000,"wood":4000}},
+    {"id":"plain-public-kitchen-output","type":"station_output","capacity_volume":64,"stock_mU":{}},
+    {"id":"plain-granary-1-store","type":"warehouse","capacity_volume":512,"stock_mU":{"grain":56000,"water":24000,"wood":36000,"stone":12000,"iron":6000,"tools":4000,"fodder":8000}},
+    {"id":"plain-house-1-meals","type":"home_meals","capacity_volume":16,"stock_mU":{"meal_basic":30000}},
+    {"id":"plain-hall-meals","type":"office_meals","capacity_volume":16,"stock_mU":{"meal_basic":2000}}
+  ],
+  "initial_food_allocation":{"ordinary_per_person_mU":2000,"hero_mU":2000,"consumer_reservation":"one portion per person for cycle0-meal0 and cycle0-meal1; deduct only at actual meal windows","already_consumed":false},
+  "initial_buildings":[{"id":"plain-hall-1","kind":"hall","slot":0,"level":1,"restored":false},{"id":"plain-house-1","kind":"house","slot":1,"level":1},{"id":"plain-farm-1","kind":"farm","slot":4,"level":1},{"id":"plain-granary-1","kind":"granary","slot":5,"level":1}],
+  "initial_beds":{"farm_bed_ids":["field-00","field-01","field-02","field-03"],"growing_bed":"field-00","crop":"millet","state":"GROWING_2","effective_growth_s":3240,"watering_mask":3,"prior_inputs":"founding_paid_not_deducted_again","harvest_cycle_id":"founding-millet-0","reserved_output_volume":16},
+  "lot_ids":"founding:{location_id}:{resource_id}, originEventID=founding:plain:0",
+  "shared_warehouse_cap_rule":"only warehouse-class sublocations share the granary cap; device and consumer containers have their explicit separate capacities and types",
+  "safety":"existing crops, meals, equipment and tools are one-time founding assets; reloading is never a second grant"
+}
