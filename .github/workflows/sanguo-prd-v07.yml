@@ -1,13 +1,15 @@
 name: Sanguo PRD v0.7
 on:
   push:
-    branches: ['docs/sanguo-prd-v07', 'main']
+    branches: ['docs/sanguo-prd-v07', 'docs/sanguo-hero-v071', 'main']
     paths:
       - 'sanguo-town/docs/life-v0.7/**'
       - 'sanguo-town/docs/PRD.md'
       - 'sanguo-town/spec/*v0.7.json'
       - 'sanguo-town/scripts/validate_prd_v07.py'
       - 'sanguo-town/scripts/check_prd_v07_delivery.py'
+      - 'sanguo-town/scripts/hero_reference_v071.py'
+      - 'sanguo-town/scripts/validate_hero_v071.py'
       - '.github/workflows/sanguo-prd-v07.yml'
   workflow_dispatch:
 permissions:
@@ -15,6 +17,8 @@ permissions:
 concurrency:
   group: sanguo-prd-v07-${{ github.ref }}
   cancel-in-progress: true
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
 jobs:
   specification:
     runs-on: ubuntu-latest
@@ -28,6 +32,7 @@ jobs:
           set -o pipefail
           mkdir -p dist/prd-v07
           python3 --version | tee dist/prd-v07/environment.txt
+          python3 sanguo-town/scripts/validate_hero_v071.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/hero-check.log
           python3 sanguo-town/scripts/validate_prd_v07.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/check.log
           python3 sanguo-town/scripts/check_prd_v07_delivery.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/delivery-check.log
       - name: Preserve exact specification sources
