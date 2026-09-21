@@ -63,7 +63,7 @@ struct LifeView:View {
     var body:some View {
         VStack(spacing:0){
             HStack{
-                VStack(alignment:.leading,spacing:3){Text("小城志 · 城市生活").font(.title2.bold());Text("life-0.7.2-v1 · 独立试玩存档，旧城不迁移").font(.caption).foregroundStyle(.secondary)}
+                VStack(alignment:.leading,spacing:3){Text("小城志 · 城市生活").font(.title2.bold());Text("life-0.7.2-v2 · 饭食改善试玩，旧城不迁移").font(.caption).foregroundStyle(.secondary)}
                 Spacer()
                 Picker("查看",selection:$page){Text("我的城").tag(0);Text("武将宝鉴 · 30").tag(1);Text("城务记录").tag(2)}.pickerStyle(.segmented).frame(width:310)
                 Button(desktop.enabled ? "隐藏桌面城景":"铺满桌面"){desktop.setEnabled(!desktop.enabled)}.disabled(model.world==nil)
@@ -82,10 +82,11 @@ struct LifeView:View {
                                 }.disabled(model.busy)
                                 Text("本批各方针仍共用开局工程链；不是五条完整特色城市。无自动宣战。").font(.caption).foregroundStyle(.secondary)
                             }
+                            LifeFoodPanel(model:model,world:w)
                             GroupBox("正在做什么"){
                                 VStack(alignment:.leading,spacing:6){
                                     ForEach(w.projects.values.filter{!$0.completed}.sorted{$0.id<$1.id}){p in
-                                        Text(p.kind=="seal" ? "雕制开城木印":"\(["house":"民居","repair":"府署修缮","market":"集市","workshop":"工造院","tavern":"饭馆"][p.kind] ?? p.kind)")
+                                        Text(p.kind=="seal" ? "雕制开城木印":"\(["house":"民居","repair":"府署修缮","market":"集市","workshop":"工造院","tavern":"饭馆","pasture":"牧栏","butcher":"肉食台"][p.kind] ?? p.kind)")
                                         ProgressView(value:Double(p.completedWork)/Double(max(1,p.totalWork)))
                                         Text("\(p.completedWork)/\(p.totalWork) 人工秒 · 第\(p.phase+1)段").font(.caption)
                                     }
@@ -104,13 +105,13 @@ struct LifeView:View {
                                 Text("合计包括在途；只有送达工作点才可使用。").font(.caption).foregroundStyle(.secondary)
                             }
                             if let id=selected,let a=w.agents[id] {
-                                let frame=LifeVisual.actor(a,world:w,at:Double(w.time))
-                                GroupBox("\(a.name) · \(LifeVisual.jobNames[a.job] ?? a.job)"){
+                                let frame=LifeLiveVisual.actor(a,world:w,at:Double(w.time))
+                                GroupBox("\(a.name) · \(LifeLiveVisual.jobName(a.job))"){
                                     VStack(alignment:.leading){Text(frame.action);if let r=frame.cargo {Text("携带 \(r.title) \(Double(frame.quantity)/1000,specifier:"%.1f")份")};if let tid=a.taskID,let t=w.tasks[tid]{Text("任务：\(t.kind) → \(t.subject)").font(.caption)}}.frame(maxWidth:.infinity,alignment:.leading)
                                 }
                             }
                             if desktop.enabled {Picker("显示器",selection:$desktop.screenID){Text("主屏幕").tag(0);ForEach(Array(NSScreen.screens.enumerated()),id:\.offset){_,s in Text(s.localizedName).tag((s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.intValue ?? 0)}}}
-                            Text("本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。养猪、军团作战、多城和完整收藏装备仍未接入。").font(.caption).foregroundStyle(.secondary)
+                            Text("本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。养殖需明确授权；军团作战、多城和完整收藏装备仍未接入。").font(.caption).foregroundStyle(.secondary)
                         }.padding(14)}.frame(width:300)
                     }
                 } else if page==1 {codex(w,c)}
