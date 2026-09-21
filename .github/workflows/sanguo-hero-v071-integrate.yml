@@ -1,0 +1,112 @@
+name: Sanguo hero v0.7.1 specification integration
+on:
+  push:
+    branches: ['docs/sanguo-hero-v071']
+    paths: ['.github/workflows/sanguo-hero-v071-integrate.yml']
+permissions:
+  contents: write
+concurrency:
+  group: sanguo-hero-v071-spec-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.ref == 'refs/heads/docs/sanguo-hero-v071'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Apply reviewed data and documentation scripts only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile sanguo-town/checkpoints/hero-v071/*.py sanguo-town/scripts/hero_reference_v071.py sanguo-town/scripts/validate_hero_v071.py
+          python3 sanguo-town/checkpoints/hero-v071/01_data.py
+          python3 sanguo-town/checkpoints/hero-v071/02_docs.py
+          python3 sanguo-town/checkpoints/hero-v071/03_checks.py
+          git diff --exit-code -- sanguo-town/Sources sanguo-town/Tests sanguo-town/Package.swift
+      - name: Validate new hero contracts and complete PRD
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/hero-v071
+          python3 --version | tee dist/hero-v071/environment.txt
+          python3 sanguo-town/scripts/validate_hero_v071.py --output dist/hero-v071 2>&1 | tee dist/hero-v071/hero-check.log
+          python3 sanguo-town/scripts/validate_prd_v07.py --output dist/hero-v071 2>&1 | tee dist/hero-v071/spec-check.log
+          python3 sanguo-town/scripts/check_prd_v07_delivery.py --output dist/hero-v071 2>&1 | tee dist/hero-v071/delivery-check.log
+      - name: Record actual evidence, commit only to the feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, os, subprocess
+          root=Path('sanguo-town'); out=Path('dist/hero-v071')
+          h=json.loads((out/'hero-validation.json').read_text())
+          b=json.loads((out/'validation.json').read_text())
+          d=json.loads((out/'delivery-validation.json').read_text())
+          assert h['failed']==h['errors']==b['failed']==d['failed']==0
+          # Reject any unexpected path produced by the migration scripts.
+          names=subprocess.check_output(['git','diff','--name-only'],text=True).splitlines()
+          allowed=('sanguo-town/docs/','sanguo-town/spec/','sanguo-town/scripts/')
+          for p in names:
+              assert p.startswith(allowed) or p in ('sanguo-town/README.md','.github/workflows/sanguo-prd-v07.yml'),p
+          run=os.environ['GITHUB_RUN_ID']; sha=os.environ['GITHUB_SHA']
+          report={'spec_version':'0.7.1','integration_input_commit':sha,'workflow_run':int(run),'scope':'specifications_and_Python_reference_arithmetic','hero_tests':h,'base_checks_passed':b['passed'],'delivery_checks_passed':d['passed'],'runtime_sources_modified':False,'Swift_ability_system_integrated':False,'application_acceptance_executed':0}
+          (root/'docs/life-v0.7/hero-validation.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          text=f'''# PRD v0.7.1 四维与技能库验证记录
+
+          本次是人物规格与Python参考实现验证，不是Swift游戏功能发布。当前软件仍town-0.5＋desktop-0.1。
+
+          ## 本轮实际结果
+
+          验证输入提交：`{sha}`。核验与生成后的实际文件由该次CI提交到`docs/sanguo-hero-v071`，不会自动修改main。
+
+          [实际运行记录](https://github.com/smart-earner/taptap-game/actions/runs/{run})
+
+          |检查|结果|范围|
+          |---|---:|---|
+          |能力配置与参考计算|{h['tests_run']}测试通过|四维权重、1—5技能、叠加、任职、重命名一致性等|
+          |基础规格与数值参照|{b['passed']}通过，0失败|配方及文档检查，不是新城市模拟|
+          |跨文件、开局与全文导出|{d['passed']}通过，0失败|包含能力专章及第四份技能配置|
+          |新生活版应用验收|72项，全部NOT_RUN|不由参考脚本改为游戏通过|
+          |M4实机／新生活引擎|NOT_RUN|本轮未改Sources、Tests、Package.swift|
+
+          部分测试有多组反例，不重复计成游戏测试数。Python参考器验证原始整数公式，尚未提供Swift世界状态适配、存档迁移或原生技能UI。最终数据已移除每将prefect/commander效果与按姓名的policy_fit；能力仅通过skill_id解析。正常作物、饭食、城建、军粮参数不因本次身份架构改变。
+
+          完整PRD入口及06A定义新人物规则；其他0.7章节同步修正被替代公式。旧charisma只在未来显式迁移时保存为legacyAttributes；不静默改当前游戏存档。实际接入仍须统一任务快照和完整应用验收。
+
+          ## 复现
+
+          ```sh
+          cd sanguo-town
+          python3 scripts/validate_hero_v071.py --output dist/prd-v07
+          python3 scripts/validate_prd_v07.py --output dist/prd-v07
+          python3 scripts/check_prd_v07_delivery.py --output dist/prd-v07
+          ```
+
+          上一版v0.7.0记录保存在本文件Git历史中；其519/54结果不能代替本轮。更早客户端的201项测试同样不为本次技能系统背书。
+          '''
+          text='\n'.join(line[10:] if line.startswith('          ') else line for line in text.splitlines())+'\n'
+          (root/'docs/life-v0.7/VALIDATION.md').write_text(text)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sanguo-town/docs sanguo-town/spec sanguo-town/scripts sanguo-town/README.md .github/workflows/sanguo-prd-v07.yml
+          git diff --cached --exit-code -- sanguo-town/Sources sanguo-town/Tests sanguo-town/Package.swift
+          git commit -m 'docs(hero): integrate verified four attributes and standard skills into PRD v0.7.1'
+          current=$(git ls-remote origin refs/heads/docs/sanguo-hero-v071 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/docs/sanguo-hero-v071
+          git rev-parse HEAD > dist/hero-v071/commit.txt
+          git archive --format=zip --output=dist/hero-v071/source.zip HEAD sanguo-town/docs sanguo-town/spec sanguo-town/scripts sanguo-town/README.md .github/workflows/sanguo-prd-v07.yml
+          sha256sum dist/hero-v071/source.zip > dist/hero-v071/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-hero-v071-${{ github.sha }}
+          path: dist/hero-v071
+          retention-days: 14
+          if-no-files-found: warn
