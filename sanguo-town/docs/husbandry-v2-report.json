@@ -1,0 +1,32 @@
+{
+  "release": "life-0.7.2-v2",
+  "scope": "opt_in_husbandry_food_chain_not_entire_PRD",
+  "verified_source_commit": "2f30595bbca7678c7473f61b8ebe5bb0a9aea9d1",
+  "native_run": 35581321911,
+  "native_job": 106274629303,
+  "native_environment": {"os":"macOS 15.7.9","arch":"arm64","xcode":"16.4","swift":"6.1.2"},
+  "native_debug_tests": 246,
+  "native_release_same_tests": 246,
+  "existing_independent_tests": 222,
+  "new_independent_tests": 24,
+  "new_breakdown": {"model":6,"runtime":12,"visual":6},
+  "linux_release_tests": 239,
+  "mac_client_compiled": true,
+  "mac_app_packaged": true,
+  "relocated_catalog_check": {"heroes":30,"recipes":4},
+  "ad_hoc_signature_verified": true,
+  "notarized": false,
+  "real_m4_tested": false,
+  "energy_profiled": false,
+  "same_day2_world_bytes_at_cadence_120_and_172800": true,
+  "linux_and_macos_day2_and_day7_worlds_equal": true,
+  "artifact_id": 10630243565,
+  "artifact_sha256": "391f0545582667252a41c550390ebca9b25d2b5b7249d5f9af7880a74af0f757",
+  "app_zip_sha256": "fc619b97d725220ccaa842b4a52f4ccaed2f6f5ffbdef40fc3a8e6442d44ae32",
+  "browser_preview": {"environment":"Linux Chromium via Playwright","external_requests":[],"errors":[],"checks":["stage selection","actual pigs visible","actual two-day consumption","play","pause","slider","narrow layout"],"pig_nodes":2},
+  "results": [
+    {"simulated_days":2,"population":24,"treasury":634,"pigs_bought":12,"pigs_processed":11,"live_or_incoming_pigs":1,"hearty_meals_consumed":623,"recent_food_coverage_bp":10000,"happiness":88},
+    {"simulated_days":7,"population":44,"treasury":2586,"pigs_bought":52,"pigs_processed":51,"live_or_incoming_pigs":1,"hearty_meals_consumed":3200,"recent_food_coverage_bp":10000,"happiness":85}
+  ],
+  "notes": "Recent coverage is not whole-period zero missed meals. Browser replay is actual simulation states, not a Mac recording. No full 30/60/90-day life balance or all PRD acceptance claimed."
+}
