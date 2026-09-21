@@ -1,0 +1,27 @@
+{
+  "spec_version": "0.7.1",
+  "integration_input_commit": "b0a5915f6c73e4476cebeff42706e97643f1bfca",
+  "workflow_run": 35555140138,
+  "scope": "specifications_and_Python_reference_arithmetic",
+  "hero_tests": {
+    "spec_version": "0.7.1",
+    "scope": "Python_contract_and_reference_arithmetic_only",
+    "tests_run": 18,
+    "failed": 0,
+    "errors": 0,
+    "swift_game_integrated": false,
+    "application_acceptance_executed": 0,
+    "example": {
+      "cook_rate": 11410,
+      "cook_seconds": 127,
+      "trade_quote": 39,
+      "zhao_escort": 63,
+      "guan_escort": 69
+    }
+  },
+  "base_checks_passed": 522,
+  "delivery_checks_passed": 57,
+  "runtime_sources_modified": false,
+  "Swift_ability_system_integrated": false,
+  "application_acceptance_executed": 0
+}

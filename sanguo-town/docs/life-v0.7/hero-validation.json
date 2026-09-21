@@ -1,27 +1,1641 @@
 {
-  "spec_version": "0.7.1",
-  "integration_input_commit": "b0a5915f6c73e4476cebeff42706e97643f1bfca",
-  "workflow_run": 35555140138,
-  "scope": "specifications_and_Python_reference_arithmetic",
-  "hero_tests": {
-    "spec_version": "0.7.1",
-    "scope": "Python_contract_and_reference_arithmetic_only",
-    "tests_run": 18,
-    "failed": 0,
-    "errors": 0,
-    "swift_game_integrated": false,
-    "application_acceptance_executed": 0,
-    "example": {
-      "cook_rate": 11410,
-      "cook_seconds": 127,
-      "trade_quote": 39,
-      "zhao_escort": 63,
-      "guan_escort": 69
+  "scope": "static_contract_only",
+  "status": "STATIC_PASS",
+  "spec_sha256": "94340e629722bb9cbb6a755e4e27b98bf0049289b0a389f18b07881fb522023c",
+  "passed": 379,
+  "failed": 0,
+  "application_cases_executed": 0,
+  "engine_tested": false,
+  "checks": [
+    {
+      "name": "versions",
+      "passed": true
+    },
+    {
+      "name": "manual cultivation",
+      "passed": true
+    },
+    {
+      "name": "player actions",
+      "passed": true
+    },
+    {
+      "name": "no automated consumption",
+      "passed": true
+    },
+    {
+      "name": "no ordinary people",
+      "passed": true
+    },
+    {
+      "name": "ten resources",
+      "passed": true
+    },
+    {
+      "name": "dependency/hero-system-v0.7.json",
+      "passed": true
+    },
+    {
+      "name": "dependency/heroes-v0.7.2.json",
+      "passed": true
+    },
+    {
+      "name": "weight/farmer",
+      "passed": true
+    },
+    {
+      "name": "weight/herder",
+      "passed": true
+    },
+    {
+      "name": "weight/butcher",
+      "passed": true
+    },
+    {
+      "name": "weight/cook",
+      "passed": true
+    },
+    {
+      "name": "weight/server",
+      "passed": true
+    },
+    {
+      "name": "weight/rationer",
+      "passed": true
+    },
+    {
+      "name": "weight/logger",
+      "passed": true
+    },
+    {
+      "name": "weight/miner",
+      "passed": true
+    },
+    {
+      "name": "weight/carpenter",
+      "passed": true
+    },
+    {
+      "name": "weight/smith",
+      "passed": true
+    },
+    {
+      "name": "weight/builder",
+      "passed": true
+    },
+    {
+      "name": "weight/porter",
+      "passed": true
+    },
+    {
+      "name": "weight/clerk",
+      "passed": true
+    },
+    {
+      "name": "weight/merchant",
+      "passed": true
+    },
+    {
+      "name": "weight/courier",
+      "passed": true
+    },
+    {
+      "name": "weight/guard",
+      "passed": true
+    },
+    {
+      "name": "weight/quartermaster",
+      "passed": true
+    },
+    {
+      "name": "weight/groom",
+      "passed": true
+    },
+    {
+      "name": "weight/restorer",
+      "passed": true
+    },
+    {
+      "name": "weight/handyman",
+      "passed": true
+    },
+    {
+      "name": "bootstrap",
+      "passed": true
+    },
+    {
+      "name": "all resource amounts",
+      "passed": true
+    },
+    {
+      "name": "no old recruitment",
+      "passed": true
+    },
+    {
+      "name": "cost",
+      "passed": true
+    },
+    {
+      "name": "probability",
+      "passed": true
+    },
+    {
+      "name": "pity",
+      "passed": true
+    },
+    {
+      "name": "duplicates enabled",
+      "passed": true
+    },
+    {
+      "name": "no automatic draw",
+      "passed": true
+    },
+    {
+      "name": "arrival",
+      "passed": true
+    },
+    {
+      "name": "unique definitions",
+      "passed": true
+    },
+    {
+      "name": "pool/talent",
+      "passed": true
+    },
+    {
+      "name": "pool/renowned",
+      "passed": true
+    },
+    {
+      "name": "pool/legend",
+      "passed": true
+    },
+    {
+      "name": "attributes/xunyu",
+      "passed": true
+    },
+    {
+      "name": "hero/xunyu",
+      "passed": true
+    },
+    {
+      "name": "gates/xunyu",
+      "passed": true
+    },
+    {
+      "name": "skills/xunyu",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/xunyu",
+      "passed": true
+    },
+    {
+      "name": "attributes/zhaoyun",
+      "passed": true
+    },
+    {
+      "name": "hero/zhaoyun",
+      "passed": true
+    },
+    {
+      "name": "gates/zhaoyun",
+      "passed": true
+    },
+    {
+      "name": "skills/zhaoyun",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhaoyun.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhaoyun.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhaoyun.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/zhaoyun",
+      "passed": true
+    },
+    {
+      "name": "attributes/lusu",
+      "passed": true
+    },
+    {
+      "name": "hero/lusu",
+      "passed": true
+    },
+    {
+      "name": "gates/lusu",
+      "passed": true
+    },
+    {
+      "name": "skills/lusu",
+      "passed": true
+    },
+    {
+      "name": "jobs/lusu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/lusu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/lusu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/lusu",
+      "passed": true
+    },
+    {
+      "name": "attributes/liang",
+      "passed": true
+    },
+    {
+      "name": "hero/liang",
+      "passed": true
+    },
+    {
+      "name": "gates/liang",
+      "passed": true
+    },
+    {
+      "name": "skills/liang",
+      "passed": true
+    },
+    {
+      "name": "jobs/liang.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/liang.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/liang.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/liang",
+      "passed": true
+    },
+    {
+      "name": "attributes/guanyu",
+      "passed": true
+    },
+    {
+      "name": "hero/guanyu",
+      "passed": true
+    },
+    {
+      "name": "gates/guanyu",
+      "passed": true
+    },
+    {
+      "name": "skills/guanyu",
+      "passed": true
+    },
+    {
+      "name": "jobs/guanyu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/guanyu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/guanyu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/guanyu",
+      "passed": true
+    },
+    {
+      "name": "attributes/zhangfei",
+      "passed": true
+    },
+    {
+      "name": "hero/zhangfei",
+      "passed": true
+    },
+    {
+      "name": "gates/zhangfei",
+      "passed": true
+    },
+    {
+      "name": "skills/zhangfei",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangfei.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangfei.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangfei.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/zhangfei",
+      "passed": true
+    },
+    {
+      "name": "attributes/caocao",
+      "passed": true
+    },
+    {
+      "name": "hero/caocao",
+      "passed": true
+    },
+    {
+      "name": "gates/caocao",
+      "passed": true
+    },
+    {
+      "name": "skills/caocao",
+      "passed": true
+    },
+    {
+      "name": "jobs/caocao.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/caocao.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/caocao.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/caocao",
+      "passed": true
+    },
+    {
+      "name": "attributes/liubei",
+      "passed": true
+    },
+    {
+      "name": "hero/liubei",
+      "passed": true
+    },
+    {
+      "name": "gates/liubei",
+      "passed": true
+    },
+    {
+      "name": "skills/liubei",
+      "passed": true
+    },
+    {
+      "name": "jobs/liubei.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/liubei.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/liubei.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/liubei",
+      "passed": true
+    },
+    {
+      "name": "attributes/sunquan",
+      "passed": true
+    },
+    {
+      "name": "hero/sunquan",
+      "passed": true
+    },
+    {
+      "name": "gates/sunquan",
+      "passed": true
+    },
+    {
+      "name": "skills/sunquan",
+      "passed": true
+    },
+    {
+      "name": "jobs/sunquan.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/sunquan.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/sunquan.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/sunquan",
+      "passed": true
+    },
+    {
+      "name": "attributes/simayi",
+      "passed": true
+    },
+    {
+      "name": "hero/simayi",
+      "passed": true
+    },
+    {
+      "name": "gates/simayi",
+      "passed": true
+    },
+    {
+      "name": "skills/simayi",
+      "passed": true
+    },
+    {
+      "name": "jobs/simayi.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/simayi.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/simayi.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/simayi",
+      "passed": true
+    },
+    {
+      "name": "attributes/guojia",
+      "passed": true
+    },
+    {
+      "name": "hero/guojia",
+      "passed": true
+    },
+    {
+      "name": "gates/guojia",
+      "passed": true
+    },
+    {
+      "name": "skills/guojia",
+      "passed": true
+    },
+    {
+      "name": "jobs/guojia.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/guojia.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/guojia.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/guojia",
+      "passed": true
+    },
+    {
+      "name": "attributes/jiaxu",
+      "passed": true
+    },
+    {
+      "name": "hero/jiaxu",
+      "passed": true
+    },
+    {
+      "name": "gates/jiaxu",
+      "passed": true
+    },
+    {
+      "name": "skills/jiaxu",
+      "passed": true
+    },
+    {
+      "name": "jobs/jiaxu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/jiaxu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/jiaxu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/jiaxu",
+      "passed": true
+    },
+    {
+      "name": "attributes/pangtong",
+      "passed": true
+    },
+    {
+      "name": "hero/pangtong",
+      "passed": true
+    },
+    {
+      "name": "gates/pangtong",
+      "passed": true
+    },
+    {
+      "name": "skills/pangtong",
+      "passed": true
+    },
+    {
+      "name": "jobs/pangtong.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/pangtong.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/pangtong.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/pangtong",
+      "passed": true
+    },
+    {
+      "name": "attributes/xunyou",
+      "passed": true
+    },
+    {
+      "name": "hero/xunyou",
+      "passed": true
+    },
+    {
+      "name": "gates/xunyou",
+      "passed": true
+    },
+    {
+      "name": "skills/xunyou",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyou.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyou.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/xunyou.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/xunyou",
+      "passed": true
+    },
+    {
+      "name": "attributes/chenqun",
+      "passed": true
+    },
+    {
+      "name": "hero/chenqun",
+      "passed": true
+    },
+    {
+      "name": "gates/chenqun",
+      "passed": true
+    },
+    {
+      "name": "skills/chenqun",
+      "passed": true
+    },
+    {
+      "name": "jobs/chenqun.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/chenqun.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/chenqun.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/chenqun",
+      "passed": true
+    },
+    {
+      "name": "attributes/manchong",
+      "passed": true
+    },
+    {
+      "name": "hero/manchong",
+      "passed": true
+    },
+    {
+      "name": "gates/manchong",
+      "passed": true
+    },
+    {
+      "name": "skills/manchong",
+      "passed": true
+    },
+    {
+      "name": "jobs/manchong.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/manchong.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/manchong.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/manchong",
+      "passed": true
+    },
+    {
+      "name": "attributes/zhangzhao",
+      "passed": true
+    },
+    {
+      "name": "hero/zhangzhao",
+      "passed": true
+    },
+    {
+      "name": "gates/zhangzhao",
+      "passed": true
+    },
+    {
+      "name": "skills/zhangzhao",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangzhao.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangzhao.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangzhao.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/zhangzhao",
+      "passed": true
+    },
+    {
+      "name": "attributes/huangyueying",
+      "passed": true
+    },
+    {
+      "name": "hero/huangyueying",
+      "passed": true
+    },
+    {
+      "name": "gates/huangyueying",
+      "passed": true
+    },
+    {
+      "name": "skills/huangyueying",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangyueying.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangyueying.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangyueying.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/huangyueying",
+      "passed": true
+    },
+    {
+      "name": "attributes/zhouyu",
+      "passed": true
+    },
+    {
+      "name": "hero/zhouyu",
+      "passed": true
+    },
+    {
+      "name": "gates/zhouyu",
+      "passed": true
+    },
+    {
+      "name": "skills/zhouyu",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhouyu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhouyu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhouyu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/zhouyu",
+      "passed": true
+    },
+    {
+      "name": "attributes/luxun",
+      "passed": true
+    },
+    {
+      "name": "hero/luxun",
+      "passed": true
+    },
+    {
+      "name": "gates/luxun",
+      "passed": true
+    },
+    {
+      "name": "skills/luxun",
+      "passed": true
+    },
+    {
+      "name": "jobs/luxun.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/luxun.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/luxun.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/luxun",
+      "passed": true
+    },
+    {
+      "name": "attributes/lumeng",
+      "passed": true
+    },
+    {
+      "name": "hero/lumeng",
+      "passed": true
+    },
+    {
+      "name": "gates/lumeng",
+      "passed": true
+    },
+    {
+      "name": "skills/lumeng",
+      "passed": true
+    },
+    {
+      "name": "jobs/lumeng.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/lumeng.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/lumeng.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/lumeng",
+      "passed": true
+    },
+    {
+      "name": "attributes/zhangliao",
+      "passed": true
+    },
+    {
+      "name": "hero/zhangliao",
+      "passed": true
+    },
+    {
+      "name": "gates/zhangliao",
+      "passed": true
+    },
+    {
+      "name": "skills/zhangliao",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangliao.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangliao.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/zhangliao.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/zhangliao",
+      "passed": true
+    },
+    {
+      "name": "attributes/xuhuang",
+      "passed": true
+    },
+    {
+      "name": "hero/xuhuang",
+      "passed": true
+    },
+    {
+      "name": "gates/xuhuang",
+      "passed": true
+    },
+    {
+      "name": "skills/xuhuang",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuhuang.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuhuang.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuhuang.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/xuhuang",
+      "passed": true
+    },
+    {
+      "name": "attributes/xiahoudun",
+      "passed": true
+    },
+    {
+      "name": "hero/xiahoudun",
+      "passed": true
+    },
+    {
+      "name": "gates/xiahoudun",
+      "passed": true
+    },
+    {
+      "name": "skills/xiahoudun",
+      "passed": true
+    },
+    {
+      "name": "jobs/xiahoudun.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/xiahoudun.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/xiahoudun.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/xiahoudun",
+      "passed": true
+    },
+    {
+      "name": "attributes/xuchu",
+      "passed": true
+    },
+    {
+      "name": "hero/xuchu",
+      "passed": true
+    },
+    {
+      "name": "gates/xuchu",
+      "passed": true
+    },
+    {
+      "name": "skills/xuchu",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuchu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuchu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/xuchu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/xuchu",
+      "passed": true
+    },
+    {
+      "name": "attributes/machao",
+      "passed": true
+    },
+    {
+      "name": "hero/machao",
+      "passed": true
+    },
+    {
+      "name": "gates/machao",
+      "passed": true
+    },
+    {
+      "name": "skills/machao",
+      "passed": true
+    },
+    {
+      "name": "jobs/machao.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/machao.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/machao.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/machao",
+      "passed": true
+    },
+    {
+      "name": "attributes/huangzhong",
+      "passed": true
+    },
+    {
+      "name": "hero/huangzhong",
+      "passed": true
+    },
+    {
+      "name": "gates/huangzhong",
+      "passed": true
+    },
+    {
+      "name": "skills/huangzhong",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangzhong.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangzhong.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/huangzhong.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/huangzhong",
+      "passed": true
+    },
+    {
+      "name": "attributes/weiyan",
+      "passed": true
+    },
+    {
+      "name": "hero/weiyan",
+      "passed": true
+    },
+    {
+      "name": "gates/weiyan",
+      "passed": true
+    },
+    {
+      "name": "skills/weiyan",
+      "passed": true
+    },
+    {
+      "name": "jobs/weiyan.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/weiyan.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/weiyan.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/weiyan",
+      "passed": true
+    },
+    {
+      "name": "attributes/ganning",
+      "passed": true
+    },
+    {
+      "name": "hero/ganning",
+      "passed": true
+    },
+    {
+      "name": "gates/ganning",
+      "passed": true
+    },
+    {
+      "name": "skills/ganning",
+      "passed": true
+    },
+    {
+      "name": "jobs/ganning.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/ganning.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/ganning.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/ganning",
+      "passed": true
+    },
+    {
+      "name": "attributes/lvbu",
+      "passed": true
+    },
+    {
+      "name": "hero/lvbu",
+      "passed": true
+    },
+    {
+      "name": "gates/lvbu",
+      "passed": true
+    },
+    {
+      "name": "skills/lvbu",
+      "passed": true
+    },
+    {
+      "name": "jobs/lvbu.s1",
+      "passed": true
+    },
+    {
+      "name": "jobs/lvbu.s2",
+      "passed": true
+    },
+    {
+      "name": "jobs/lvbu.s3",
+      "passed": true
+    },
+    {
+      "name": "signature/lvbu",
+      "passed": true
+    },
+    {
+      "name": "90 distinct skills",
+      "passed": true
+    },
+    {
+      "name": "star costs",
+      "passed": true
+    },
+    {
+      "name": "body and locks",
+      "passed": true
+    },
+    {
+      "name": "manual splitting nonmax",
+      "passed": true
+    },
+    {
+      "name": "no arbitrage/talent",
+      "passed": true
+    },
+    {
+      "name": "no arbitrage/renowned",
+      "passed": true
+    },
+    {
+      "name": "no arbitrage/legend",
+      "passed": true
+    },
+    {
+      "name": "six recipes",
+      "passed": true
+    },
+    {
+      "name": "recipe/cook_basic",
+      "passed": true
+    },
+    {
+      "name": "recipe/cook_meat",
+      "passed": true
+    },
+    {
+      "name": "recipe/ration_plain",
+      "passed": true
+    },
+    {
+      "name": "recipe/forge",
+      "passed": true
+    },
+    {
+      "name": "recipe/smelt_gold",
+      "passed": true
+    },
+    {
+      "name": "recipe/cook_feast",
+      "passed": true
+    },
+    {
+      "name": "smelting",
+      "passed": true
+    },
+    {
+      "name": "gold source",
+      "passed": true
+    },
+    {
+      "name": "building/hall",
+      "passed": true
+    },
+    {
+      "name": "building/house",
+      "passed": true
+    },
+    {
+      "name": "building/farm",
+      "passed": true
+    },
+    {
+      "name": "building/granary",
+      "passed": true
+    },
+    {
+      "name": "building/market",
+      "passed": true
+    },
+    {
+      "name": "building/workshop",
+      "passed": true
+    },
+    {
+      "name": "building/tavern",
+      "passed": true
+    },
+    {
+      "name": "building/stable",
+      "passed": true
+    },
+    {
+      "name": "building/station",
+      "passed": true
+    },
+    {
+      "name": "building/barracks",
+      "passed": true
+    },
+    {
+      "name": "building/goldmine",
+      "passed": true
+    },
+    {
+      "name": "building/smelter",
+      "passed": true
+    },
+    {
+      "name": "building/pasture",
+      "passed": true
+    },
+    {
+      "name": "building/butcher",
+      "passed": true
+    },
+    {
+      "name": "building/ration",
+      "passed": true
+    },
+    {
+      "name": "building/delivery",
+      "passed": true
+    },
+    {
+      "name": "building/cart",
+      "passed": true
+    },
+    {
+      "name": "initial gold facilities",
+      "passed": true
+    },
+    {
+      "name": "no legacy active skills",
+      "passed": true
+    },
+    {
+      "name": "reference one draw production",
+      "passed": true
+    },
+    {
+      "name": "reference five stars",
+      "passed": true
+    },
+    {
+      "name": "reference cumulative affordable upgrades",
+      "passed": true
+    },
+    {
+      "name": "negative/auto cultivation",
+      "passed": true
+    },
+    {
+      "name": "negative/system draw",
+      "passed": true
+    },
+    {
+      "name": "negative/remove owned",
+      "passed": true
+    },
+    {
+      "name": "negative/wrong probability",
+      "passed": true
+    },
+    {
+      "name": "negative/same hero twice",
+      "passed": true
+    },
+    {
+      "name": "negative/free coins",
+      "passed": true
+    },
+    {
+      "name": "negative/coin building",
+      "passed": true
+    },
+    {
+      "name": "negative/soul arbitrage",
+      "passed": true
+    },
+    {
+      "name": "negative/decompose body",
+      "passed": true
+    },
+    {
+      "name": "negative/instant gold",
+      "passed": true
+    },
+    {
+      "name": "negative/old skill stacking",
+      "passed": true
+    },
+    {
+      "name": "negative/no guest beds",
+      "passed": true
+    },
+    {
+      "name": "current version/PRD.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/../spec/hero-town-v0.9.json",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/reference/baseline-0259545/PRD.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/../spec/hero-town-v0.8.json",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/00_PRODUCT.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/01_CITY_GROWTH.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/02_PRODUCTION.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/03_AGENTS_AND_LOGISTICS.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/04_FOOD_AND_ECONOMY.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/05_GOVERNANCE_AND_REGION.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/06_HEROES_COLLECTION_AND_ARMY.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/07_CONTENT_AND_PROGRESSION.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/08_DESKTOP_UI_AND_ART.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/life-v0.7/09_ENGINEERING_AND_ACCEPTANCE.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD.md/BUILD_STATUS.md",
+      "passed": true
+    },
+    {
+      "name": "current version/PRD_CITY_LIFE.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD_CITY_LIFE.md/PRD.md",
+      "passed": true
+    },
+    {
+      "name": "current version/PRD_DESKTOP_MODE.md",
+      "passed": true
+    },
+    {
+      "name": "link/PRD_DESKTOP_MODE.md/life-v0.7/08_DESKTOP_UI_AND_ART.md",
+      "passed": true
+    },
+    {
+      "name": "current version/00_PRODUCT.md",
+      "passed": true
+    },
+    {
+      "name": "current version/01_CITY_GROWTH.md",
+      "passed": true
+    },
+    {
+      "name": "current version/02_PRODUCTION.md",
+      "passed": true
+    },
+    {
+      "name": "current version/03_AGENTS_AND_LOGISTICS.md",
+      "passed": true
+    },
+    {
+      "name": "current version/04_FOOD_AND_ECONOMY.md",
+      "passed": true
+    },
+    {
+      "name": "current version/05_GOVERNANCE_AND_REGION.md",
+      "passed": true
+    },
+    {
+      "name": "current version/06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "passed": true
+    },
+    {
+      "name": "current version/06_HEROES_COLLECTION_AND_ARMY.md",
+      "passed": true
+    },
+    {
+      "name": "current version/07_CONTENT_AND_PROGRESSION.md",
+      "passed": true
+    },
+    {
+      "name": "current version/08_DESKTOP_UI_AND_ART.md",
+      "passed": true
+    },
+    {
+      "name": "current version/09_ENGINEERING_AND_ACCEPTANCE.md",
+      "passed": true
+    },
+    {
+      "name": "table/building/hall",
+      "passed": true
+    },
+    {
+      "name": "table/building/house",
+      "passed": true
+    },
+    {
+      "name": "table/building/farm",
+      "passed": true
+    },
+    {
+      "name": "table/building/granary",
+      "passed": true
+    },
+    {
+      "name": "table/building/market",
+      "passed": true
+    },
+    {
+      "name": "table/building/workshop",
+      "passed": true
+    },
+    {
+      "name": "table/building/tavern",
+      "passed": true
+    },
+    {
+      "name": "table/building/stable",
+      "passed": true
+    },
+    {
+      "name": "table/building/station",
+      "passed": true
+    },
+    {
+      "name": "table/building/barracks",
+      "passed": true
+    },
+    {
+      "name": "table/building/goldmine",
+      "passed": true
+    },
+    {
+      "name": "table/building/smelter",
+      "passed": true
+    },
+    {
+      "name": "table/attachment/pasture",
+      "passed": true
+    },
+    {
+      "name": "table/attachment/butcher",
+      "passed": true
+    },
+    {
+      "name": "table/attachment/ration",
+      "passed": true
+    },
+    {
+      "name": "table/attachment/delivery",
+      "passed": true
+    },
+    {
+      "name": "table/attachment/cart",
+      "passed": true
     }
-  },
-  "base_checks_passed": 522,
-  "delivery_checks_passed": 57,
-  "runtime_sources_modified": false,
-  "Swift_ability_system_integrated": false,
-  "application_acceptance_executed": 0
+  ],
+  "runtime_cases": [
+    {
+      "caseID": "GC01",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC02",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC03",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC04",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC05",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC06",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC07",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC08",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC09",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC10",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC11",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC12",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC13",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC14",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC15",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC16",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC17",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC18",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC19",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC20",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC21",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC22",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC23",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC24",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC25",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC26",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC27",
+      "status": "NOT_RUN"
+    },
+    {
+      "caseID": "GC28",
+      "status": "NOT_RUN"
+    }
+  ]
 }

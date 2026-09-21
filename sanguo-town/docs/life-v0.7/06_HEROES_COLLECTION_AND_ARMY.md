@@ -1,87 +1,82 @@
-# 06 三十武将、招募、培养与收藏
-**PRD v0.8.0。常住全武将，5位开局 + 25位招募。**
+# 06 酒馆抽卡、重复卡与玩家培养
+**PRD v0.9.0。本章替换旧定向三阶段招募；培养为玩家手动，不是太守自动。**
 
-## 6.1 全量角色表
-四维按政/智/武/统排列，技能ID取锁定技能库。属性是游戏设定。starting人物不再执行任何招募。表中的T为招募层，min为已拥有数量；只限制发现资格，不能作为额外隐形收费。
-|ID/姓名|四维|技能ID|默认偏好|招募模板/T/min|
+## 6.1 全量常驻池
+同一常驻池30人，含开局5人；无发现门槛、限时池、每日免费次数、抽空档位或“已拥有移出池”。每人只存在一个真实本体，先获得权益再旅行。四维与造型复用锁定原目录，星级技能按06A重配，旧技能引用不同时生效。
+|ID|姓名|稀有度|开局|培养技能模板|
 |---|---|---|---|---|
-|xunyu 荀彧|94/88/35/55|agriculture,cookery,appeasement,kings_counsel|food|founding/0/0|
-|zhaoyun 赵云|62/74/94/92|patrol,drill,escort,dragon_courage|logistics|founding/0/0|
-|lusu 鲁肃|86/84/40/70|commerce,logistics,diplomatic_plan|trade|trade/0/5|
-|liang 诸葛亮|92/96/35/85|construction,metallurgy,restoration,logistics,sleeping_dragon|craft|craft/0/5|
-|guanyu 关羽|60/72/96/90|rationcraft,drill,escort,martial_sage|guard|route/0/5|
-|zhangfei 张飞|42/55/97/88|gathering,construction,escort,thunder_roar|supply|founding/0/0|
-|caocao 曹操|94/92/72/96|agriculture,logistics,commerce,drill,rearguard|food|supply/0/5|
-|liubei 刘备|84/78/76/82|appeasement,agriculture,logistics|food|founding/0/0|
-|sunquan 孙权|88/81/64/84|commerce,logistics,patrol,drill|trade|trade/0/5|
-|simayi 司马懿|91/97/36/93|logistics,commerce,rearguard,drill|food|supply/1/8|
-|guojia 郭嘉|74/97/29/70|escort,rearguard,logistics|guard|route/1/8|
-|jiaxu 贾诩|85/96/28/72|commerce,rearguard,logistics|trade|trade/1/8|
-|pangtong 庞统|85/96/36/82|construction,metallurgy,restoration,logistics|craft|craft/1/8|
-|xunyou 荀攸|89/95/30/75|rationcraft,logistics,rearguard|food|supply/1/8|
-|chenqun 陈群|96/83/26/55|appeasement,agriculture|food|supply/2/12|
-|manchong 满宠|86/82/64/80|patrol,construction,rationcraft|guard|route/2/12|
-|zhangzhao 张昭|94/86/24/48|commerce,appeasement,logistics|trade|trade/2/12|
-|huangyueying 黄月英|80/94/30/55|carpentry,metallurgy,restoration|craft|founding/0/0|
-|zhouyu 周瑜|85/95/71/96|drill,escort,logistics,metallurgy|guard|route/2/12|
-|luxun 陆逊|90/95/65/94|drill,rearguard,agriculture,logistics|food|supply/2/12|
-|lumeng 吕蒙|73/85/82/90|drill,escort,patrol|guard|route/3/18|
-|zhangliao 张辽|65/78/92/94|drill,escort,patrol,rearguard|guard|route/3/18|
-|xuhuang 徐晃|58/72/91/88|rationcraft,drill,rearguard|guard|route/3/18|
-|xiahoudun 夏侯惇|70/65/90/86|gathering,construction,drill|supply|field/3/18|
-|xuchu 许褚|28/40/98/70|gathering,rearguard|supply|field/3/18|
-|machao 马超|40/58/97/88|patrol,escort,drill|guard|route/4/24|
-|huangzhong 黄忠|58/68/94/87|drill,escort,rearguard|guard|route/4/24|
-|weiyan 魏延|52/73/92/90|patrol,rationcraft,escort|guard|route/4/24|
-|ganning 甘宁|43/70/94/86|patrol,escort,logistics|guard|route/4/24|
-|lvbu 吕布|24/38/100/92|drill,escort,gathering|guard|route/4/24|
-所有30人都可做基础工作，不存在普通人口50属性兜底，也不需要每工种凑一名专属武将。六类偏好仅同优先任务排序。职业XP、属性、skillID三层分开；固定技能1—5项、最多1特色，暂不学技/洗练/手动放招。
+|xunyu|荀彧|传奇|是|food|
+|zhaoyun|赵云|传奇|是|logistics|
+|lusu|鲁肃|良才|否|trade|
+|liang|诸葛亮|传奇|否|craft|
+|guanyu|关羽|传奇|否|guard|
+|zhangfei|张飞|名士|是|supply|
+|caocao|曹操|传奇|否|food|
+|liubei|刘备|名士|是|food|
+|sunquan|孙权|名士|否|trade|
+|simayi|司马懿|传奇|否|food|
+|guojia|郭嘉|名士|否|guard|
+|jiaxu|贾诩|名士|否|trade|
+|pangtong|庞统|名士|否|craft|
+|xunyou|荀攸|良才|否|food|
+|chenqun|陈群|良才|否|food|
+|manchong|满宠|良才|否|guard|
+|zhangzhao|张昭|良才|否|trade|
+|huangyueying|黄月英|名士|是|craft|
+|zhouyu|周瑜|传奇|否|guard|
+|luxun|陆逊|名士|否|food|
+|lumeng|吕蒙|良才|否|guard|
+|zhangliao|张辽|名士|否|guard|
+|xuhuang|徐晃|良才|否|guard|
+|xiahoudun|夏侯惇|良才|否|supply|
+|xuchu|许褚|良才|否|supply|
+|machao|马超|名士|否|guard|
+|huangzhong|黄忠|名士|否|guard|
+|weiyan|魏延|良才|否|guard|
+|ganning|甘宁|名士|否|guard|
+|lvbu|吕布|传奇|否|guard|
+良才10、名士12、传奇8；稀有度是游戏化配置，不是历史人物价值判断。所有人物都能做基础工作。
 
-## 6.2 招募配置可直接执行
-每位非开局人物按上表获得固定模板，不能按姓名走特殊引擎分支。净等待在准备劳动完成时开始；未发现只是目录，不占人/访客实体。
-|模板|必须满足的实际发现条件|三段等待秒|三段现金|第二段物料|
-|---|---|---|---|---|
-|field|harvested_lots>=1|300/1800/300|10/20/20|grain2|
-|supply|consecutive_full_meals>=4|300/2400/600|15/25/20|meal4|
-|trade|building_market>=1 且 external_settlements>=3|600/3600/600|20/40/30|grain2|
-|craft|building_workshop>=1 且 forge_batches>=1|600/5400/900|25/50/35|tools2|
-|route|building_station>=1 且 consecutive_full_meals>=4|600/3600/600|20/40/30|rations4|
-|feast|building_tavern>=1 且 public_meals_consumed>=16|300/2400/600|15/25/20|meal4|
-条件键含义：harvested_lots不同收割结算数；consecutive_full_meals连续餐覆盖100%；external_settlements不同外部订单结清数；forge_batches真实器材批次；public_meals_consumed真实常住用餐份数；building_x为已完工级别。没有登录/开图鉴计数。
-T0..4的钱乘数1/1/2/2/3；等待乘数1/2/2/3/3；物料不乘。每段实际经办60准备+30交接人工，使用merchant（接待/共事）与courier（邀留）权重。三段净等待外部联系，不把未拥有候选当免费工人。
-完整流程 UNDISCOVERED→DISCOVERED→AUTHORIZED→STAGE_WAIT_INPUT→PREPARE→CONTACT_WAIT→HANDOFF→STAGE_COMPLETE，重复三段后→ARRIVING(300秒)→RESIDENT。阶段准备开始现金/输入转消费，输出是进度而不是新资源；首两段无候选劳力。
-选心愿必须展示总上限：sum(三段钱)×T钱乘数、各阶段材料、净等待之和×T等待乘数、270基准人工秒、最后300旅行秒；不含排队/路程，不能报保证到达时刻。一次授权总价，逐段冻结当前阶段资金，锁quoteHash；超预算拒绝，不默许追价。
-邀留PREPARE前查04章供给、1床、常住<30、唯一heroID以及未来到餐预测，同时预留bedID。开始邀留后这床不能给别人；到达时原子prospect→resident、消费预留、分配住所、加入下一餐。场景如提前出现候选必须是同一prospect，不能在到任再造一份。
+## 6.2 价格、概率与保底
+单抽100金币、十连1000，无折扣/额外赠卡。只扣GoldWallet可用整金币；不消耗粮材、床位、将魂，不受酒馆灶忙碌影响。
+普通抽先按整数r∈[0,9999]：0..6999良才，7000..9499名士，9500..9999传奇；档内按heroID排序均匀抽。普通每位概率为良才7%、名士25%/12、传奇0.625%；界面可显示近似数并提供精确分数。
+nonLegendCount记录连续非传奇，取0..19。抽前为19则本抽档位强制传奇（档内仍随机），否则使用基础分布。抽到任何传奇（含重复）归0，其余+1。保底跨天/退出/更新保留，与其他池不混用；当前仅一个池。
+十连逐抽更新拥有集合及保底：同一十连第一张新人、后续同名即重复。没有十连额外保底、必新将或暗改概率。普通70/25/5是基础概率，不能称包含保底后的长期占比。
+全30人5星时禁止发起新招募，钱包不变。十连付费时整体合法则完整发10张，不中途截断；培养是另一个手动事务，不在十连内部自动发生。全满星后余卡/将魂保留，城市照常运行。
+金币不足、追赶离线、存档失败、已满星集齐或并发请求时不接受新单；错误明确。无每日上限和签到补偿。
 
-## 6.3 切换/暂停/重放
-最多1主动心愿（名将/武器/马/木印共享）、3关注。切换只停止旧目标的新阶段，已开始段安全完成并停在边界；已出发的人必须抵达保留床位。未开始可释放现金/物料/床；已消费不退款；关闭游戏不重置等待和prospectID。开局五将任何招募命令返回ALREADY_OWNED。
-最终阶段取消须明确确认放弃未消费预留，已ARRIVING不允许抹除角色；可在到达后调整偏好，不自动退人。全部25人一城和平可达；没有“先有这个角色才能开启其招募所需工作”的环。
+## 6.3 随机与支付事务
+保存drawRngState:uint64；新存档创建时使用系统随机源产生并落盘，不使用所有用户相同的公开城镇种子作为抽卡种子。测试可注入固定状态。城市故事随机不消费抽卡随机流。
+splitmix64：state=(state+0x9E3779B97F4A7C15) mod 2^64；z=state；z=(z xor(z>>30))*0xBF58476D1CE4E5B9 mod 2^64；z=(z xor(z>>27))*0x94D049BB133111EB mod 2^64；输出z xor(z>>31)。
+均匀整数uniform(n)：threshold=2^64 mod n，用64位输出u，u<threshold则重抽，返回u mod n。普通抽先uniform(10000)再uniform(档内人数)；保底抽跳过档位随机，仅抽人物。每抽保存前后状态及poolVersion，强制整型溢出约定，不用浮点取模。
+完整操作：命令去重/版本检查→候选状态扣金币→顺序生成全部结果/重复卡/新人权益→更新保底及RNG→校验→原子保存→发布回执→播放揭晓。
+动画可跳过，关闭/重启不能重抽。落盘失败全部回滚且不泄露结果，重试相同命令得到同一候选结果；相同id不同payload拒绝。正常重启/重放不改变结果；本机存档不承诺抵御手工改档或恢复旧备份刷结果，不宣称在线防作弊。
 
-## 6.4 木印与六兵器
-木印：治理被接受后可选10铜+木2，公共木作360人工秒；完成唯一founders_seal，官署展示，无倍率。
-|ID/名称|发现|铜|外联秒|修复人工秒|材料|装备四维|
-|---|---|---:|---:|---:|---|---|
-|silver-spear 银纹长枪|workshop1|50|600|300|木2铁2|统2武2|
-|dragon-spear 龙胆亮银枪|赵云已拥有+workshop1|480|14400|900|铁12器材2|统3武4|
-|crescent-blade 青龙偃月刀|关羽已拥有+defense1|520|21600|1080|铁15木3|武6|
-|serpent-spear 丈八蛇矛|张飞已拥有+industry1|480|21600|1080|铁12木4.5|武6|
-|qinggang 青釭剑|外部结清3+academy1+workshop1|560|28800|1200|铁12器材3|智4武2|
-|seven-star 七星宝刀|academy1+E08已读+workshop1|580|36000|1500|铁10器材4|智3政3|
-两阶段：联系花floor(总铜×40%)，60准备+净等待+30交接，生成唯一不可装备原件；修复花余款和表内材料，原件进WIP，真实修复完成变成可装备物。只能在修复席完成，不因有卡片就拥有武器。
-每人最多1武器/1坐骑，各属性封顶100；未跨整数效果门槛显示0贡献。唯一物不出售、不合成吞掉；装备移交同城且双方非任务锁，实际持有位置一致，不生成多份。
+## 6.4 新武将抵达与床位
+首次获得以heroID原子创建OwnedHero(star1,sourceDrawID)，立即移入已拥有集合；不是点击“领取”才拥有。
+权益到达时间=paidAt+30秒，期间ARRIVING不参与生产、不计餐、不在城里画替身。t到达在城门生成同一实体，真实走到酒馆/住宅，之后按实际位置工作。
+优先分配正式空床；无空床占酒馆30个专用客床之一（不是外部访客4人限额）。开局5已正式入住、其余25最多25客床，故十连即使全新人也可容纳；不因随机结果扣钱后卡住。
+到达后下一餐进入名单，临时居住者也要送饭、休息和真实劳动；不得把客人当免费劳力。太守优先扩建住宅、按到达时间/heroID分配正式床，迁居走路完成且床锁转移原子。其余专用客床不画虚构人物。
+抽卡不受食品门槛限制；太守预测在途人数并准备饭食，压力测试必须覆盖首日连续25新人，无隐藏“先吃四顿”招募条件。
 
-## 6.5 四马
-|ID/名称|发现|铜|联系秒|被动驯养秒|人工秒|路径食粮|个人空载加速bp|
-|---|---|---:|---:|---:|---:|---:|---:|
-|yellow-horse 黄骠马|stable1|120|1800|7200|300|1.5|500|
-|red-hare 赤兔|黄骠已拥有+外部3次|600|28800|43200|1200|5|1000|
-|dilu 的卢|黄骠已拥有+water1|500|21600|36000|1000|4|800|
-|jueying 绝影|黄骠已拥有+road1|560|28800|43200|1200|5|1200|
-联系40%预款，60准备/30交接；驯养余款，人工前后各一半，食粮在准备时完整消费，中间被动。井须可达，无水/草库存。联系结束生成唯一马实体并由真实马夫牵入预留马位；到位后驯养。
-驯养路径已含食粮，不重复收普通照料；入藏后每cycle粮0.25+30人工。缺料等、不死不追债，新出行暂不享速度加成；照料恢复后恢复。只加实际带马的个人空载路段，不加全城物流/板车。马不是肉。
-所有藏品为8资源报价，不允许后台回读旧木构/草/酒。完整藏品参数同样收入新JSON，UI只读报价。
+## 6.5 重复卡、本体与手动升星
+重复结果生成DuplicateCardLot(id,heroID,count,originDrawIDs,locked=false)，不创造HeroResident、不占床、不增食量、不自动变将魂。开局5人同样可抽到重复并培养。
+每人1..5星；升级到2/3/4/5星分别消耗同名重复卡1/2/3/4张，累计10张；首次获得本体不算材料。每命令只升一星，不收金币/将魂/材料，不清熟练度、不重置外观身份。
+玩家选择人物→看到当前/目标星、所需与剩余卡、解锁效果→确认→按来源顺序选择足额未锁同名卡或使用显式选定卡→消费和升星同一事务。未到城但已拥有也可培养，到达继承最新星级。
+卡不足/锁定/非同名/5星拒绝，保存失败原卡与星级不变。不能吃其他角色、本体、未来抽卡或负数数量。技能随星级自动解锁，无额外手动技能按钮。
+升星不取消携货/工序；效果只作用下一合法快照，不能把同一批矿石在升星前后重复增产。升星揭晓可跳过。
 
-## 6.6 军务边界与宝鉴
-v0.8不创建无名士兵/军团/伤兵/出征。barracks训练位供已拥有武将120秒守备演练，priority60，按有效人工累积guardXP，不提升另一个train等级、不叠额外奖励；粮食按普通人餐窗消费。
-宝鉴四态未发现/已发现/进行中/已拥有；详情优先显示住处/正在做/下一站/偏好，其次四维技能。军团专用技能在当前版本明确标未启用，不允许解释为已加工作效率。开局5人直接已拥有，其余25人显示逐项条件缺口/已付阶段/预计最少剩余时间。获得入账不依赖揭晓。
-兵器在藏架或本人身上，马在马厩/路上，木印在官署，角色在真实地图；卡片展示不增加物品。
+## 6.6 手动分解、锁卡与兑换
+|稀有度|一张分解得通用将魂|兑换同名卡每张消耗|
+|---|---:|---:|
+|良才|10|40|
+|名士|30|120|
+|传奇|100|400|
+玩家选择重复卡及整数数量（不默认勾选）→确认不可撤销、所得将魂、受影响人物及是否损失当前升星资格→提交。未满星人物卡也允许主动分解，但必须明确警告；满星卡只提示可分解，不自动执行。
+锁定卡不能分解或升星消费；需单独解锁。分解接口仅接受重复卡lotID，不接受heroID本体；任何伪造本体ID返回INVALID_CARD。批量最多100个lot、每lot数量1..所选可用量，总量有界，整笔成功或失败。
+通用将魂整数钱包；既不占仓储，也不是金币。兑换由玩家选择已拥有未满星hero与1..10张，显示单价、总价、剩余余额；不得兑换未拥有/已满星人物。数量不超过到5星剩余所需总卡减现有同名卡（含锁定），防止误兑换无用卡；不自动升级。兑换卡可手动分解但4:1损耗不可能套利。
+太守和离线推进不得修改星级、重复卡或将魂余额，只给只读提示。所有手动培养均持久化回执，低频合并提醒，不要求每日处理。
+
+## 6.7 抽到以后的价值
+真实劳力增加；四维决定岗位适配；工作经验独立成长；星级1/3/5解锁能力、2/4强化；实际技能改变相关劳动、资源或场景；故事记录来自真实共事。
+卡片展示身份/住处/任务/专长/星级/下一星效果，不展示没有结算入口的虚假战力。本体永不出售或分解。装备、坐骑和军团首批不开放，旧设计见版本归档。

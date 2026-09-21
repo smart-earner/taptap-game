@@ -1,14 +1,8 @@
-# v0.8 规格验证记录
-日期：2026-09-21。范围：完整原路径PRD、参数、引用、静态算术与反例；**未运行v0.8 Swift引擎**。
-
-- 静态合同校验：403通过，0失败，含7项非法配置反例。
-- 原GitHub基线归档：15份正文逐字节与3f89632相同，另保留本历史验证记录。
-- 30将：5起始、25招募，六模板、五层人数门槛静态可达；这不是物资/时间/床位动态可达的证明。
-- 应用HT01—HT32：32项NOT_RUN；UX01—UX08：8项NOT_RUN。
-- 配方、报价、睡眠窗口、容量、依赖hash与当前文档相对链接校验通过；没有因此声称长期平衡或人物美术完成。
-
-复现：`python3 scripts/validate_hero_town_v08.py`。生成：
-- `dist/prd-v08/validation.json`：逐项证据与未运行用例。
-- `dist/prd-v08/PRD-v0.8-complete.md`：总入口、11个分章、全部JSON的单文件本地研发副本。
-
-旧v0.7检查脚本仅适用于旧提交；CI遇到v0.8配置改跑v0.8合同，同时继续跑锁定四维技能参考测试。历史验证记录见[原文](../reference/baseline-3f89632/life-v0.7/VALIDATION.md)。当前游戏交付范围仍见[BUILD_STATUS](../BUILD_STATUS.md)。
+# v0.9 规格验证记录
+日期：2026-09-21。范围仅当前完整PRD、参数、引用、基础算术和反例；未执行v0.9 Swift运行验收。
+命令：`python3 scripts/validate_hero_town_v09.py`。
+结果：379项静态检查通过，0失败，含12项负面变体；application_cases_executed=0，GC01—GC28均NOT_RUN。
+[机器报告](hero-validation.json)记录spec SHA256与逐条结果。
+本地全文：`dist/prd-v09/PRD-v0.9-complete.md`，含总入口、全部11个原路径分章及完整参数。
+CI优先检查v0.9；历史v0.8的403项静态成绩只在[归档](../reference/baseline-0259545/life-v0.7/VALIDATION.md)保留，不并入当前成绩。
+培养明确为玩家手动：升星、分解、兑换不由太守或离线执行。静态通过不代表概率分布实测、经济节奏或游戏已实现。

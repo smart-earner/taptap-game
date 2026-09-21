@@ -7,6 +7,8 @@ on:
       - 'sanguo-town/docs/PRD.md'
       - 'sanguo-town/spec/*v0.7.json'
       - 'sanguo-town/spec/hero-town-v0.8.json'
+      - 'sanguo-town/spec/hero-town-v0.9.json'
+      - 'sanguo-town/scripts/validate_hero_town_v09.py'
       - 'sanguo-town/scripts/validate_hero_town_v08.py'
       - 'sanguo-town/scripts/validate_prd_v07.py'
       - 'sanguo-town/scripts/check_prd_v07_delivery.py'
@@ -35,7 +37,9 @@ jobs:
           mkdir -p dist/prd-v07
           python3 --version | tee dist/prd-v07/environment.txt
           python3 sanguo-town/scripts/validate_hero_v071.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/hero-check.log
-          if [ -f sanguo-town/spec/hero-town-v0.8.json ]; then
+          if [ -f sanguo-town/spec/hero-town-v0.9.json ]; then
+            python3 sanguo-town/scripts/validate_hero_town_v09.py --output dist/prd-v07/current-v09 2>&1 | tee dist/prd-v07/current-v09.log
+          elif [ -f sanguo-town/spec/hero-town-v0.8.json ]; then
             python3 sanguo-town/scripts/validate_hero_town_v08.py --output dist/prd-v07/current-v08 2>&1 | tee dist/prd-v07/current-v08.log
           else
             python3 sanguo-town/scripts/validate_prd_v07.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/check.log
