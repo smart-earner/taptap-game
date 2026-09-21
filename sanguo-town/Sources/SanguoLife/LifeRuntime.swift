@@ -119,7 +119,9 @@ public struct LifeRuntime: Sendable {
             if only==nil && (phase+duration>2160 || (a.serviceSeconds+duration>1920 && a.busyCycle==world.cycle)){continue}
             let id=world.next("task")
             world.tasks[id] = .init(id:id,worker:a.id,kind:kind,job:job,subject:subject,steps:steps,started:world.time,due:world.time+steps[0].seconds,rate:r)
-            world.agents[a.id]!.taskID=id;world.agents[a.id]!.restStart=nil
+            world.agents[a.id]!.taskID=id
+            if let rest=world.agents[a.id]!.restStart,world.time-rest>=600 {world.agents[a.id]!.restedCycle=world.cycle}
+            world.agents[a.id]!.restStart=nil
             if world.agents[a.id]!.busyCycle != world.cycle {world.agents[a.id]!.busyCycle=world.cycle;world.agents[a.id]!.serviceSeconds=0}
             world.agents[a.id]!.serviceSeconds+=duration
             return id
@@ -129,7 +131,7 @@ public struct LifeRuntime: Sendable {
     mutating func finishStep(_ id:String) {
         guard var task=world.tasks[id] else{return}
         if !task.current.destination.isEmpty {world.agents[task.worker]!.node=task.current.destination}
-        if task.current.kind=="work" && !["eat","home","meal_trip"].contains(task.kind) {world.agents[task.worker]!.workSeconds[task.job,default:0]+=task.current.seconds}
+        if ["work","load","unload"].contains(task.current.kind) && !["eat","home","meal_trip"].contains(task.kind) {world.agents[task.worker]!.workSeconds[task.job,default:0]+=task.current.seconds}
         if ["haul","export"].contains(task.kind) && task.current.kind=="load" {
             for p in task.reservations {
                 let lot=world.lots[p.lotID]!
@@ -148,7 +150,16 @@ public struct LifeRuntime: Sendable {
             _=world.consume(task.resource!,quantity:task.quantity,at:task.id)
         }
         task.step+=1
-        if task.step<task.steps.count {task.started=world.time;task.due=world.time+task.current.seconds;world.tasks[id]=task;return}
+        if task.step<task.steps.count {
+            task.started=world.time;task.due=world.time+task.current.seconds;world.tasks[id]=task
+            if task.kind=="prepare",task.current.kind=="work" {
+                world.beginReservedInputs(id)
+                if let s=world.stations[task.subject],let recipe=s.recipe {
+                    world.stations[task.subject]!.foodInProcess=catalog.recipe(recipe)!.output_mU["meal",default:0]
+                }
+            }
+            return
+        }
         world.tasks[id]=nil;world.agents[task.worker]!.taskID=nil
         finishTask(task)
     }

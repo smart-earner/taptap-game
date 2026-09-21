@@ -36,7 +36,7 @@ public struct LifeSaveStore: LifePersistence, Sendable {
         try bytes.write(to:url,options:.atomic)
     }
 }
-public enum LifeCommand: Sendable {case policy(String),seal,recruit(String?),growth(Bool),rations(Int64)}
+public enum LifeCommand: Sendable {case policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String)}
 /// Serial actor publishes a candidate only after persistence succeeds.
 public actor LifeSession {
     private var engine:LifeRuntime
@@ -58,6 +58,11 @@ public actor LifeSession {
         case .seal:try draft.requestSeal()
         case .recruit(let id):try draft.requestRecruit(id)
         case .growth(let value):draft.world.growthEnabled=value
+        case .prefect(let id):
+            guard draft.world.owned.contains(id),let person=draft.world.agents[id],person.heroID != nil,person.taskID==nil else{throw LifeError.invalid("请在已加入人物完成当前任务后调任")}
+            draft.world.agents[draft.world.prefect]?.job="flex"
+            draft.world.prefect=id;draft.world.agents[id]!.job="prefect"
+            draft.world.record("appointment","\(person.name)接任本城太守，已开始工序保留原效率快照。")
         case .rations(let quantity):guard quantity>=0 && quantity<=160000 else{throw LifeError.invalid("军粮试制目标必须在0—160份")};draft.world.rationTarget=quantity
         }
         try draft.world.validate();try store?.save(draft.world);engine=draft

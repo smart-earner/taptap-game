@@ -27,7 +27,10 @@ extension LifeRuntime {
                 // V1 only reads completed service evidence; no decorative walking creates a service.
                 let clean=min(100,40+world.cleanedSites.count*10)
                 let security=world.counters["patrols",default:0]>0 ? 80:60
-                let target=(world.foodCoverage/100*40+quality*10+100*15+clean*10+security*15+100*10)/100
+                let housing=min(100,world.housing*100/max(1,world.agents.count))
+                let rested=world.agents.values.filter{a in a.restedCycle>=world.cycle-1 || a.restStart.map{world.time-$0>=600} == true}.count
+                let rest=world.cycle==0 ? 100:rested*100/max(1,world.agents.count)
+                let target=(world.foodCoverage/100*40+quality*10+housing*15+clean*10+security*15+rest*10)/100
                 let change=max(-5,min(3+world.meals[index].recoveryExtra,target-world.happiness))
                 world.happiness=max(0,min(100,world.happiness+change))
                 let complete=world.meals[index].served.count==world.meals[index].expected.count

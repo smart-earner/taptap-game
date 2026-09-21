@@ -107,9 +107,14 @@ extension LifeRuntime {
             let space=r.output_mU.reduce(Int64(0)){$0+$1.value*LifeResource(rawValue:$1.key)!.volume}
             guard world.has(r.input_mU,at:s.input),world.freeSpace(s.output)>=space else{continue}
             if let task=assign(kind:"prepare",job:r.job,subject:id,at:s.node,work:r.prepare_s) {
-                world.use(r.input_mU,at:s.input)
+                let parts=r.input_mU.keys.sorted().flatMap { world.selection(LifeResource(rawValue:$0)!,quantity:r.input_mU[$0]!,at:s.input)! }
+                for part in parts {world.lots[part.lotID]!.reserved+=part.amount}
+                world.tasks[task]!.reservations=parts
                 world.storages[s.output]!.incoming+=space
-                world.stations[id]!.recipe=recipeID;world.stations[id]!.phase="preparing";world.stations[id]!.taskID=task;world.stations[id]!.outputSpace=space;world.stations[id]!.foodInProcess=r.output_mU["meal",default:0]
+                world.stations[id]!.recipe=recipeID;world.stations[id]!.phase="preparing";world.stations[id]!.taskID=task;world.stations[id]!.outputSpace=space;world.stations[id]!.foodInProcess=0
+                if world.tasks[task]!.current.kind=="work" {
+                    world.beginReservedInputs(task);world.stations[id]!.foodInProcess=r.output_mU["meal",default:0]
+                }
             }
         }
         if !finishingOnly {
@@ -168,7 +173,8 @@ extension LifeRuntime {
                 let reservedBedCount=world.recruits.values.filter{$0.stage==2 && $0.state != "waiting" && $0.state != "owned"}.count
                 guard world.treasury-world.reservedCash-stage.cash>=100,
                       progress.stage<2 || world.agents.count+reservedBedCount<world.housing else{continue}
-                if let grain=stage.materials_mU["grain"],world.foodEquivalent()-grain*4<Int64(world.agents.count*4000){continue}
+                let foodCost=stage.materials_mU["grain",default:0]*4+stage.materials_mU["meal",default:0]
+                if foodCost>0 && world.foodEquivalent()-foodCost<Int64(world.agents.count*4000){continue}
                 supply(stage.materials_mU,to:"recruit")
                 guard world.has(stage.materials_mU,at:"recruit") else{continue}
                 if assign(kind:"recruit_prepare",job:"courier",subject:id,at:"hall",work:60) != nil {

@@ -2,6 +2,8 @@ import SwiftUI
 import AppKit
 import SanguoCore
 import SanguoPresentation
+import SanguoLife
+import Darwin
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -75,20 +77,22 @@ final class AppModel: ObservableObject {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var waitingForExit = false
     func applicationDidFinishLaunching(_ notification: Notification) {
-        Task { await AppModel.shared.start() }
+        Task { await LifeModel.shared.restore() }
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didWake),
             name: NSWorkspace.didWakeNotification, object: nil)
     }
-    func applicationWillTerminate(_ notification: Notification) { DesktopPresenter.shared.shutdown() }
+    func applicationWillTerminate(_ notification: Notification) { DesktopPresenter.shared.shutdown(); LifeDesktop.shared.shutdown() }
     @objc private func didWake(_ notification: Notification) {
-        Task { await AppModel.shared.refresh() }
+        Task { await AppModel.shared.refresh(); await LifeModel.shared.refresh() }
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard !waitingForExit else { return .terminateLater }
         waitingForExit = true
         Task {
-            let saved = await AppModel.shared.flushForExit()
+            let oldSaved = await AppModel.shared.flushForExit()
+            let lifeSaved = await LifeModel.shared.saveForExit()
+            let saved = oldSaved && lifeSaved
             waitingForExit = false
             sender.reply(toApplicationShouldTerminate: saved)
         }
@@ -101,8 +105,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 struct SanguoMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
+    init() {
+        if CommandLine.arguments.contains("--life-catalog-check") {
+            do { let c=try LifeCatalog.bundled(); print("Bundled life catalog: \(c.heroes.count) heroes, \(c.recipes.count) recipes"); exit(0) }
+            catch { FileHandle.standardError.write(Data("Life catalog failed: \(error.localizedDescription)\n".utf8)); exit(1) }
+        }
+    }
     var body: some Scene {
-        Window("小城志 · 我的城", id: "town") {
+        Window("小城志 · 城市生活", id: "life") {
+            LifeView()
+        }.defaultSize(width:1360,height:850)
+        Window("小城志 · 旧版城景", id: "town") {
             TownStrip(model: model).task { await model.start() }
         }.defaultSize(width: 960, height: 450)
         Window("小城志 · 主公府", id: "main") {
@@ -124,7 +137,9 @@ struct TownMenu: View {
     @ObservedObject var model: AppModel
     @Environment(\.openWindow) private var openWindow
     var body: some View {
-        Text("小城志 · 开发版")
+        Text("小城志 · 生活版开发中")
+        Button("城市生活 · 新版试玩") { openWindow(id: "life") }
+        Divider()
         Button("打开主公府") { openWindow(id: "main") }
         Button("显示城市概览") { openWindow(id: "town") }
         Button("城市成长册") { openWindow(id:"memories") }

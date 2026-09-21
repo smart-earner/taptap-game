@@ -94,6 +94,10 @@ public struct LifeCatalog: Decodable, Sendable {
     public struct Metric: Decodable, Sendable { public var event: String; public var cap: Int; public var allowed_roles: [String] }
     public var metrics: [String: Metric]
     public static func bundled() throws -> LifeCatalog {
+        // App bundles use an explicit resource location; do not depend on a CI build path.
+        if let appURL=Bundle.main.url(forResource:"catalog",withExtension:"json",subdirectory:"Life072") {
+            return try decode(Data(contentsOf:appURL))
+        }
         guard let url = Bundle.module.url(forResource: "catalog", withExtension: "json") else { throw LifeError.invalid("缺少生活版参数包") }
         return try decode(Data(contentsOf: url))
     }

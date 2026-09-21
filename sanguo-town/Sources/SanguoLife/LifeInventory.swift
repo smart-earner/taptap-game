@@ -32,6 +32,15 @@ extension LifeWorld {
         precondition(has(inputs,at:location))
         for key in inputs.keys.sorted() {precondition(consume(LifeResource(rawValue:key)!,quantity:inputs[key]!,at:location))}
     }
+    mutating func beginReservedInputs(_ taskID:String) {
+        guard let task=tasks[taskID], task.kind=="prepare", !task.reservations.isEmpty else{return}
+        for part in task.reservations {
+            guard let lot=lots[part.lotID] else{preconditionFailure("reserved input missing")}
+            lots[part.lotID]!.reserved-=part.amount; lots[part.lotID]!.amount-=part.amount
+            consumed[lot.resource.rawValue,default:0]+=part.amount
+        }
+        tasks[taskID]!.reservations=[]; pruneLots()
+    }
     mutating func pruneLots() {for id in Array(lots.keys) where lots[id]!.amount==0 {lots[id]=nil}}
     public func validate() throws {
         func check(_ b:Bool,_ text:String) throws {if !b{throw LifeError.invalid(text)}}
@@ -39,6 +48,18 @@ extension LifeWorld {
         try check(time>=0 && time<=315_360_000 && sequence>0 && sequence<Int64.max/2,"时间或序列越界")
         try check(agents.count<=256 && tasks.count<=2048 && lots.count<=50000,"实体数量超过安全上限")
         try check(treasury>=0 && reservedCash>=0 && reservedCash<=treasury,"国库预留不合法")
+        try check(storages.count<=512 && fields.count<=24 && stations.count<=100 && projects.count<=512 && meals.count<=8,"容器或工作点超过上限")
+        try check([initial,produced,consumed].allSatisfy { $0.values.allSatisfy{ $0>=0 && $0<=1_000_000_000_000_000 } },"资源总账越界")
+        try check(storages.values.allSatisfy{LifeMap.places[$0.node] != nil},"仓库位置无效")
+        let cropStates:Set<String>=["empty","sowing","water1","watering1","growing1","water2","watering2","growing2","ripe","harvesting"]
+        for f in fields.values {try check(["rice","millet"].contains(f.crop) && cropStates.contains(f.state) && (f.due == nil || f.due!>=time),"农田阶段不受支持")}
+        let stationStates:Set<String>=["idle","preparing","passive","finish","finishing"]
+        for s in stations.values {
+            try check(stationStates.contains(s.phase) && (s.recipe == nil || ["cook_basic","cook_meat","ration_plain","forge"].contains(s.recipe!)),"加工阶段不受支持")
+            try check(storages[s.input] != nil && storages[s.output] != nil && (s.due == nil || s.due!>=time),"设备库存或时点错误")
+        }
+        for p in projects.values {try check(p.totalWork>0 && p.completedWork>=0 && p.completedWork<=p.totalWork && (p.completed ? p.phase==4:(0..<4).contains(p.phase)),"工程工作量或阶段错误")}
+
         for (id,lot) in lots {
             try check(lot.id==id && lot.amount>0 && lot.amount<=1_000_000_000 && lot.reserved>=0 && lot.reserved<=lot.amount,"批次数量不合法")
             try check(storages[lot.location] != nil || tasks[lot.location] != nil,"批次失去仓库或承运者")
