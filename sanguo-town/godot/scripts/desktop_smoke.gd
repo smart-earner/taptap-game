@@ -65,6 +65,20 @@ func run() -> void:
 	var before=int(scene.snapshot.time)
 	scene.elapsed=0;scene.speed=1
 	desktop.hide_manager()
+	await create_timer(.35).timeout
+	await RenderingServer.frame_post_draw
+	var hidden_frame_a=desktop.surface.get_texture().get_image()
+	await create_timer(.35).timeout
+	await RenderingServer.frame_post_draw
+	var hidden_frame_b=desktop.surface.get_texture().get_image()
+	var hidden_changed_pixels=0
+	for y in range(0,hidden_frame_a.get_height(),16):
+		for x in range(0,hidden_frame_a.get_width(),16):
+			var hidden_before=hidden_frame_a.get_pixel(x,y)
+			var hidden_after=hidden_frame_b.get_pixel(x,y)
+			var hidden_difference=absf(hidden_before.r-hidden_after.r)+absf(hidden_before.g-hidden_after.g)+absf(hidden_before.b-hidden_after.b)+absf(hidden_before.a-hidden_after.a)
+			if hidden_difference>.02: hidden_changed_pixels+=1
+	if not require(hidden_changed_pixels>20,"desktop keeps animating after manager window is hidden"): return
 	await create_timer(2.5).timeout
 	scene.speed=0
 	while scene.busy: await process_frame

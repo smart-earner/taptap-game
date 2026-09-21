@@ -91,10 +91,13 @@ func hide_manager() -> void:
 	command(7,0)
 	manager_visible = false
 	Engine.max_fps = 15
-	RenderingServer.viewport_set_active(get_window().get_viewport_rid(),false)
+	# Do not deactivate the root viewport here. On macOS Godot's secondary
+	# native Window depends on the root render submission even though it owns a
+	# separate viewport; deactivating it freezes the desktop canvas on its last
+	# frame. The hidden manager window itself is not presented, and the global
+	# 15 FPS cap provides the intended idle-power reduction.
 
 func show_manager(page: String = "") -> void:
-	RenderingServer.viewport_set_active(get_window().get_viewport_rid(),true)
 	command(7,1)
 	manager_visible = true
 	Engine.max_fps = 30
