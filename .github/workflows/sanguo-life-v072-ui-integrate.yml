@@ -1,0 +1,88 @@
+name: Sanguo Life v072 playable integration
+on:
+  push:
+    branches: ['feat/sanguo-life-runtime-v072']
+    paths: ['.github/workflows/sanguo-life-v072-ui-integrate.yml']
+permissions:
+  contents: write
+concurrency:
+  group: sanguo-life-v072-ui-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Verify exact patch and apply to tested runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,zlib,subprocess
+          from pathlib import Path
+          hashes=['e2d4f58a143e2092e8c2064f953f1289d3efb8409c78f37eeea633b20da2f5d5','202270333e66c4d41003589012e992b717a27fb75138cb1425e41711850d4e4b','8d1329476468e15df004ec598e660c573982c9d9ec159f605ba29d688ead0434','119a5f0e9d9151ae0324bd3f01c33a50d51cd9d8e51367b6f61ed98af6d07f46','49b63546445d240cce7963787dad323e83f6301fbf640dec3a576822bec30110','d431eb36a9c24d48737c82d499660a4f5c2a76eca6014eaa7dad61b877ead0eb','2bbf6e443f07704dade9e5b95e31947c55dd52b66e255e935942ed031e1f55a6','1fed69dfb7c84e0967337cc13c8aa08178ee0c8f8a30e751bd48c658e8237869']
+          parts=[]
+          for i,h in enumerate(hashes):
+              p=Path(f'sanguo-town/checkpoints/life072/ui02.{i}').read_text().strip().encode()
+              print(i,len(p),hashlib.sha256(p).hexdigest())
+              assert hashlib.sha256(p).hexdigest()==h,f'part {i} differs'
+              parts.append(p)
+          data=b''.join(parts)
+          assert hashlib.sha256(data).hexdigest()=='b6e9e5c954527863cc5c6e51e98a70bc282f6eac0d9ecad2b36686d26a1d6535'
+          patch=zlib.decompress(base64.b64decode(data));path=Path('/tmp/life-ui.patch');path.write_bytes(patch)
+          names=[line[6:] for line in patch.decode().splitlines() if line.startswith('+++ b/')]
+          for p in names:
+              assert '..' not in Path(p).parts and (p.startswith(('sanguo-town/Sources/SanguoLife/','sanguo-town/Sources/SanguoLifeVisual/','sanguo-town/Sources/SanguoLifeCLI/','sanguo-town/Tests/SanguoLifeTests/')) or p in ('sanguo-town/Sources/SanguoMac/LifeScene.swift','sanguo-town/Sources/SanguoMac/LifeViews.swift','sanguo-town/Sources/SanguoMac/SanguoMacApp.swift','sanguo-town/Package.swift','sanguo-town/scripts/build-macos.sh')),p
+          subprocess.run(['git','apply','--check',str(path)],check=True)
+          subprocess.run(['git','apply',str(path)],check=True)
+          PY
+      - name: Native Debug and Release runtime and client tests
+        working-directory: sanguo-town
+        run: |
+          set -euo pipefail
+          mkdir -p dist/life-v072
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/life-v072/environment.txt
+          swift test 2>&1 | tee dist/life-v072/debug.txt
+          swift build --product SanguoMac 2>&1 | tee dist/life-v072/client.txt
+          swift test -c release 2>&1 | tee dist/life-v072/release.txt
+      - name: Same simulation with different visit cadence and recorded city preview
+        working-directory: sanguo-town
+        run: |
+          set -euo pipefail
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 120 --seal --preview --output dist/life-v072/day1 2>&1 | tee dist/life-v072/day1.txt
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 86400 --seal --output dist/life-v072/day1-once 2>&1 | tee dist/life-v072/day1-once.txt
+          cmp dist/life-v072/day1/world.json dist/life-v072/day1-once/world.json
+          swift run -c release SanguoLifeCLI --seconds 604800 --cadence 86400 --seal --output dist/life-v072/day7 2>&1 | tee dist/life-v072/day7.txt
+      - name: Build and relocate actual development app
+        working-directory: sanguo-town
+        run: |
+          set -euo pipefail
+          bash scripts/build-macos.sh 2>&1 | tee dist/life-v072/app-build.txt
+          mkdir -p /tmp/sanguo-relocated
+          ditto dist/SanguoTown-Development.app /tmp/sanguo-relocated/SanguoTown-Development.app
+          (cd /tmp; /tmp/sanguo-relocated/SanguoTown-Development.app/Contents/MacOS/SanguoMac --life-catalog-check) | tee dist/life-v072/relocated-bundle.txt
+          codesign --verify --deep --strict /tmp/sanguo-relocated/SanguoTown-Development.app
+          ditto -c -k --keepParent dist/SanguoTown-Development.app dist/life-v072/SanguoTown-Development.zip
+      - name: Commit verified source on feature branch only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sanguo-town/Package.swift sanguo-town/Sources/SanguoLife sanguo-town/Sources/SanguoLifeVisual sanguo-town/Sources/SanguoLifeCLI sanguo-town/Sources/SanguoMac/LifeScene.swift sanguo-town/Sources/SanguoMac/LifeViews.swift sanguo-town/Sources/SanguoMac/SanguoMacApp.swift sanguo-town/Tests/SanguoLifeTests sanguo-town/scripts/build-macos.sh
+          git commit -m 'feat(life): ship playable task-driven city, desktop scene, codex and isolated persistent save'
+          current=$(git ls-remote origin refs/heads/feat/sanguo-life-runtime-v072 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/sanguo-life-runtime-v072
+          git rev-parse HEAD > sanguo-town/dist/life-v072/commit.txt
+          git archive --format=zip --output=sanguo-town/dist/life-v072/source.zip HEAD sanguo-town
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-life-v072-playable-${{ github.sha }}
+          path: sanguo-town/dist/life-v072
+          retention-days: 14
+          if-no-files-found: warn
