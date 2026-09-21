@@ -1,45 +1,35 @@
-name: Sanguo life specification
+name: Sanguo PRD v0.6 historical specification
 on:
-  push:
-    branches: ['docs/sanguo-life-v06-devspec', 'main']
-    paths:
-      - 'sanguo-town/docs/life-v0.6/**'
-      - 'sanguo-town/docs/PRD.md'
-      - 'sanguo-town/spec/*v0.6.json'
-      - 'sanguo-town/scripts/validate_life_*.py'
-      - '.github/workflows/sanguo-life-spec.yml'
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: sanguo-life-spec-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
-  validate:
+  historical-specification:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          ref: cbf7190f9df0a04a81a3c7b1b076bd5f30283e48
           persist-credentials: false
-      - name: Validate design data, not the game engine
+      - name: Validate archived v0.6 contracts only
         run: |
           set -o pipefail
+          mkdir -p dist/life-spec
           python3 --version
-          python3 sanguo-town/scripts/validate_life_spec.py --output dist/life-spec | tee life-spec.log
-          python3 sanguo-town/scripts/validate_life_contracts.py --output dist/life-spec | tee -a life-spec.log
-      - name: Archive exact tracked documentation and configuration
+          python3 sanguo-town/scripts/validate_life_spec.py --output dist/life-spec | tee dist/life-spec/check.log
+          python3 sanguo-town/scripts/validate_life_contracts.py --output dist/life-spec | tee -a dist/life-spec/check.log
+      - name: Archive the actual historical source under test
         if: always()
         run: |
           mkdir -p dist/life-spec
-          cp life-spec.log dist/life-spec/ 2>/dev/null || true
-          git archive --format=zip --output=dist/life-spec/source.zip HEAD sanguo-town/docs sanguo-town/spec sanguo-town/scripts .github/workflows/sanguo-life-spec.yml
+          git archive --format=zip --output=dist/life-spec/source.zip HEAD sanguo-town/docs sanguo-town/spec sanguo-town/scripts
           git rev-parse HEAD > dist/life-spec/commit.txt
           sha256sum dist/life-spec/source.zip > dist/life-spec/SHA256SUMS
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: sanguo-life-spec-${{ github.sha }}
+          name: sanguo-archived-v06-cbf7190
           path: dist/life-spec
           retention-days: 14
           if-no-files-found: error
