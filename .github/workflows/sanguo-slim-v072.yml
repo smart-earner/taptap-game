@@ -1,0 +1,40 @@
+name: Sanguo slim design v0.7.2
+on:
+  push:
+    branches: ['docs/sanguo-slim-30-v072', 'main']
+    paths:
+      - 'sanguo-town/spec/*v0.7.2.json'
+      - 'sanguo-town/scripts/*slim_v072.py'
+      - 'sanguo-town/docs/SLIM_V0_7_2.md'
+      - 'sanguo-town/docs/PRD.md'
+      - '.github/workflows/sanguo-slim-v072.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-slim-v072-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  specification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Resolve design data and test contracts, not the game
+        run: |
+          set -euo pipefail
+          mkdir -p dist/slim-v072
+          python3 --version | tee dist/slim-v072/environment.txt
+          python3 sanguo-town/scripts/build_slim_v072.py --output dist/slim-v072 | tee dist/slim-v072/build.log
+          python3 sanguo-town/scripts/test_slim_v072.py --output dist/slim-v072 2>&1 | tee dist/slim-v072/test.log
+          git diff --exit-code
+          git rev-parse HEAD > dist/slim-v072/commit.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-slim-v072-${{ github.sha }}
+          path: dist/slim-v072
+          retention-days: 14
+          if-no-files-found: error
