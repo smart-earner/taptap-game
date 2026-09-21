@@ -10,6 +10,9 @@ import SanguoDesktopHost
 final class LifeScene: SKScene {
     private let city = SKNode()
     private let scenery = SKNode()
+    private let livestock = LifeAnimalLayer()
+    private var visibleIDs = Set<String>()
+    private var costumes: [String: Costume] = [:]
     private var characters:[String:VectorSprite]=[:]
     private var cargo:[String:VectorSprite]=[:]
     private var labels:[String:SKLabelNode]=[:]
@@ -22,7 +25,7 @@ final class LifeScene: SKScene {
     override init() {
         super.init(size:CGSize(width:1920,height:1080))
         scaleMode = .resizeFill; backgroundColor = .clear
-        addChild(city); city.addChild(scenery)
+        addChild(city); city.addChild(scenery); city.addChild(livestock)
     }
     required init?(coder:NSCoder){fatalError("Programmatic scene")}
     override func didChangeSize(_ oldSize:CGSize){layoutCity()}
@@ -33,7 +36,7 @@ final class LifeScene: SKScene {
     func sync(_ world:LifeWorld) {
         current=world;lastSync=Date();layoutCity()
         scenery.removeAllChildren()
-        for item in LifeVisual.scene(world) {
+        for item in LifeLiveVisual.scene(world) {
             let node=VectorSprite(item.art);node.zPosition=CGFloat(item.depth);scenery.addChild(node)
             if !item.title.isEmpty && !desktop {
                 let label=SKLabelNode(fontNamed:"PingFangSC-Regular")
@@ -41,18 +44,22 @@ final class LifeScene: SKScene {
                 label.position = .init(x:item.point.x,y:item.point.y-22);label.zPosition=3000;scenery.addChild(label)
             }
         }
+        let shown = LifeFoodVisual.visibleAgents(world,limit:limit)
+        visibleIDs = Set(shown.map(\.id))
+        livestock.sync(world)
         let ids=Set(world.agents.keys)
         for id in Array(characters.keys) where !ids.contains(id) {characters.removeValue(forKey:id)?.removeFromParent();cargo.removeValue(forKey:id)?.removeFromParent();labels.removeValue(forKey:id)?.removeFromParent()}
-        for a in world.agents.values.sorted(by:{$0.id<$1.id}).prefix(limit) {
-            if characters[a.id]==nil {
-                let frame=LifeVisual.actor(a,world:world,at:Double(world.time))
+        for a in shown {
+            let frame=LifeLiveVisual.actor(a,world:world,at:Double(world.time))
+            if characters[a.id]==nil || costumes[a.id] != frame.costume {
+                characters[a.id]?.removeFromParent(); labels[a.id]?.removeFromParent()
+                costumes[a.id]=frame.costume
                 let sprite=VectorSprite(CharacterRig.artwork(frame.costume));characters[a.id]=sprite;city.addChild(sprite)
                 let label=SKLabelNode(fontNamed:"PingFangSC-Regular");label.fontSize=12;label.zPosition=4000;labels[a.id]=label;city.addChild(label)
             }
             cargo.removeValue(forKey:a.id)?.removeFromParent()
-            let frame=LifeVisual.actor(a,world:world,at:Double(world.time))
             if let resource=frame.cargo {
-                let item=VectorSprite(LifeVisual.cargo(resource));item.setScale(0.8);cargo[a.id]=item;city.addChild(item)
+                let item=VectorSprite(LifeFoodVisual.cargo(resource,hearty:LifeFoodVisual.heartyCargo(a,world:world)));item.setScale(0.8);cargo[a.id]=item;city.addChild(item)
             }
         }
         display()
@@ -60,15 +67,13 @@ final class LifeScene: SKScene {
     override func update(_ currentTime:TimeInterval){display()}
     private func display(){
         guard let w=current else{return}
-        let visible=Set(w.agents.values.sorted{a,b in
-            let pa=a.heroID != nil ? 0:(a.taskID != nil ? 1:2),pb=b.heroID != nil ? 0:(b.taskID != nil ? 1:2)
-            return pa==pb ? a.id<b.id:pa<pb
-        }.prefix(limit).map(\.id))
+        let visualTime = reducedMotion ? Double(w.time) : Double(w.time) + min(5,max(0,Date().timeIntervalSince(lastSync)))
+        livestock.display(w,at:visualTime,desktop:desktop,reducedMotion:reducedMotion)
         for (id,node) in characters {
             guard let a=w.agents[id] else{continue}
             let t=a.taskID.flatMap{w.tasks[$0]}
             let now=reducedMotion ? Double(w.time):min(Double(t?.due ?? w.time),Double(w.time)+max(0,Date().timeIntervalSince(lastSync)))
-            let f=LifeVisual.actor(a,world:w,at:now),hide=f.sleeping || !visible.contains(id)
+            let f=LifeLiveVisual.actor(a,world:w,at:now),hide=f.sleeping || !visibleIDs.contains(id)
             node.isHidden=hide;cargo[id]?.isHidden=hide;labels[id]?.isHidden=hide || desktop
             node.position = .init(x:f.position.x,y:f.position.y);node.zPosition=CGFloat(1100-f.position.y);node.setScale(0.62)
             node.pose(CharacterRig.pose(motion:f.motion,time:f.phase,distance:f.distance,facing:f.facing,item:.none,reducedMotion:reducedMotion))
@@ -80,8 +85,8 @@ final class LifeScene: SKScene {
     override func mouseDown(with event:NSEvent){
         guard !desktop,let w=current else{return}
         let point=city.convert(event.location(in:self),from:self)
-        let found=w.agents.values.compactMap {a -> (String,Double)? in
-            let f=LifeVisual.actor(a,world:w,at:Double(w.time));guard !f.sleeping else{return nil}
+        let found=LifeFoodVisual.visibleAgents(w,limit:limit).compactMap {a -> (String,Double)? in
+            let f=LifeLiveVisual.actor(a,world:w,at:Double(w.time));guard !f.sleeping else{return nil}
             return (a.id,hypot(f.position.x-point.x,f.position.y+20-point.y))
         }.min{$0.1<$1.1}
         if let found,found.1<50 {onSelect?(found.0)}
