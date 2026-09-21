@@ -50,7 +50,6 @@ def main() -> int:
     c.eq('inherited crop elapsed growth', seed['initial_beds']['effective_growth_s'], cfg['initial']['existing_millet_growth_s'])
     c.eq('FNV fixed independent vector zero', module.fnv64(20260920,'plain',0),2070784952295781526)
     c.eq('FNV fixed independent vector ten', module.fnv64(20260920,'plain',10),11922799572503056283)
-    # Explicit distinction between presentation, money and task quantities.
     c.eq('no resident tax', cfg['economy']['tax_enabled'], False)
     c.eq('no food decay', cfg['economy']['spoilage_enabled'], False)
     c.eq('no intruder loss', cfg['security']['losses'], False)
@@ -74,7 +73,6 @@ def main() -> int:
     c.eq('new engine acceptance not silently passed', sum(x['status']!='NOT_RUN' for x in acceptance), 0)
     c.eq('acceptance count retained',len(acceptance),72)
     c.check('base checks completed before export', module.read_json(out/'validation.json')['failed']==0)
-    # Assemble the actual index and all normative text. Append all three JSONs.
     combined = '\n\n---\n\n'.join(p.read_text(encoding='utf-8') for p in paths)
     for title, value in [('附录A 核心数值JSON',cfg),('附录B 人物与内容JSON',content),('附录C 确定性开局JSON',seed)]:
         combined += '\n\n# '+title+'\n\n```json\n'+json.dumps(value,ensure_ascii=False,indent=2)+'\n```\n'
@@ -84,7 +82,9 @@ def main() -> int:
     previous = (out/'PRD-v0.7-readable.html').read_text(encoding='utf-8')
     styles = re.search(r'<style>(.*?)</style>',previous,re.S)
     assert styles is not None
-    page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7 完整研发规格</title><style>'+styles[1]+'</style></head><body><aside><strong>小城志 · PRD v0.7</strong>'+toc+'</aside><main><div class="status">完整研发规格：十章正文、三份配置。新生活引擎与M4实机验收尚未执行；静态通过不等于游戏完成。</div>'+body+'</main></body></html>'
+    # Wrap long identifiers/URLs without hiding wide tables or clipped content.
+    responsive = 'p,td,th,a,blockquote{overflow-wrap:anywhere}main{min-width:0}pre,.table-wrap{max-width:100%;box-sizing:border-box}'
+    page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7 完整研发规格</title><style>'+styles[1]+responsive+'</style></head><body><aside><strong>小城志 · PRD v0.7</strong>'+toc+'</aside><main><div class="status">完整研发规格：十章正文、三份配置。新生活引擎与M4实机验收尚未执行；静态通过不等于游戏完成。</div>'+body+'</main></body></html>'
     (out/'PRD-v0.7-readable.html').write_text(page,encoding='utf-8')
     source_paths = paths + [ROOT/'spec/life-v0.7.json',ROOT/'spec/content-v0.7.json',ROOT/'spec/bootstrap-v0.7.json',Path(__file__).resolve(),ROOT/'scripts/validate_prd_v07.py']
     report = {'scope':'cross_file_delivery_and_bootstrap_spec_only','spec_version':'0.7.0','passed':len(c.rows)-len(c.failures),'failed':len(c.failures),'application_cases_executed':0,'engine_tested':False,'checks':c.rows,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths},'complete_markdown_bytes':len(combined.encode('utf-8'))}
