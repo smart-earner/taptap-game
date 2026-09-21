@@ -2,13 +2,22 @@ import Foundation
 import SanguoLife
 import SanguoLifeVisual
 @main struct LifeCLI {
-    static func main() throws {
+    static func main() async throws {
         let args=Array(CommandLine.arguments.dropFirst())
         func value(_ name:String)->String? {guard let i=args.firstIndex(of:name),i+1<args.count else{return nil};return args[i+1]}
+        if let encoded=value("--godot-request-b64") {
+            guard let data=Data(base64Encoded:encoded),let request=String(data:data,encoding:.utf8) else {print("{\"ok\":false,\"error\":\"Invalid bridge encoding\"}");return}
+            GodotBridge.run(request,saveDirectory:value("--godot-save"));return
+        }
+        if let request=value("--godot-bridge") {GodotBridge.run(request,saveDirectory:value("--godot-save"));return}
         let seconds=Int64(value("--seconds") ?? "7200") ?? 7200
         let cadence=Int64(value("--cadence") ?? "30") ?? 30
         guard seconds>=0,seconds<=2_592_000,cadence>0 else{throw LifeError.invalid("--seconds必须0..2592000，--cadence必须正数")}
-        let c=try LifeCatalog.bundled();var engine=try LifeRuntime(catalog:c,wallUTC:0)
+        if args.contains("--hero-town-v09-check") {try await HeroTownV09Check.run();return}
+        if args.contains("--gacha-check") {try await GachaCheck.run();return}
+        if args.contains("--visual-check") {try VisualCheck.run(output:value("--output"));return}
+        let c=try LifeCatalog.bundled();var engine=try LifeRuntime(catalog:c,wallUTC:0,heroPreview:args.contains("--hero-town-preview"),gachaMode:args.contains("--gacha"))
+        if args.contains("--hero-check") {try HeroPreviewCheck.run();return}
         if args.contains("--husbandry"){try engine.setHusbandry(enabled:true)}
         if args.contains("--seal"){try engine.requestSeal()}
         var samples:[LifeWorld]=[engine.world]

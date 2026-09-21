@@ -113,7 +113,7 @@ struct SanguoMacApp: App {
     }
     var body: some Scene {
         Window("小城志 · 城市生活", id: "life") {
-            LifeView()
+            if LifeModel.gachaMode {GoldTownView()} else {LifeView()}
         }.defaultSize(width:1360,height:850)
         Window("小城志 · 旧版城景", id: "town") {
             TownStrip(model: model).task { await model.start() }

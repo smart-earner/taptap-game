@@ -26,9 +26,10 @@ extension LifeRuntime {
                 world.foodCoverage=expected>0 ? served*10000/expected:10000
                 let quality=served>0 ? past.reduce(0){$0+$1.served.values.reduce(0,+)}/served:0
                 // V1 only reads completed service evidence; no decorative walking creates a service.
-                let clean=min(100,40+world.cleanedSites.count*10)
+                let clean=min(100,40+world.cleanedSites.count*10+(world.counters["star_environment_until",default:0]>world.time ? 5:0))
                 let security=world.counters["patrols",default:0]>0 ? 80:60
-                let housing=min(100,world.housing*100/max(1,world.agents.count))
+                let legalGuestBeds=world.isGacha ? world.agents.values.filter{$0.home=="tavern"}.count:0
+                let housing=min(100,(world.housing+legalGuestBeds)*100/max(1,world.agents.count))
                 let rested=world.agents.values.filter{a in a.restedCycle>=world.cycle-1 || a.restStart.map{world.time-$0>=600} == true}.count
                 let rest=world.cycle==0 ? 100:rested*100/max(1,world.agents.count)
                 let target=(world.foodCoverage/100*40+quality*10+housing*15+clean*10+security*15+rest*10)/100
@@ -36,6 +37,15 @@ extension LifeRuntime {
                 world.happiness=max(0,min(100,world.happiness+change))
                 let complete=world.meals[index].served.count==world.meals[index].expected.count
                 world.counters["consecutive_full_meals"]=complete ? world.counters["consecutive_full_meals",default:0]+1:0
+                if world.isFormalHeroTown {
+                    let singleExpected=world.meals[index].expected.count
+                    let singleCoverage=singleExpected>0 ? world.meals[index].served.count*10000/singleExpected:10000
+                    if singleCoverage<9000 {world.heroTown!.city.lowMealStreak+=1;world.heroTown!.city.goodMealStreak=0}
+                    else if singleCoverage>=9500 {world.heroTown!.city.goodMealStreak+=1;world.heroTown!.city.lowMealStreak=0}
+                    else {world.heroTown!.city.lowMealStreak=0;world.heroTown!.city.goodMealStreak=0}
+                    if world.heroTown!.city.lowMealStreak>=2 {world.heroTown!.city.supplyRecovery=true}
+                    if world.heroTown!.city.goodMealStreak>=2 {world.heroTown!.city.supplyRecovery=false}
+                }
                 world.record("meal","本餐实际供应\(world.meals[index].served.count)/\(world.meals[index].expected.count)人；\(world.coverageText())，满意度\(world.happiness)。")
             }
         }
@@ -59,9 +69,12 @@ extension LifeRuntime {
             }
         }
     }
-    mutating func startProject(id:String,kind:String,node:String,cash:Int64,work:Int64,materials:[String:Int64]) {
-        guard world.projects[id]==nil,world.treasury-world.reservedCash>=cash+100 else{return}
+    mutating func startProject(id:String,kind:String,node:String,cash:Int64,work:Int64,materials:[String:Int64],targetPlotID:String?=nil,targetLevel:Int?=nil,beneficiaryDemandID:String?=nil) {
+        guard world.projects[id]==nil,world.isGacha ? cash==0 : world.treasury-world.reservedCash>=cash+100 else{return}
         world.projects[id] = .init(id:id,kind:kind,node:node,materials:materials,cash:cash,totalWork:work)
+        world.projects[id]!.targetPlotID=targetPlotID
+        world.projects[id]!.targetLevel=targetLevel
+        world.projects[id]!.beneficiaryDemandID=beneficiaryDemandID ?? (world.isFormalHeroTown ? "system.\(id)":nil)
         // Dedicated site capacity is limited to the quoted materials, never a universal infinite warehouse.
         let volume=materials.reduce(Int64(0)){$0+$1.value*LifeResource(rawValue:$1.key)!.volume}
         world.storages["project-"+id] = .init(node:node,capacity:max(1_000_000,volume))
@@ -80,7 +93,15 @@ extension LifeRuntime {
             p.completed=true
             if p.kind=="seal" {world.owned.append("founders_seal");world.record("collection","开城木印已完成，已放入府署藏架。")}
             else if p.kind=="repair" {world.record("construction","府署修缮完成：材料已到场并实际消耗，四段施工完工。")}
+            else if world.isFormalHeroTown {
+                finishFormalProject(p)
+                world.record("construction","\(buildingName(p.kind))项目完成，容量、道路服务与城市状态已提交。")
+            }
             else {
+                if world.isGacha,p.kind=="house_upgrade",let index=Int(p.id.split(separator:"-")[2]) {
+                    world.gacha!.houseLevels[index]+=1
+                }
+                if world.isGacha,p.kind=="house" {world.gacha!.houseLevels.append(1)}
                 world.buildings[p.kind,default:0]+=1
                 world.record("construction","\(buildingName(p.kind))建成，下一轮规划开始使用。")
                 if p.kind=="house" {world.storages["home-meals"]!.capacity=Int64(world.housing)*1_000_000}
@@ -89,7 +110,8 @@ extension LifeRuntime {
         world.projects[id]=p
     }
     mutating func planProjects() {
-        if world.growthEnabled,world.projects["repair"]?.completed==true,
+        planGoldHousing()
+        if !world.isGacha,world.growthEnabled,world.projects["repair"]?.completed==true,
            !world.projects.values.contains(where:{!$0.completed && $0.kind != "seal"}) {
             let kind = world.housing<=world.agents.count ? "house" : (world.buildings["market",default:0]==0 ? "market":(world.buildings["workshop",default:0]==0 ? "workshop":(world.buildings["tavern",default:0]==0 ? "tavern":"")))
             if !kind.isEmpty,let q=catalog.buildings.first(where:{$0.id==kind}) {
@@ -99,12 +121,20 @@ extension LifeRuntime {
         for id in world.projects.keys.sorted() {
             let p=world.projects[id]!
             guard !p.completed else{continue}
+            if world.isGacha,p.phase==0,!p.stageStarted,!world.gacha!.surveyedProjects.contains(id),world.agents.keys.contains(where:{hasSignature($0,"craft")}) {
+                if !world.tasks.values.contains(where:{$0.kind=="survey" && $0.subject==id}) {
+                    let eligible=Set(world.agents.keys.filter{hasSignature($0,"craft")})
+                    if let task=assign(kind:"survey",job:"builder",subject:id,at:p.node,work:30,eligible:eligible) {world.tasks[task]!.contribution=(p.materials["wood",default:0]*9000+9999)/10000}
+                }
+                continue
+            }
             let stage=projectStage(p),target="project-"+id
             if !p.stageStarted {
                 supply(stage.materials,to:target)
                 guard world.has(stage.materials,at:target) else{continue}
             }
-            if world.foodCoverage<9000 && p.kind != "repair" {continue}
+            let necessaryHousing=world.isFormalHeroTown && p.kind=="house" && world.agents.values.contains{$0.home=="tavern"}
+            if (world.foodCoverage<9000 || world.heroTown?.city.supplyRecovery==true) && p.kind != "repair" && !necessaryHousing {continue}
             let threshold=p.totalWork*[20,45,80,100][p.phase]/100
             let outstanding=threshold-p.completedWork-p.allocatedWork
             guard outstanding>0 else{continue}
@@ -118,7 +148,7 @@ extension LifeRuntime {
                 world.tasks[task]!.contribution=contribution;world.projects[id]!.allocatedWork+=contribution
             }
         }
-        if world.time>0 && world.time%43200==0 && world.agents.count+2<=world.housing && world.agents.count<150 && world.foodCoverage>=9500 && world.happiness>=70 {
+        if !world.isHeroPreview && world.time>0 && world.time%43200==0 && world.agents.count+2<=world.housing && world.agents.count<150 && world.foodCoverage>=9500 && world.happiness>=70 {
             for _ in 0..<2 {let id=world.next("resident");world.agents[id] = .init(id:id,name:"新邻\(world.agents.count+1)",job:"flex",node:"gate",home:"home",dining:"home-meals")}
             world.record("immigration","两名新居民抵达，床位与日常饭食需求已同步。")
         }

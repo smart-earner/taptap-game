@@ -6,8 +6,11 @@ import SanguoLifeVisual
 @MainActor
 final class LifeModel:ObservableObject {
     static let shared=LifeModel()
+    static let gachaMode=CommandLine.arguments.contains("--gold-town") || Bundle.main.bundleIdentifier=="dev.sanguotown.gold-town"
+    static let heroPreview=gachaMode || CommandLine.arguments.contains("--hero-town-preview") || Bundle.main.bundleIdentifier=="dev.sanguotown.hero-preview"
     @Published private(set) var world:LifeWorld? {didSet{LifeDesktop.shared.sync(world)}}
     @Published private(set) var catalog:LifeCatalog?
+    @Published private(set) var definition:LifeGachaDefinition?
     @Published private(set) var busy=false
     @Published var error:String?
     private var session:LifeSession?
@@ -19,13 +22,15 @@ final class LifeModel:ObservableObject {
         guard session==nil,!busy else{return}
         busy=true;defer{busy=false}
         do {
-            let root=try FileManager.default.url(for:.applicationSupportDirectory,in:.userDomainMask,appropriateFor:nil,create:true).appendingPathComponent("SanguoTown-Life072",isDirectory:true)
+            let root=try FileManager.default.url(for:.applicationSupportDirectory,in:.userDomainMask,appropriateFor:nil,create:true).appendingPathComponent(Self.gachaMode ? "SanguoTown-GoldTown09-Preview" : (Self.heroPreview ? "SanguoTown-HeroPreview" : "SanguoTown-Life072"),isDirectory:true)
             let store=LifeSaveStore(url:root.appendingPathComponent("world.json")), c=try LifeCatalog.bundled()
             let loaded=try await Task.detached{try store.load()}.value
             catalog=c
-            guard loaded != nil || create else{return}
+            guard loaded != nil || create || Self.heroPreview else{return}
+            if let loaded, loaded.isHeroPreview != Self.heroPreview || loaded.isGacha != Self.gachaMode {throw LifeError.invalid("存档与启动模式不匹配")}
             let engine:LifeRuntime
-            if let loaded {engine=try LifeRuntime(catalog:c,world:loaded)} else{engine=try LifeRuntime(catalog:c,wallUTC:AppModel.now())}
+            if let loaded {engine=try LifeRuntime(catalog:c,world:loaded)} else{engine=try LifeRuntime(catalog:c,wallUTC:AppModel.now(),heroPreview:Self.heroPreview,gachaMode:Self.gachaMode)}
+            definition=engine.definition
             let session=LifeSession(engine:engine,store:store);try await session.save()
             try await session.advance(wallUTC:AppModel.now())
             self.session=session;world=await session.snapshot();error=nil
@@ -63,7 +68,7 @@ struct LifeView:View {
     var body:some View {
         VStack(spacing:0){
             HStack{
-                VStack(alignment:.leading,spacing:3){Text("小城志 · 城市生活").font(.title2.bold());Text("生活试玩 v2 · 可选肉食供应，经典城池不迁移").font(.caption).foregroundStyle(.secondary)}
+                VStack(alignment:.leading,spacing:3){Text(LifeModel.heroPreview ? "小城志 · 五将共建" : "小城志 · 城市生活").font(.title2.bold());Text(LifeModel.heroPreview ? "v0.8 五将试玩 · 独立存档 · 真实生产结算" : "生活试玩 v2 · 可选肉食供应，经典城池不迁移").font(.caption).foregroundStyle(.secondary)}
                 Spacer()
                 Picker("查看",selection:$page){Text("我的城").tag(0);Text("武将宝鉴 · 30").tag(1);Text("城务记录").tag(2)}.pickerStyle(.segmented).frame(width:310)
                 Button(desktop.enabled ? "隐藏桌面城景":"铺满桌面"){desktop.setEnabled(!desktop.enabled)}.disabled(model.world==nil)
@@ -76,12 +81,14 @@ struct LifeView:View {
                     HStack(spacing:0){
                         LifeCanvas(world:w,reducedMotion:reducedMotion,onSelect:{selected=$0}).accessibilityLabel("真实城市生活。可点击人物查看当前任务；桌面模式鼠标穿透。")
                         ScrollView{VStack(alignment:.leading,spacing:16){
-                            GroupBox("主公定方向"){
+                            if !w.isHeroPreview { GroupBox("主公定方向"){
                                 Picker("城市方向",selection:Binding(get:{w.policy},set:{p in Task{await model.send(.policy(p))}})){
                                     Text("安民").tag("supply");Text("兴商").tag("trade");Text("兴业").tag("industry");Text("备战").tag("military");Text("均衡").tag("balanced")
                                 }.disabled(model.busy)
                                 Text("本批各方针仍共用开局工程链；不是五条完整特色城市。无自动宣战。").font(.caption).foregroundStyle(.secondary)
                             }
+                            }
+                            if w.isHeroPreview { heroRoster(w) }
                             GroupBox("正在做什么"){
                                 VStack(alignment:.leading,spacing:6){
                                     ForEach(w.projects.values.filter{!$0.completed}.sorted{$0.id<$1.id}){p in
@@ -96,10 +103,10 @@ struct LifeView:View {
                                 VStack(alignment:.leading,spacing:8){
                                     if w.owned.contains("founders_seal"){Text("开城木印已在府署藏架展示。")}else{Button("制作开城木印 · 10铜/木2"){Task{await model.send(.seal)}}.disabled(model.busy || w.projects["founders_seal"] != nil)}
                                     if let wish=w.wish {Text("正在结识：\(c.hero(wish)?.name ?? wish)")}
-                                    Button("打开宝鉴，选择一位想招募的人"){page=1}
+                                    Button(w.isHeroPreview ? "查看三十将图鉴（招募待开放）" : "打开宝鉴，选择一位想招募的人"){page=1}
                                 }.font(.callout)
                             }
-                            HusbandryPanel(model:model,world:w)
+                            if !w.isHeroPreview { HusbandryPanel(model:model,world:w) }
                             GroupBox("实际物资"){
                                 VStack(spacing:5){ForEach(LifeResource.allCases,id:\.self){r in HStack{Text(r.title);Spacer();Text(String(format:"%.1f",Double(w.amount(r))/1000)).monospacedDigit()}}}
                                 Text("合计包括在途；只有送达工作点才可使用。").font(.caption).foregroundStyle(.secondary)
@@ -111,7 +118,7 @@ struct LifeView:View {
                                 }
                             }
                             if desktop.enabled {Picker("显示器",selection:$desktop.screenID){Text("主屏幕").tag(0);ForEach(Array(NSScreen.screens.enumerated()),id:\.offset){_,s in Text(s.localizedName).tag((s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.intValue ?? 0)}}}
-                            Text("本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。可选养殖与肉食已接入；军团作战、多城和完整收藏装备仍待完成。").font(.caption).foregroundStyle(.secondary)
+                            Text(w.isHeroPreview ? "试玩范围：五将分工、供餐、收割、搬运、府署修缮和昼夜。暂未开放新版招募、扩建、养殖与调任；地图及完整六类偏好仍在适配。" : "本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。可选养殖与肉食已接入；军团作战、多城和完整收藏装备仍待完成。").font(.caption).foregroundStyle(.secondary)
                         }.padding(14)}.frame(width:300)
                     }
                 } else if page==1 {codex(w,c)}
@@ -144,21 +151,42 @@ struct LifeView:View {
                                 HStack{Text(h.name).font(.title2.bold());Spacer();Text(owned ? "已加入":(w.wish==h.id ? "正在结识":(known ? "已发现":"待发现"))).font(.caption).foregroundStyle(owned ? .green:.secondary)}
                                 HStack{ForEach([("administration","政"),("strategy","智"),("valor","武"),("command","统")],id:\.0){k,n in Text("\(n) \(h.attributes[k,default:0])").monospacedDigit()}}
                                 Text(h.skill_ids.map{id in c.skills.first{$0.id==id}?.name ?? id}.joined(separator:" · ")).font(.caption)
-                                if let r=route {
+                                if let r=route, !w.isHeroPreview {
                                     Text("全程\(r.stages.reduce(0){$0+$1.cash})铜 · 最少\(r.stages.reduce(Int64(0)){$0+$1.passive_s}/60)分钟等待，另计实际工作与缺料").font(.caption).foregroundStyle(.secondary)
                                     if !known {Text("条件："+r.unlock.map{condition in metricName(condition.metric)+" ≥ \(condition.amount)"}.joined(separator:"；")).font(.caption)}
                                     if let p=w.recruits[h.id] {Text("已完成\(p.stage)/3段 · 实付\(p.spent)铜 · \(p.state)").font(.caption)}
                                 }
-                                if !owned {Button(w.wish==h.id ? "当前心愿":"关注并招募"){confirmHero=h.id;showConfirmation=true}.disabled(!known || model.busy || w.wish==h.id)}
+                                if !owned {Button(w.wish==h.id ? "当前心愿":"关注并招募"){confirmHero=h.id;showConfirmation=true}.disabled(w.isHeroPreview || !known || model.busy || w.wish==h.id)}
                                 else {
                                     Text("已在城中，占用真实床位和饭食；无每日训练领奖。").font(.caption).foregroundStyle(.secondary)
-                                    Button(w.prefect==h.id ? "现任太守":"任为太守（空闲时）"){Task{await model.send(.prefect(h.id))}}.disabled(w.prefect==h.id || w.agents[h.id]?.taskID != nil || model.busy)
+                                    Button(w.prefect==h.id ? "现任太守":"任为太守（空闲时）"){Task{await model.send(.prefect(h.id))}}.disabled(w.isHeroPreview || w.prefect==h.id || w.agents[h.id]?.taskID != nil || model.busy)
                                 }
                             }.frame(maxWidth:.infinity,alignment:.leading).padding(5)
                         }
                     }
                 }
             }.padding(20)
+        }
+    }
+    private func heroRoster(_ w:LifeWorld)->some View {
+        GroupBox("五将 · 今日一起把小城建起来") {
+            VStack(alignment:.leading,spacing:12) {
+                Text("目标：收第一茬粮 → 五人共餐 → 修好府署").font(.caption)
+                ForEach(["xunyu","liubei","zhangfei","zhaoyun","huangyueying"],id:\.self) { id in
+                    if let a=w.agents[id] {
+                        Button { selected=id } label: {
+                            HStack { Text(a.name).font(.headline);Spacer();Text(LifeVisual.actor(a,world:w,at:Double(w.time)).action).font(.caption).lineLimit(1) }
+                        }.buttonStyle(.plain)
+                        Picker("劳动偏好",selection:Binding(get:{a.job},set:{job in Task{await model.send(.heroPreference(id,job))}})) {
+                            Text("做饭").tag("cook");Text("种田").tag("farmer");Text("采木").tag("logger")
+                            Text("搬运").tag("porter");Text("营造").tag("builder");Text("机动").tag("flex")
+                        }.disabled(model.busy)
+                    }
+                }
+                Text("偏好影响同优先级选人，不限制互相帮忙。").font(.caption).foregroundStyle(.secondary)
+                Button("演示推进 60 秒 · 真实结算"){Task{await model.send(.previewStep)}}.disabled(model.busy)
+                Text("城内时间：\(w.time / 60)分\(w.time % 60)秒；按钮会推进生产和消耗并保存。").font(.caption)
+            }
         }
     }
     private func metricName(_ metric:String)->String{

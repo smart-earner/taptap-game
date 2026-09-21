@@ -35,8 +35,26 @@ public struct LifeSaveStore: LifePersistence, Sendable {
         }
         try bytes.write(to:url,options:.atomic)
     }
+    public func availableBackups() -> [Int] {
+        (1...3).filter{FileManager.default.fileExists(atPath:url.appendingPathExtension("bak\($0)").path)}
+    }
+    /// Recovery is deliberately explicit.  The current bytes are preserved before a
+    /// validated backup replaces them, even when the current file is corrupt.
+    public func restoreBackup(_ index:Int,confirmed:Bool) throws -> LifeWorld {
+        guard confirmed,(1...3).contains(index) else{throw LifeError.invalid("恢复备份需要明确确认")}
+        let backup=url.appendingPathExtension("bak\(index)")
+        guard FileManager.default.fileExists(atPath:backup.path) else{throw LifeError.invalid("备份不存在")}
+        let bytes=try Data(contentsOf:backup),world=try Self.decode(bytes)
+        let fm=FileManager.default
+        if fm.fileExists(atPath:url.path) {
+            let stamp=Int64(Date().timeIntervalSince1970)
+            try Data(contentsOf:url).write(to:url.appendingPathExtension("before-restore-\(stamp)"),options:.atomic)
+        }
+        try bytes.write(to:url,options:.atomic)
+        return world
+    }
 }
-public enum LifeCommand: Sendable {case husbandry(Bool),policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String)}
+public enum LifeCommand: Sendable {case husbandry(Bool),policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String),heroPreference(String,String),previewStep,gacha(LifeGachaRequest)}
 /// Serial actor publishes a candidate only after persistence succeeds.
 public actor LifeSession {
     private var engine:LifeRuntime
@@ -53,13 +71,26 @@ public actor LifeSession {
     }
     public func send(_ command:LifeCommand) throws {
         var draft=engine
+        if draft.world.isGacha {
+            switch command {
+            case .gacha:break
+            case .previewStep where !draft.world.isFormalHeroTown:break
+            default:throw LifeError.invalid("DENIED_SCOPE：城务由太守安排；玩家只开放招募与手动培养")
+            }
+        }
         switch command {
+        case .gacha(let request):_ = try draft.performGacha(request)
+        case .heroPreference(let id,let job):try draft.setHeroPreference(id,job)
+        case .previewStep:
+            guard draft.world.isHeroPreview else{throw LifeError.invalid("仅试玩支持演示推进")}
+            try draft.advance(to:draft.world.time+60)
         case .husbandry(let enabled):try draft.setHusbandry(enabled:enabled)
         case .policy(let p):try draft.setPolicy(p)
         case .seal:try draft.requestSeal()
         case .recruit(let id):try draft.requestRecruit(id)
         case .growth(let value):draft.world.growthEnabled=value
         case .prefect(let id):
+            guard !draft.world.isHeroPreview else{throw LifeError.invalid("五将试玩暂未开放调任")}
             guard draft.world.owned.contains(id),let person=draft.world.agents[id],person.heroID != nil,person.taskID==nil else{throw LifeError.invalid("请在已加入人物完成当前任务后调任")}
             draft.world.agents[draft.world.prefect]?.job="flex"
             draft.world.prefect=id;draft.world.agents[id]!.job="prefect"

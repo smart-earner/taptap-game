@@ -1,7 +1,7 @@
 import XCTest
 @testable import SanguoLife
 final class LifeTests: XCTestCase {
-    func testCatalog() throws {let c=try LifeCatalog.bundled();XCTAssertEqual(c.heroes.count,30);XCTAssertEqual(c.skills.count,22);XCTAssertEqual(LifeResource.allCases.count,8)}
+    func testCatalog() throws {let c=try LifeCatalog.bundled();XCTAssertEqual(c.heroes.count,30);XCTAssertEqual(c.skills.count,22);XCTAssertEqual(LifeResource.allCases.count,10);XCTAssertEqual(c.recipes.count,4)}
     func testCookingRate() throws {let c=try LifeCatalog.bundled();let w=LifeHero(id:"ordinary",name:"厨师",starting:false,attributes:["administration":50,"strategy":50,"valor":50,"command":50],skill_ids:[]);let result=try LifeAbilities.workRate(c,worker:.init(w,role:"worker",eligible:true),job:"cook",leaders:[.init(c.hero("xunyu")!,role:"prefect",eligible:true)]);XCTAssertEqual(result,11410)}
 }
 extension LifeTests {

@@ -4,6 +4,7 @@ extension LifeRuntime {
     /// A single lasting decision. No animals, food, money or completed buildings are granted.
     /// Explicit opt-in upgrades the isolated life save; the former client rejects format 2.
     public mutating func setHusbandry(enabled: Bool) throws {
+        guard !world.isHeroPreview else {throw LifeError.invalid("五将试玩暂未开放养殖")}
         let newlyEnabled = world.husbandry == nil
         if newlyEnabled {
             guard enabled else { return }

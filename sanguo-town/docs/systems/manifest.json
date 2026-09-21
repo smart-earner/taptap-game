@@ -1,0 +1,534 @@
+{
+  "version": "0.9.0",
+  "modules": [
+    "00_PRODUCT.md",
+    "01_TAVERN_GACHA.md",
+    "02_HERO_CULTIVATION.md",
+    "03_PRODUCTION_ECONOMY.md",
+    "04_GOVERNOR_LOGISTICS.md",
+    "05_FOOD_LIFE.md",
+    "06_CITY_PROGRESSION.md",
+    "07_PRESENTATION.md",
+    "08_ENGINEERING_ACCEPTANCE.md"
+  ],
+  "sections": [
+    {
+      "source": "00_PRODUCT.md",
+      "section": "00-intro",
+      "heading": "00 产品合同与开局",
+      "file": "00_PRODUCT.md",
+      "anchor": "sec-00-intro"
+    },
+    {
+      "source": "00_PRODUCT.md",
+      "section": "0.1",
+      "heading": "0.1 产品定义",
+      "file": "00_PRODUCT.md",
+      "anchor": "sec-0-1"
+    },
+    {
+      "source": "00_PRODUCT.md",
+      "section": "0.2",
+      "heading": "0.2 精确开局",
+      "file": "00_PRODUCT.md",
+      "anchor": "sec-0-2"
+    },
+    {
+      "source": "00_PRODUCT.md",
+      "section": "0.3",
+      "heading": "0.3 实施阶段",
+      "file": "00_PRODUCT.md",
+      "anchor": "sec-0-3"
+    },
+    {
+      "source": "00_PRODUCT.md",
+      "section": "0.4",
+      "heading": "0.4 无额外操作原则",
+      "file": "00_PRODUCT.md",
+      "anchor": "sec-0-4"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "01-intro",
+      "heading": "01 城市成长、土地、建筑与街区",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-01-intro"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.1",
+      "heading": "1.1 五类状态与地块",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-1"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.2",
+      "heading": "1.2 经营窗口和建设资格",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-2"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.3",
+      "heading": "1.3 建筑完整报价",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-3"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.4",
+      "heading": "1.4 附属设施",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-4"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.5",
+      "heading": "1.5 工程状态、费用与取消",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-5"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.6",
+      "heading": "1.6 八街区",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-6"
+    },
+    {
+      "source": "01_CITY_GROWTH.md",
+      "section": "1.7",
+      "heading": "1.7 新人的自动安居",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-1-7"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "02-intro",
+      "heading": "02 十资源、种植与采金冶炼",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-02-intro"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.1",
+      "heading": "2.1 资源完整表",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-1"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.2",
+      "heading": "2.2 作物",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-2"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.3",
+      "heading": "2.3 采集",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-3"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.4",
+      "heading": "2.4 配方全表",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-4"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.5",
+      "heading": "2.5 养殖范围",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-5"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.6",
+      "heading": "2.6 金矿与冶金链",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-6"
+    },
+    {
+      "source": "02_PRODUCTION.md",
+      "section": "2.7",
+      "heading": "2.7 食物容量与运行边界",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-2-7"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "03-intro",
+      "heading": "03 武将实体、偏好、作息与物流",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-03-intro"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.1",
+      "heading": "3.1 身份和职责",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-1"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.2",
+      "heading": "3.2 调度确定算法",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-2"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.3",
+      "heading": "3.3 作息与行政",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-3"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.4",
+      "heading": "3.4 人工、经验与被动等待",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-4"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.5",
+      "heading": "3.5 运输全链路",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-5"
+    },
+    {
+      "source": "03_AGENTS_AND_LOGISTICS.md",
+      "section": "3.6",
+      "heading": "3.6 同时刻顺序",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-3-6"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "04-intro",
+      "heading": "04 饭食、生活质量、招募入住与财政",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-04-intro"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.1",
+      "heading": "4.1 餐窗与名单",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-4-1"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.2",
+      "heading": "4.2 保护线与目标",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-4-2"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.3",
+      "heading": "4.3 菜单与保供",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-4-3"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.4",
+      "heading": "4.4 满意度与休息",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-4-4"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.5",
+      "heading": "4.5 入住和预测供给",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-4-5"
+    },
+    {
+      "source": "04_FOOD_AND_ECONOMY.md",
+      "section": "4.6",
+      "heading": "4.6 金币与物资分离",
+      "file": "03_PRODUCTION_ECONOMY.md",
+      "anchor": "sec-4-6"
+    },
+    {
+      "source": "05_GOVERNANCE_AND_REGION.md",
+      "section": "05-intro",
+      "heading": "05 太守全自动治理",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-05-intro"
+    },
+    {
+      "source": "05_GOVERNANCE_AND_REGION.md",
+      "section": "5.1",
+      "heading": "5.1 权限矩阵",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-5-1"
+    },
+    {
+      "source": "05_GOVERNANCE_AND_REGION.md",
+      "section": "5.2",
+      "heading": "5.2 调度优先级",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-5-2"
+    },
+    {
+      "source": "05_GOVERNANCE_AND_REGION.md",
+      "section": "5.3",
+      "heading": "5.3 太守与租约",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-5-3"
+    },
+    {
+      "source": "05_GOVERNANCE_AND_REGION.md",
+      "section": "5.4",
+      "heading": "5.4 培养权限与提醒",
+      "file": "04_GOVERNOR_LOGISTICS.md",
+      "anchor": "sec-5-4"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "06A-intro",
+      "heading": "06A 四维、熟练度与星级技能",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-06a-intro"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "A.1",
+      "heading": "A.1 三条独立成长",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-a-1"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "A.2",
+      "heading": "A.2 人工公式",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-a-2"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "A.3",
+      "heading": "A.3 六模板，30人显式映射",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-a-3"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "A.4",
+      "heading": "A.4 专长精确结算",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-a-4"
+    },
+    {
+      "source": "06A_ATTRIBUTE_AND_SKILL_SYSTEM.md",
+      "section": "A.5",
+      "heading": "A.5 快照与解释",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-a-5"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "06-intro",
+      "heading": "06 酒馆抽卡、重复卡与玩家培养",
+      "file": "01_TAVERN_GACHA.md",
+      "anchor": "sec-06-intro"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.1",
+      "heading": "6.1 全量常驻池",
+      "file": "01_TAVERN_GACHA.md",
+      "anchor": "sec-6-1"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.2",
+      "heading": "6.2 价格、概率与保底",
+      "file": "01_TAVERN_GACHA.md",
+      "anchor": "sec-6-2"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.3",
+      "heading": "6.3 随机与支付事务",
+      "file": "01_TAVERN_GACHA.md",
+      "anchor": "sec-6-3"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.4",
+      "heading": "6.4 新武将抵达与床位",
+      "file": "01_TAVERN_GACHA.md",
+      "anchor": "sec-6-4"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.5",
+      "heading": "6.5 重复卡、本体与手动升星",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-6-5"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.6",
+      "heading": "6.6 手动分解、锁卡与兑换",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-6-6"
+    },
+    {
+      "source": "06_HEROES_COLLECTION_AND_ARMY.md",
+      "section": "6.7",
+      "heading": "6.7 抽到以后的价值",
+      "file": "02_HERO_CULTIVATION.md",
+      "anchor": "sec-6-7"
+    },
+    {
+      "source": "07_CONTENT_AND_PROGRESSION.md",
+      "section": "07-intro",
+      "heading": "07 成长节奏与生活反馈",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-07-intro"
+    },
+    {
+      "source": "07_CONTENT_AND_PROGRESSION.md",
+      "section": "7.1",
+      "heading": "7.1 自动发展",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-7-1"
+    },
+    {
+      "source": "07_CONTENT_AND_PROGRESSION.md",
+      "section": "7.2",
+      "heading": "7.2 生活故事保留",
+      "file": "05_FOOD_LIFE.md",
+      "anchor": "sec-7-2"
+    },
+    {
+      "source": "07_CONTENT_AND_PROGRESSION.md",
+      "section": "7.3",
+      "heading": "7.3 首轮体验",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-7-3"
+    },
+    {
+      "source": "07_CONTENT_AND_PROGRESSION.md",
+      "section": "7.4",
+      "heading": "7.4 长期与终局",
+      "file": "06_CITY_PROGRESSION.md",
+      "anchor": "sec-7-4"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "08-intro",
+      "heading": "08 全桌面地图、武将生活与Mac交互",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-08-intro"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.1",
+      "heading": "8.1 桌面承载，不是独占全屏",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-1"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.2",
+      "heading": "8.2 世界坐标与工作点",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-2"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.3",
+      "heading": "8.3 五人开局与人数表现",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-3"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.4",
+      "heading": "8.4 人物资产与动画合同",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-4"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.5",
+      "heading": "8.5 信息层级与交互",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-5"
+    },
+    {
+      "source": "08_DESKTOP_UI_AND_ART.md",
+      "section": "8.6",
+      "heading": "8.6 桌面工程与体验门槛",
+      "file": "07_PRESENTATION.md",
+      "anchor": "sec-8-6"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "09-intro",
+      "heading": "09 工程、保存与验收",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-09-intro"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.1",
+      "heading": "9.1 单一引擎",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-1"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.2",
+      "heading": "9.2 必需持久对象",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-2"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.3",
+      "heading": "9.3 命令与权限",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-3"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.4",
+      "heading": "9.4 原子性与恢复",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-4"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.5",
+      "heading": "9.5 离线与性能",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-5"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.6",
+      "heading": "9.6 v0.9运行验收（全部NOT_RUN）",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-6"
+    },
+    {
+      "source": "09_ENGINEERING_AND_ACCEPTANCE.md",
+      "section": "9.7",
+      "heading": "9.7 交付顺序",
+      "file": "08_ENGINEERING_ACCEPTANCE.md",
+      "anchor": "sec-9-7"
+    }
+  ]
+}

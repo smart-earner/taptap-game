@@ -10,12 +10,14 @@
 
 ```sh
 cd sanguo-town
-swift test
-swift test -c release
+bash scripts/test-local.sh debug
+bash scripts/test-local.sh release
 python3 scripts/validate_spec.py
 ```
 
 前两条是同一套运行测试的不同构建模式；第三条只是历史PRD静态检查。输出中的XCTest “0 tests”之后还有Swift Testing结果，以最终“40 tests passed”为本批计数，不把不同测试框架的标题混淆。
+
+`test-local.sh`会优先使用工具链默认配置。如果独立Command Line Tools已安装`Testing.framework`、但SwiftPM未自动加入framework搜索路径，脚本只为本次测试添加宿主兼容参数。它不修改`Package.swift`、不影响Xcode或CI配置。可用`bash scripts/test-local.sh all`顺序执行Debug与Release复验。
 
 ## 3. 无图形演示
 

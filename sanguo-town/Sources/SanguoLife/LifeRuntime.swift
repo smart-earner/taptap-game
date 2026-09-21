@@ -4,9 +4,21 @@ import Foundation
 /// Older WorldState saves are intentionally not accepted or rewritten by this type.
 public struct LifeRuntime: Sendable {
     public let catalog: LifeCatalog
+    public let definition:LifeGachaDefinition?
     public internal(set) var world: LifeWorld
-    public init(catalog:LifeCatalog,wallUTC:Int64) throws {
-        self.catalog=catalog;world=LifeWorld(wallUTC:wallUTC)
+    public init(catalog:LifeCatalog,wallUTC:Int64,heroPreview:Bool=false,gachaMode:Bool=false,formalHeroTown:Bool=false,rngSeed:UInt64?=nil) throws {
+        let gachaMode=gachaMode || formalHeroTown
+        let heroPreview=heroPreview || gachaMode
+        definition=gachaMode ? try .bundled():nil
+        var selected=heroPreview ? catalog.heroPreviewCatalog() : catalog
+        if let definition {selected.recipes=definition.recipes;selected.buildings=definition.buildings}
+        self.catalog=selected;world=LifeWorld(wallUTC:wallUTC)
+        if heroPreview { world.format=3;world.rules="hero-town-0.8-preview1";world.treasury=400;world.growthEnabled=false }
+        if gachaMode {
+            world.format=4;world.rules=formalHeroTown ? LifeHeroTownContract.rules:"hero-town-0.9-preview1"
+            world.treasury=200;world.gacha = .init(rng:rngSeed ?? UInt64.random(in:UInt64.min...UInt64.max));world.growthEnabled=true
+            if formalHeroTown {world.heroTown = .initial(wallUTC:wallUTC)}
+        }
         let assets:[(String,String,Int64,[LifeResource:Int64])] = [
             ("warehouse","warehouse",512,[.grain:56000,.wood:36000,.stone:12000,.iron:6000,.tools:4000]),
             ("kitchen-in","kitchen",64,[.grain:8000,.wood:4000]),("kitchen-out","kitchen",64,[:]),
@@ -16,22 +28,43 @@ public struct LifeRuntime: Sendable {
             ("ration-in","ration",64,[:]),("ration-out","ration",64,[:]),("recruit","hall",64,[:])]
         for (id,node,cap,stock) in assets {
             world.storages[id] = .init(node:node,capacity:cap*1_000_000)
-            for r in LifeResource.allCases {if let q=stock[r] {world.add(r,quantity:q,at:id,origin:"founding");world.initial[r.rawValue,default:0]+=q}}
+            let previewStock:[LifeResource:Int64] = id=="warehouse" ? [.grain:24000,.wood:20000,.stone:8000,.iron:4000,.tools:2000] : (id=="home-meals" ? [.meal:10000] : [:])
+            for r in LifeResource.allCases {if let q=(heroPreview ? previewStock : stock)[r] {world.add(r,quantity:q,at:id,origin:"founding");world.initial[r.rawValue,default:0]+=q}}
         }
         let names=["阿禾","谷生","林生","石安","禾娘","阿担","阿车","阿运","木成","筑安","仓平","井清","卫平","夜安","阿勤"]
         let jobs=["farmer","farmer","logger","miner","cook","porter","porter","porter","builder","builder","clerk","handyman","guard_day","guard_night","flex"]
         for i in 0..<15 {let id=String(format:"r%02d",i+1);world.agents[id] = .init(id:id,name:names[i],job:jobs[i],node:"home",home:"home",dining:"home-meals")}
         world.agents["xunyu"] = .init(id:"xunyu",name:catalog.hero("xunyu")!.name,job:"prefect",node:"hall",home:"home",dining:"hall-meals",heroID:"xunyu")
+        if heroPreview {
+            world.agents=[:];world.owned=[];world.discovered=[]
+            for (id,job,node) in [("xunyu","cook","kitchen"),("liubei","farmer","farm"),("zhangfei","logger","trees"),("zhaoyun","porter","warehouse"),("huangyueying","builder","hall")] {
+                guard let hero=catalog.hero(id) else {throw LifeError.invalid("缺少开局武将：\(id)")}
+                world.agents[id] = .init(id:id,name:hero.name,job:job,node:node,home:"home",dining:"home-meals",heroID:id,origin:"founding")
+                world.owned.append(id);world.discovered.append(id)
+                if gachaMode {world.gacha!.stars[id]=1}
+            }
+        }
         world.stations["kitchen"] = .init(id:"kitchen",node:"kitchen",input:"kitchen-in",output:"kitchen-out",kind:"kitchen")
         world.stations["forge"] = .init(id:"forge",node:"workshop",input:"forge-in",output:"forge-out",kind:"forge")
         world.stations["ration"] = .init(id:"ration",node:"ration",input:"ration-in",output:"ration-out",kind:"ration")
         for i in 0..<4 {let id="field-\(i)";world.fields[id] = .init(id:id,state:i==0 ? "growing2":"empty",due:i==0 ? 360:nil);world.storages[id] = .init(node:id,capacity:64_000_000)}
-        startProject(id:"repair",kind:"repair",node:"hall",cash:20,work:600,materials:["wood":4000,"stone":2000])
-        world.record("founding","荀彧接掌小城：先供好饭，再修好府署。30将图鉴已载入，只有荀彧已加入。")
+        if gachaMode {setupGoldTown()}
+        if formalHeroTown {syncFormalCapacities()}
+        startProject(id:"repair",kind:"repair",node:"hall",cash:gachaMode ? 0:20,work:600,materials:["wood":4000,"stone":2000])
+        world.record("founding",heroPreview ? "五将共建一城：先收第一茬粮，再一起吃上热饭。偏好不是禁令，缺人时会互相帮忙。" : "荀彧接掌小城：先供好饭，再修好府署。30将图鉴已载入，只有荀彧已加入。")
+        if formalHeroTown {
+            world.heroTown!.city.plots[1].occupancy=5
+            world.record("authority","玩家已一次授权太守自动经营；招募和培养资产仍只接受玩家命令。")
+        }
         plan(); world.nextPlan=30
         try world.validate()
     }
-    public init(catalog:LifeCatalog,world:LifeWorld) throws {try world.validate();self.catalog=catalog;self.world=world}
+    public init(catalog:LifeCatalog,world:LifeWorld) throws {
+        try world.validate();definition=world.isGacha ? try .bundled():nil
+        var selected=world.isHeroPreview ? catalog.heroPreviewCatalog():catalog
+        if let definition {selected.recipes=definition.recipes;selected.buildings=definition.buildings}
+        self.catalog=selected;self.world=world
+    }
     public mutating func advance(to target:Int64) throws {
         guard target>=world.time, target-world.time<=2_592_000, target<=315_360_000 else {throw LifeError.invalid("模拟时间倒退或超出单次30天补算上限")}
         var candidate=self
@@ -48,6 +81,7 @@ public struct LifeRuntime: Sendable {
         for f in world.fields.values {if let d=f.due {n=min(n,d)}}
         for s in world.stations.values {if let d=s.due {n=min(n,d)}}
         for r in world.recruits.values {if let d=r.due {n=min(n,d)}}
+        for due in world.gacha?.arrivals.values ?? [:].values {n=min(n,due)}
         for pig in world.husbandry?.pigs.values ?? [:].values { if let due=pig.due { n=min(n,due) } }
         let base=world.time/2880*2880
         for o:Int64 in [240,420,600,780,1800,1920,1980,2160,2880] where base+o>world.time {n=min(n,base+o)}
@@ -63,7 +97,9 @@ public struct LifeRuntime: Sendable {
         for id in world.stations.keys.sorted() {if world.stations[id]?.due==world.time {world.stations[id]!.due=nil;world.stations[id]!.phase="finish"}}
         for id in world.recruits.keys.sorted() {if world.recruits[id]?.due==world.time {world.recruits[id]!.due=nil;world.recruits[id]!.state="finish"}}
         settleHusbandry()
+        if world.isFormalHeroTown,world.isNight {world.heroTown!.adminLease=nil;world.counters["admin_lease"]=0}
         updateMeals()
+        settleHeroArrivals()
         if world.time==world.nextPlan {plan();world.nextPlan+=30}
     }
     public mutating func setPolicy(_ value:String) throws {
@@ -71,11 +107,13 @@ public struct LifeRuntime: Sendable {
         world.policy=value;world.record("policy","已调整城市方向；在途货物和当前加工不撤销。")
     }
     public mutating func requestSeal() throws {
+        guard !world.isGacha else {throw LifeError.invalid("酒馆版收藏工程由后续版本开放，不花招募金币")}
         guard !world.owned.contains("founders_seal"),world.projects["founders_seal"]==nil,world.treasury-world.reservedCash>=110 else{throw LifeError.invalid("木印已完成、正在制作或余款不足；未重复扣费")}
         startProject(id:"founders_seal",kind:"seal",node:"seal",cash:10,work:360,materials:["wood":2000])
         world.record("wish","已授权制作开城木印：10铜、木材2、360人工秒；完成后自动入藏。")
     }
     public mutating func requestRecruit(_ id:String?) throws {
+        guard !world.isHeroPreview else {throw LifeError.invalid("五将试玩暂未开放新版招募")}
         if let id {guard catalog.hero(id) != nil,world.discovered.contains(id),!world.owned.contains(id) else{throw LifeError.invalid("该人物尚未发现或已经加入")}}
         world.wish=id
         if let id,world.recruits[id]==nil {world.recruits[id] = .init()}
@@ -84,23 +122,28 @@ public struct LifeRuntime: Sendable {
         let h=agent.heroID.flatMap{catalog.hero($0)} ?? .init(id:agent.id,name:agent.name,starting:false,attributes:["administration":50,"strategy":50,"valor":50,"command":50],skill_ids:[])
         return .init(h,role:role,eligible:true)
     }
-    func leaders() -> [LifeAbilitySource] {world.agents[world.prefect].map{[profile($0,role:"prefect")]} ?? []}
+    func leaders() -> [LifeAbilitySource] {
+        if world.isHeroPreview && (world.isNight || world.counters["admin_lease",default:0]<=world.time) {return []}
+        return world.agents[world.prefect].map{[profile($0,role:"prefect")]} ?? []
+    }
     func rate(_ agent:LifeAgent,job:String) -> Int {
+        if world.isGacha {return starWorkRate(agent,job:job)}
         let seconds=agent.workSeconds[job,default:0], xp=seconds/300
         let level=1+[60,180,360,600].filter{xp>=Int64($0)}.count
-        return (try? LifeAbilities.workRate(catalog,worker:profile(agent),job:job,leaders:leaders(),level:level)) ?? 10000
+        return (try? LifeAbilities.workRate(catalog,worker:profile(agent),job:job,leaders:leaders().filter{$0.id != agent.id},level:level)) ?? 10000
     }
     func move(_ from:String,_ to:String,loaded:Bool=false) -> LifeStep? {
         guard from != to else{return nil}
         let path=LifeMap.path(from,to)
         return .init(kind:loaded ? "carry":"walk",seconds:max(1,Int64(ceil(LifeMap.length(path)/(loaded ? 32:48)))),route:path,destination:to)
     }
-    mutating func assign(kind:String,job:String,subject:String,at node:String,work:Int64,tail:[LifeStep]=[],only:String?=nil) -> String? {
+    mutating func assign(kind:String,job:String,subject:String,at node:String,work:Int64,tail:[LifeStep]=[],only:String?=nil,eligible:Set<String>?=nil) -> String? {
         let phase=world.phase
         let available=world.agents.values.filter {a in
             guard a.taskID==nil else{return false}
+            if let eligible,!eligible.contains(a.id) {return false}
             if let only {return a.id==only}
-            guard a.job != "prefect",a.job != "guard_night",a.job != "guard_day",phase>=240,phase<1920 else{return false}
+            guard a.job != "prefect",a.job != "guard_night",a.job != "guard_day",phase >= (world.isHeroPreview ? 0 : 240),phase<1920 else{return false}
             if let meal=world.meals.last(where:{!$0.closed && $0.expected.contains(a.id) && $0.served[a.id]==nil}),world.time>=meal.at-120 {
                 if world.amount(.meal,at:a.dining)>=1000 || !["cook","porter"].contains(job) {return false}
             }
@@ -111,6 +154,9 @@ public struct LifeRuntime: Sendable {
             let da=LifeMap.length(LifeMap.path(a.node,node)),db=LifeMap.length(LifeMap.path(b.node,node))
             return da==db ? a.id<b.id:da<db
         }
+        if world.isFormalHeroTown,only==nil,["build","survey"].contains(kind) || (kind=="gather" && subject=="goldmine") || (kind=="prepare" && subject=="smelter") {
+            guard available.count>2 else{return nil}
+        }
         for a in available {
             let r=rate(a,job:job);var steps:[LifeStep]=[]
             if let m=move(a.node,node){steps.append(m)}
@@ -118,9 +164,19 @@ public struct LifeRuntime: Sendable {
             steps+=tail
             if steps.isEmpty {continue}
             let duration=steps.reduce(Int64(0)){$0+$1.seconds}
-            if only==nil && (phase+duration>2160 || (a.serviceSeconds+duration>1920 && a.busyCycle==world.cycle)){continue}
+            let endNode=steps.last(where:{!$0.destination.isEmpty})?.destination ?? node
+            let returnHome=world.isGacha ? (move(endNode,a.home)?.seconds ?? 0):0
+            if only==nil && (phase+duration+returnHome>2160 || (a.serviceSeconds+duration+returnHome>1920 && a.busyCycle==world.cycle)){continue}
             let id=world.next("task")
             world.tasks[id] = .init(id:id,worker:a.id,kind:kind,job:job,subject:subject,steps:steps,started:world.time,due:world.time+steps[0].seconds,rate:r)
+            if world.isFormalHeroTown,let star=world.gacha?.stars[a.id],let skills=definition?.hero(a.id)?.skills {
+                let active=skills.filter{$0.unlock_star<=star && $0.jobs?.contains(job)==true}.map(\.id)
+                let retained=max(0,r-10000)
+                let snapshot=LifeSkillSnapshot(id:"skill-\(id)",contentHash:LifeHeroTownContract.contentHash,heroID:a.id,star:star,skillIDs:active,metric:"work_rate_bp",value:r,retainedValue:retained,eventID:id)
+                world.tasks[id]!.skillSnapshot=snapshot
+                world.heroTown!.skillSnapshots.append(snapshot)
+                if world.heroTown!.skillSnapshots.count>10000 {world.heroTown!.skillSnapshots.removeFirst(world.heroTown!.skillSnapshots.count-10000)}
+            }
             world.agents[a.id]!.taskID=id
             if let rest=world.agents[a.id]!.restStart,world.time-rest>=600 {world.agents[a.id]!.restedCycle=world.cycle}
             world.agents[a.id]!.restStart=nil
@@ -147,6 +203,7 @@ public struct LifeRuntime: Sendable {
             world.storages[task.target]!.incoming-=task.space
             world.counters["deliveries",default:0]+=1
             world.record("delivery","\(world.agents[task.worker]!.name)将\(String(format:"%.2f",Double(task.quantity)/1000))份\(task.resource!.title)送达\(label(task.target))。")
+            if world.isGacha,task.target=="mint" {mintDeliveredGold()}
         }
         if task.kind=="export" && task.current.kind=="external_sale" {
             _=world.consume(task.resource!,quantity:task.quantity,at:task.id)
@@ -168,6 +225,18 @@ public struct LifeRuntime: Sendable {
     }
     mutating func finishTask(_ t:LifeTask) {
         switch t.kind {
+        case "survey":
+            world.projects[t.subject]!.materials["wood"]=t.contribution
+            world.gacha!.surveyedProjects.insert(t.subject)
+            world.record("skill","\(world.agents[t.worker]!.name)完成现场勘测，工程木材报价减少10%。")
+        case "star_patrol":
+            world.counters["patrols",default:0]+=1
+            world.counters["star_patrol_cycle"]=Int(world.cycle)
+            if t.contribution==5 {world.counters["star_environment_until"]=Int((world.cycle+1)*2880)}
+        case "administration":
+            world.counters["admin_lease"]=Int(world.time+600)
+            if world.isFormalHeroTown {world.heroTown!.adminLease = .init(sourceHeroID:t.worker,taskID:t.id,completedAt:world.time,expiresAt:world.time+600)}
+            world.record("administration","\(world.agents[t.worker]!.name)处理完城务，治理加成持续600秒；随后继续参与日常劳动。")
         case "pig_arrive", "pig_care", "pig_process": finishHusbandryTask(t)
         case "export":
             world.treasury+=t.contribution;world.counters["external_transactions",default:0]+=1
@@ -221,6 +290,7 @@ public struct LifeRuntime: Sendable {
         }
     }
     public func label(_ location:String) -> String {
+        if world.isGacha,let label=["goldmine":"金矿","smelter-in":"冶金坊","smelter-out":"金锭出货台","mint":"府署金库","guest-meals":"酒馆客房餐点"][location] {return label}
         if location.hasPrefix("field"){return "田边"};if location.hasPrefix("project"){return "工地"}
         return ["pasture-feed":"牧栏饲料点","butcher-out":"肉食台出货区","warehouse":"粮仓","kitchen-in":"厨房","kitchen-out":"厨房出餐台","home-meals":"住宅餐点","hall-meals":"官署餐点","trees":"林地","quarry":"采石点","mine":"矿点","forge-in":"工坊","forge-out":"工坊","recruit":"官署接待点","ration-in":"制粮台","ration-out":"军粮架"][location] ?? location
     }

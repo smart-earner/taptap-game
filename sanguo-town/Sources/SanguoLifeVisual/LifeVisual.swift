@@ -21,6 +21,7 @@ public enum LifeVisual {
     public static let width=1920.0, height=1080.0
     public static let jobNames=["herder":"牧工","butcher":"肉食工","prefect":"太守","farmer":"农夫","logger":"伐木工","miner":"矿工","cook":"厨师","porter":"挑夫","builder":"营造工","carpenter":"木匠","clerk":"仓吏","handyman":"杂役","guard_day":"日巡","guard_night":"夜巡","guard":"巡兵","flex":"机动居民","courier":"驿卒","smith":"铁匠","rationer":"制粮工","merchant":"商贩","server":"堂役"]
     public static func scene(_ w:LifeWorld) -> [LifeArtElement] {
+        if w.isGacha { return LifeTownArt.scene(w) }
         let night=w.isNight, earth=night ? "#455956":"#B1BC82",road=night ? "#647370":"#DCCBA3"
         var elements:[LifeArtElement]=[]
         func put(_ id:String,_ art:VNode,_ depth:Double=0,_ title:String="",_ point:LifePoint = .init(0,0)) {
@@ -99,6 +100,24 @@ public enum LifeVisual {
             put("seal",.init("display-seal",children:[.rect("display-table",p.x-16,p.y,32,19,"#75593E"),.rect("wooden-seal",p.x-7,p.y+19,14,17,"#C79B56"),.line("seal-mark",[(p.x-4,p.y+25),(p.x+4,p.y+25)],"#EBDCAB",width:3)]),1100-p.y,"开城木印 · 已入藏",p)
         }
         elements += LifePigArt.structures(w)
+        if w.isGacha {
+            let p=LifeMap.point("goldmine")
+            let mine:VNode = .init("gold-mine",children:[
+                .polygon("gold-hill",[(p.x-64,p.y),(p.x-39,p.y+73),(p.x+12,p.y+93),(p.x+59,p.y+5)],night ? "#62675C":"#938873"),
+                .rect("mine-mouth",p.x-19,p.y,38,44,"#333E37",radius:13),
+                .line("mine-beams",[(p.x-25,p.y),(p.x-25,p.y+48),(p.x+25,p.y+48),(p.x+25,p.y)],"#B89653",width:7),
+                .polygon("gold-vein",[(p.x-37,p.y+38),(p.x-16,p.y+65),(p.x-20,p.y+76),(p.x-47,p.y+49)],"#DCC361")])
+            put("goldmine",mine,1100-p.y,"金矿 · 矿石待运",p)
+            let f=LifeMap.point("smelter"),lit=w.stations["smelter"]?.phase=="passive"
+            var furnace:[VNode]=[.rect("furnace-base",f.x-56,f.y,112,15,"#6E7163",radius:4),
+                .rect("furnace-body",f.x-32,f.y+12,64,68,"#937760",radius:8),
+                .rect("furnace-stack",f.x+6,f.y+70,22,62,"#766953"),
+                .rect("furnace-door",f.x-21,f.y+17,40,34,lit ? "#E8A13A":"#353B33",radius:6),
+                .line("furnace-band",[(f.x-32,f.y+55),(f.x+32,f.y+55)],"#C5AC7F",width:5)]
+            if lit {furnace.append(.polygon("gold-fire",[(f.x-13,f.y+19),(f.x-5,f.y+40),(f.x,f.y+28),(f.x+9,f.y+44),(f.x+15,f.y+19)],"#FFE391",stroke:"none"))}
+            if w.amount(.gold_ingot,at:"smelter-out")>0 {var bar=cargo(.gold_ingot);bar.transform = .init(x:f.x+50,y:f.y+12);furnace.append(bar)}
+            put("smelter",.init("smelter-art",children:furnace),1100-f.y,lit ? "冶金坊 · 炉火正旺":"冶金坊 · 等待调度",f)
+        }
         return elements.sorted{$0.depth == $1.depth ? $0.id<$1.id:$0.depth<$1.depth}
     }
     public static func building(_ kind:String,at p:LifePoint,night:Bool,phase:Int?) -> VNode {
@@ -114,6 +133,8 @@ public enum LifeVisual {
     }
     public static func cargo(_ r:LifeResource, quality: String = "basic") -> VNode {
         switch r {
+        case .gold_ore:return .init("gold-ore",children:[.rect("ore-basket",-15,0,30,16,"#816345"),.polygon("gold-rock",[(-12,14),(-6,27),(0,20),(8,26),(14,13)],"#CBAC54")])
+        case .gold_ingot:return .init("gold-ingot",children:[.polygon("bar",[(-15,2),(-10,16),(10,16),(15,2)],"#EFC44E"),.line("shine",[(-8,12),(8,12)],"#FFF2B4",width:3)])
         case .wood:return .init("logs",children:[.rect("log-a",-20,5,40,8,"#AC8654",radius:4),.rect("log-b",-19,12,37,8,"#BE9B66",radius:4),.line("tie",[(0,4),(0,21)],"#675E40",width:3)])
         case .meal:
             var parts: [VNode] = [.rect("tray-bottom",-17,1,34,4,"#956B46"),.ellipse("bowl",-12,5,24,10,"#E8D5AD"),.ellipse("rice",-10,9,20,6,"#F7ECCD")]
@@ -138,12 +159,15 @@ public enum LifeVisual {
                 if t.kind=="pig_process" {action=t.current.kind=="lead" ? "牵猪交给肉食台":"前往牧栏交接"}}
             else {
                 switch t.kind {
+                case "survey":motion = .read;action="勘测节材"
+                case "star_patrol":motion = .walk;action="晚间巡线"
+                case "administration":motion = .read;action="处理城务"
                 case "pig_care": motion = .cultivate; action="喂养与照料"
                 case "pig_process": motion = .hammer; action="院内加工肉料"
                 case "pig_arrive": motion = .idle; action="安置幼猪"
                 case "sow","water","harvest":motion = .cultivate;action=["sow":"播种","water":"浇灌","harvest":"收割"][t.kind]!
-                case "gather","replant":motion=t.resource == .wood ? .chop:.hammer;action=t.kind=="replant" ? "补植林木":"采集整理"
-                case "prepare","finish":motion = .hammer;action=t.job=="cook" ? "做饭出餐":"加工制作"
+                case "gather","replant":motion=t.resource == .wood ? .chop:.hammer;action=t.kind=="replant" ? "补植林木":(t.resource == .gold_ore ? "开采金矿":"采集整理")
+                case "prepare","finish":motion = .hammer;action=t.job=="cook" ? "做饭出餐":(t.subject=="smelter" ? "冶炼收金":"加工制作")
                 case "build":motion = .hammer;action=t.job=="carpenter" ? "雕制木印":"营造施工"
                 case "eat":motion = .read;action="用餐"
                 case "patrol":motion = .idle;action="巡更值守"
@@ -179,9 +203,10 @@ public enum LifeVisual {
         for a in visibleAgents(w, limit:96) {
             let f=actor(a,world:w,at:clock);if f.sleeping{continue}
             let pose=CharacterRig.pose(motion:f.motion,time:f.phase,distance:f.distance,facing:f.facing,item:.none,reducedMotion:false)
-            var body=SVG.node(CharacterRig.artwork(f.costume),overrides:pose.transforms,hidden:pose.hidden)
+            var body=SVG.node(w.isHeroPreview ? LifeHeroArt.artwork(a.heroID,fallback:f.costume):CharacterRig.artwork(f.costume),overrides:pose.transforms,hidden:pose.hidden)
             if let r=f.cargo {var c=cargo(r,quality:f.quality);c.transform = .init(x:0,y:25);body+=SVG.node(c)}
-            ordered.append((1100-f.position.y,"<g transform=\"translate(\(f.position.x) \(f.position.y)) scale(.62)\">\(body)</g>"))
+            let scale=w.isGacha ? 1.32:(w.isHeroPreview ? 1.15:0.62)
+            ordered.append((1100-f.position.y,"<g transform=\"translate(\(f.position.x) \(f.position.y)) scale(\(scale))\">\(body)</g>"))
         }
         let shapes=ordered.sorted{$0.0<$1.0}.map(\.1).joined()
         let labels=scene(w).filter{!$0.title.isEmpty}.map{"<text x=\"\($0.point.x)\" y=\"\(height-$0.point.y+22)\" text-anchor=\"middle\" font-size=\"13\" fill=\"\(w.isNight ? "#EEE2BF":"#40584E")\">\(SVG.escape($0.title))</text>"}.joined()

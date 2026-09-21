@@ -1,0 +1,7 @@
+[configuration]
+entry_symbol = "town_desktop_init"
+compatibility_minimum = "4.7"
+reloadable = false
+
+[libraries]
+macos = "res://bin/libtown_desktop.dylib"

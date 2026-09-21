@@ -15,11 +15,15 @@ final class LifeScene: SKScene {
     private var characters:[String:VectorSprite]=[:]
     private var cargo:[String:VectorSprite]=[:]
     private var labels:[String:SKLabelNode]=[:]
+    private var sceneryCache:[String:LifeArtElement]=[:]
+    private var sceneryNodes:[String:SKNode]=[:]
+    private var sceneryMode=""
     private var current:LifeWorld?
     private var lastSync = Date()
     var limit=96
     var desktop=false
     var reducedMotion=false
+    var showLabels=true
     var onSelect:((String)->Void)?
     override init() {
         super.init(size:CGSize(width:1920,height:1080))
@@ -34,13 +38,24 @@ final class LifeScene: SKScene {
     }
     func sync(_ world:LifeWorld) {
         current=world;lastSync=Date();layoutCity()
-        scenery.removeAllChildren()
-        for item in LifeVisual.scene(world) {
-            let node=VectorSprite(item.art);node.zPosition=CGFloat(item.depth);scenery.addChild(node)
-            if !item.title.isEmpty && !desktop {
+        let mode="\(world.isNight)-\(desktop)-\(showLabels)"
+        if mode != sceneryMode {
+            scenery.removeAllChildren();sceneryCache=[:];sceneryNodes=[:];sceneryMode=mode
+        }
+        let artwork=LifeVisual.scene(world),active=Set(artwork.map(\.id))
+        for id in Array(sceneryNodes.keys) where !active.contains(id) {
+            sceneryNodes.removeValue(forKey:id)?.removeFromParent();sceneryCache.removeValue(forKey:id)
+        }
+        for item in artwork {
+            if let cached=sceneryCache[item.id],cached.art==item.art,cached.title==item.title,cached.depth==item.depth {continue}
+            sceneryNodes.removeValue(forKey:item.id)?.removeFromParent()
+            let group=SKNode();group.zPosition=CGFloat(item.depth)
+            let node=VectorSprite(item.art);group.addChild(node);scenery.addChild(group)
+            sceneryNodes[item.id]=group;sceneryCache[item.id]=item
+            if !item.title.isEmpty && !desktop && showLabels {
                 let label=SKLabelNode(fontNamed:"PingFangSC-Regular")
-                label.text=item.title;label.fontSize=13;label.fontColor=world.isNight ? .init(white:0.92,alpha:1):.init(white:0.2,alpha:1)
-                label.position = .init(x:item.point.x,y:item.point.y-22);label.zPosition=3000;scenery.addChild(label)
+                label.text=item.title;label.fontSize=15;label.fontColor=world.isNight ? .init(white:0.92,alpha:1):.init(red:0.20,green:0.28,blue:0.22,alpha:1)
+                label.position = .init(x:item.point.x,y:item.point.y-32);label.zPosition=3000;group.addChild(label)
             }
         }
         let frames=LifePigArt.frames(world,at:Double(world.time))
@@ -54,7 +69,7 @@ final class LifeScene: SKScene {
             if characters[a.id]==nil || costumes[a.id] != frame.costume {
                 characters[a.id]?.removeFromParent();labels[a.id]?.removeFromParent()
                 costumes[a.id]=frame.costume
-                let sprite=VectorSprite(CharacterRig.artwork(frame.costume));characters[a.id]=sprite;city.addChild(sprite)
+                let sprite=VectorSprite(world.isHeroPreview ? LifeHeroArt.artwork(a.heroID,fallback:frame.costume) : CharacterRig.artwork(frame.costume));characters[a.id]=sprite;city.addChild(sprite)
                 let label=SKLabelNode(fontNamed:"PingFangSC-Regular");label.fontSize=12;label.zPosition=4000;labels[a.id]=label;city.addChild(label)
             }
             cargo.removeValue(forKey:a.id)?.removeFromParent()
@@ -79,11 +94,11 @@ final class LifeScene: SKScene {
             let t=a.taskID.flatMap{w.tasks[$0]}
             let now=reducedMotion ? Double(w.time):min(Double(t?.due ?? w.time),Double(w.time)+max(0,Date().timeIntervalSince(lastSync)))
             let f=LifeVisual.actor(a,world:w,at:now),hide=f.sleeping || !visible.contains(id)
-            node.isHidden=hide;cargo[id]?.isHidden=hide;labels[id]?.isHidden=hide || desktop
-            node.position = .init(x:f.position.x,y:f.position.y);node.zPosition=CGFloat(1100-f.position.y);node.setScale(0.62)
+            node.isHidden=hide;cargo[id]?.isHidden=hide;labels[id]?.isHidden=hide || desktop || (w.isGacha && !showLabels)
+            node.position = .init(x:f.position.x,y:f.position.y);node.zPosition=CGFloat(1100-f.position.y);node.setScale(w.isGacha ? 1.32:(w.isHeroPreview ? 1.15:0.62))
             node.pose(CharacterRig.pose(motion:f.motion,time:f.phase,distance:f.distance,facing:f.facing,item:.none,reducedMotion:reducedMotion))
             cargo[id]?.position = .init(x:f.position.x,y:f.position.y+19);cargo[id]?.zPosition=node.zPosition+0.3
-            labels[id]?.text="\(f.name) · \(f.action)";labels[id]?.position = .init(x:f.position.x,y:f.position.y+53)
+            labels[id]?.text=f.action;labels[id]?.position = .init(x:f.position.x,y:f.position.y+(w.isGacha ? 122:(w.isHeroPreview ? 92:53)))
             labels[id]?.fontColor=w.isNight ? .white:.init(white:0.15,alpha:1)
         }
     }
@@ -131,8 +146,9 @@ struct LifeCanvas:NSViewRepresentable {
     let world:LifeWorld
     var reducedMotion:Bool
     var onSelect:(String)->Void
+    var showLabels=true
     func makeNSView(context:Context)->LifeSKView {LifeSKView(frame:.zero)}
-    func updateNSView(_ view:LifeSKView,context:Context){view.lifeScene.reducedMotion=reducedMotion;view.lifeScene.onSelect=onSelect;view.lifeScene.sync(world);view.refresh()}
+    func updateNSView(_ view:LifeSKView,context:Context){view.lifeScene.reducedMotion=reducedMotion;view.lifeScene.showLabels=showLabels;view.lifeScene.onSelect=onSelect;view.lifeScene.sync(world);view.refresh()}
     static func dismantleNSView(_ view:LifeSKView,coordinator:()){view.stop()}
 }
 

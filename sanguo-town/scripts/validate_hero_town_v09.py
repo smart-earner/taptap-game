@@ -96,16 +96,42 @@ def main():
     for name, mutate in mutations:
         bad = copy.deepcopy(s); mutate(bad)
         rows.append({'name':'negative/' + name, 'passed':any(not r['passed'] for r in validate(bad))})
-    chapters = sorted((ROOT/'docs/life-v0.7').glob('0*.md'))
-    docs = [ROOT/'docs/PRD.md', ROOT/'docs/PRD_CITY_LIFE.md', ROOT/'docs/PRD_DESKTOP_MODE.md'] + chapters
+    system_dir = ROOT/'docs/systems'
+    manifest = json.loads((system_dir/'manifest.json').read_text())
+    chapters = [system_dir/name for name in manifest['modules']]
+    redirects = sorted((ROOT/'docs/life-v0.7').glob('0*.md'))
+    guides = [system_dir/'CONTRACTS.md', system_dir/'MIGRATION.md']
+    rows.append({'name':'system manifest/version', 'passed':manifest['version'] == '0.9.0'})
+    rows.append({'name':'system manifest/nine unique modules', 'passed':len(chapters) == len(set(chapters)) == 9})
+    rows.append({'name':'system manifest/complete file inventory', 'passed':set(chapters) == set(system_dir.glob('0*.md'))})
+    sections = manifest['sections']
+    section_ids = [item['section'] for item in sections]
+    expected_sections = {f'{chapter}.{section}' for chapter, count in
+                         [('0',4),('1',7),('2',7),('3',6),('4',6),('5',4),('6',7),('7',4),('8',6),('9',7),('A',5)]
+                         for section in range(1, count+1)}
+    expected_sections |= {f'{prefix}-intro' for prefix in ['00','01','02','03','04','05','06','06A','07','08','09']}
+    rows.append({'name':'system manifest/all original sections exactly once',
+                 'passed':set(section_ids) == expected_sections and len(section_ids) == len(expected_sections)})
+    for item in sections:
+        marker = f'<!-- source: {item["source"]} / {item["section"]} -->'
+        owner = system_dir/item['file']
+        rows.append({'name':'section owner/' + item['section'],
+                     'passed':owner in chapters and sum(p.read_text().count(marker) for p in chapters) == 1
+                     and marker in owner.read_text() and item['heading'] in owner.read_text()})
+    docs = [ROOT/'docs/PRD.md', ROOT/'docs/PRD_CITY_LIFE.md', ROOT/'docs/PRD_DESKTOP_MODE.md'] + chapters + guides + redirects
     for p in docs:
         content = p.read_text()
         rows.append({'name':'current version/' + p.name,'passed':'v0.9' in content})
         for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', content):
             if not target.startswith(('http:', 'https:', '#')):
-                rows.append({'name':'link/' + p.name + '/' + target,'passed':(p.parent/target.split('#')[0]).exists()})
+                path, _, anchor = target.partition('#')
+                linked = p.parent/path
+                valid = linked.exists()
+                if valid and anchor:
+                    valid = f'id="{anchor}"' in linked.read_text()
+                rows.append({'name':'link/' + p.name + '/' + target,'passed':valid})
     # Verify the source tables against data, including labor that must not be zeroed with currency.
-    table = (ROOT/'docs/life-v0.7/01_CITY_GROWTH.md').read_text()
+    table = (system_dir/'06_CITY_PROGRESSION.md').read_text()
     for b in s['buildings']:
         rows.append({'name':'table/building/' + b['id'],'passed':f"|{b['id']}|{b['max']}|0|{b['work_s']}|" in table})
     for b in s['attachments']:
@@ -118,12 +144,14 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output/'validation.json').write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
     sections=[]
-    for p in [ROOT/'docs/PRD.md']+chapters:
+    for p in [ROOT/'docs/PRD.md']+guides+chapters:
         def link(m):
             target=m.group(2)
             if target.startswith(('http:', 'https:', '#')): return m.group(0)
-            path=(p.parent/target.split('#')[0]).resolve().relative_to(ROOT.parent)
-            return f'[{m.group(1)}](https://github.com/smart-earner/taptap-game/blob/main/{path})'
+            local, separator, anchor = target.partition('#')
+            path=(p.parent/local).resolve().relative_to(ROOT.parent)
+            suffix = separator + anchor if separator else ''
+            return f'[{m.group(1)}](https://github.com/smart-earner/taptap-game/blob/main/{path}{suffix})'
         sections.append(re.sub(r'\[([^\]]*)\]\(([^)]+)\)',link,p.read_text()))
     (args.output/'PRD-v0.9-complete.md').write_text('\n\n---\n\n'.join(sections)+'\n\n# 完整参数\n\n```json\n'+json.dumps(s,ensure_ascii=False,indent=2)+'\n```\n')
     print(json.dumps({k:report[k] for k in ['scope','status','passed','failed','application_cases_executed']},ensure_ascii=False))

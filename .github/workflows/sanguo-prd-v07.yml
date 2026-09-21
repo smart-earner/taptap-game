@@ -4,6 +4,9 @@ on:
     branches: ['docs/sanguo-prd-v07', 'docs/sanguo-hero-v071', 'main']
     paths:
       - 'sanguo-town/docs/life-v0.7/**'
+      - 'sanguo-town/docs/systems/**'
+      - 'sanguo-town/docs/PRD_CITY_LIFE.md'
+      - 'sanguo-town/docs/PRD_DESKTOP_MODE.md'
       - 'sanguo-town/docs/PRD.md'
       - 'sanguo-town/spec/*v0.7.json'
       - 'sanguo-town/spec/hero-town-v0.8.json'
