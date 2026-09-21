@@ -1,9 +1,9 @@
 name: Sanguo Town macOS
 on:
   push:
-    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/build-macos.sh','sanguo-town/spec/city-identity-v0.5.json','.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','sanguo-town/spec/**','.github/workflows/sanguo-town-macos.yml']
   pull_request:
-    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/build-macos.sh','sanguo-town/spec/city-identity-v0.5.json','.github/workflows/sanguo-town-macos.yml']
+    paths: ['sanguo-town/Sources/**','sanguo-town/Tests/**','sanguo-town/Package.swift','sanguo-town/scripts/**','sanguo-town/spec/**','.github/workflows/sanguo-town-macos.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,47 +22,49 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Preserve tracked source files
+      - name: Environment and bundled configuration consistency
         run: |
+          set -euo pipefail
           mkdir -p dist/logs
-          git -C .. archive --format=zip --output=sanguo-town/dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
-      - name: Record actual environment and validate current PRD (not runtime acceptance)
-        run: |
-          set -o pipefail
           { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
           test "$(uname -m)" = arm64
-          python3 scripts/validate_prd_v07.py --output dist/prd-v07 | tee dist/logs/spec-check.txt
-          python3 scripts/check_prd_v07_delivery.py --output dist/prd-v07 | tee dist/logs/spec-delivery-check.txt
-      - name: Existing game Debug tests and native SDK compilation
+          python3 scripts/export_life_catalog.py --check | tee dist/logs/catalog.txt
+          python3 scripts/test_slim_v072.py --output dist/slim-spec 2>&1 | tee dist/logs/slim-spec.txt
+      - name: Debug runtime tests and native client
         run: |
-          set -o pipefail
+          set -euo pipefail
           swift test 2>&1 | tee dist/logs/debug-test.txt
           swift build --product SanguoMac 2>&1 | tee dist/logs/macos-build.txt
-      - name: Existing game Release regression
+      - name: Release runtime tests
         run: |
-          set -o pipefail
+          set -euo pipefail
           swift test -c release 2>&1 | tee dist/logs/release-test.txt
-      - name: Existing town-0.5 identity rules matrix (not life-0.7)
+      - name: Actual life runtime and visit-cadence comparison
         run: |
-          set -o pipefail
-          swift run -c release SanguoGrowth --identity --matrix --output dist/identity-matrix 2>&1 | tee dist/logs/identity-matrix.txt
-          swift run -c release SanguoGrowth --identity --days 90 --cadence 3 --legion 60 --output dist/identity-preview 2>&1 | tee dist/logs/identity-preview.txt
-      - name: Build unchanged game development app
+          set -euo pipefail
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 120 --seal --preview --output dist/life-day1 2>&1 | tee dist/logs/life-day1.txt
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 86400 --seal --output dist/life-once 2>&1 | tee dist/logs/life-once.txt
+          cmp dist/life-day1/world.json dist/life-once/world.json
+      - name: Build and verify portable development bundle
         run: |
-          set -o pipefail
+          set -euo pipefail
           bash scripts/build-macos.sh 2>&1 | tee dist/logs/app-build.txt
+          mkdir -p /tmp/sanguo-relocated
+          ditto dist/SanguoTown-Development.app /tmp/sanguo-relocated/SanguoTown-Development.app
+          (cd /tmp; /tmp/sanguo-relocated/SanguoTown-Development.app/Contents/MacOS/SanguoMac --life-catalog-check) | tee dist/logs/relocated-bundle.txt
+          codesign --verify --deep --strict /tmp/sanguo-relocated/SanguoTown-Development.app
           ditto -c -k --keepParent dist/SanguoTown-Development.app dist/SanguoTown-Development.zip
-      - name: Preserve logs and development artifacts
+          git -C .. archive --format=zip --output=sanguo-town/dist/source.zip HEAD sanguo-town .github/workflows/sanguo-town-macos.yml
+      - name: Preserve real logs and development artifacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: sanguo-macos-${{ github.sha }}
           path: |
             sanguo-town/dist/logs
+            sanguo-town/dist/slim-spec
             sanguo-town/dist/source.zip
-            sanguo-town/dist/identity-matrix
-            sanguo-town/dist/identity-preview
-            sanguo-town/dist/prd-v07
+            sanguo-town/dist/life-day1
             sanguo-town/dist/SanguoTown-Development.zip
           retention-days: 14
           if-no-files-found: warn

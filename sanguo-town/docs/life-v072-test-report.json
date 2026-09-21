@@ -1,0 +1,19 @@
+{
+  "version":"life-0.7.2-v1",
+  "spec":"0.7.2",
+  "status":"playable_single_city_slice_not_full_prd",
+  "tested_source_commit":"0a24671b723817742c1b48a4fc9fc2e76af48386",
+  "native_run":35560805806,
+  "native_job":106213194002,
+  "environment":{"macOS":"15.7.9","architecture":"arm64","xcode":"16.4","swift":"6.1.2"},
+  "native_tests":{"new_life_XCTest":21,"existing_swift_testing":201,"total_distinct":222,"debug_pass":true,"release_same_tests_pass":true},
+  "linux":{"swift":"6.2.1","new_life_tests":21,"existing_tests":194,"total_distinct":215,"all_pass":true,"day1_same_world_as_Mac":true},
+  "catalog":{"resources":8,"recipe_definitions":4,"hero_definitions":30,"skills":22,"sha256":"264a77c6f148def8ea68606d474290e69eb66eb3c6b6f633412e080fcb4383b1"},
+  "native_app":{"built":true,"relocated_catalog_check":true,"adhoc_signature_verified":true,"zip_sha256":"bbab8a86edc9578c8a37df217ad8020bce24f08dc1295eb158291a0558187784","notarized":false},
+  "cadence":{"seconds":86400,"compare_cadence_s":[120,86400],"byte_identical_world":true},
+  "simulation":{"day1":{"seconds":86400,"population":20,"happiness_at_checkpoint":85,"food_coverage_recent_windows_bp":10000,"treasury":398,"harvests":13,"deliveries":599,"meals_consumed":1017,"discovered_heroes":5,"wooden_seal_owned":true},"day7":{"seconds":604800,"population":44,"happiness_at_checkpoint":85,"food_coverage_recent_windows_bp":10000,"treasury":3718,"harvests":189,"deliveries":5492,"meals_consumed":12122,"discovered_heroes":14,"wooden_seal_owned":true}},
+  "real_M4_interaction_tested":false,
+  "energy_profiled":false,
+  "full_PRD_acceptance_completed":false,
+  "remaining":["pig_and_meat_source","complete_30_hero_discovery_prerequisites","hero_distinct_art","military_gameplay","equipment","multi_city","full_policy_branches","native_ui_interaction_acceptance","legacy_save_migration"]
+}
