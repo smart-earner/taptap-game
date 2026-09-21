@@ -9,7 +9,7 @@ var enabled = false
 var manager_visible = true
 var poll_elapsed = 0.0
 var preferred_display = 0
-var desktop_size = 24.0
+var desktop_size = 20.2
 var config = ConfigFile.new()
 var status: Dictionary = {}
 var error = ""
@@ -31,7 +31,7 @@ func initialize(owner_town: Node3D) -> bool:
 	preferred_display = int(config.get_value("desktop","display",0))
 	# Versioned preference: the old small-diorama default must not silently
 	# shrink the layout6 full-desktop map.
-	desktop_size = clampf(float(config.get_value("desktop","size_layout6",24.0)),20,36)
+	desktop_size = clampf(float(config.get_value("desktop","size_topdown_v1",20.2)),19.5,30)
 	command(5,DisplayServer.window_get_native_handle(DisplayServer.WINDOW_HANDLE))
 	get_tree().auto_accept_quit = false
 	get_window().close_requested.connect(func():
@@ -50,7 +50,7 @@ func save_preferences() -> void:
 	if OS.get_environment("SANGUO_GODOT_SAVE")!="": return
 	config.set_value("desktop","enabled",enabled)
 	config.set_value("desktop","display",preferred_display)
-	config.set_value("desktop","size_layout6",desktop_size)
+	config.set_value("desktop","size_topdown_v1",desktop_size)
 	config.save("user://desktop.cfg")
 
 func create_surface() -> bool:
@@ -74,8 +74,10 @@ func create_surface() -> bool:
 	desktop_camera.near = .1
 	desktop_camera.far = 150
 	surface.add_child(desktop_camera)
-	desktop_camera.position = Vector3(sin(.63)*32,28,cos(.63)*32)
-	desktop_camera.look_at(Vector3.ZERO)
+	# The management window keeps its isometric camera. The actual desktop layer
+	# is a separate, straight-down projection that fills the selected screen.
+	desktop_camera.position = Vector3(0,42,.01)
+	desktop_camera.look_at(Vector3.ZERO,Vector3(0,0,-1))
 	desktop_camera.current = true
 	surface.show()
 	command(2,preferred_display)
@@ -127,7 +129,7 @@ func _process(delta: float) -> void:
 
 func show_settings() -> void:
 	town.open_modal("把小城放在桌面", "desktop")
-	town.paragraph("城景在桌面层，工作窗口在上面。武将照常经营，鼠标直接穿过。",17,town.INK)
+	town.paragraph("俯视大地图铺满桌面层，桌面图标与工作窗口仍在上面。武将照常经营，鼠标直接穿过。",17,town.INK)
 	if not clock_owned:
 		town.paragraph(error,15,Color("a6553e")); return
 	status = command(1,0)
@@ -148,9 +150,9 @@ func show_settings() -> void:
 		command(2,preferred_display)
 		save_preferences())
 	town.modal_body.add_child(selector)
-	town.paragraph("城景大小（左大右小）",15,town.INK)
+	town.paragraph("桌面地图留白（左少右多）",15,town.INK)
 	var scale_slider = HSlider.new()
-	scale_slider.min_value=20;scale_slider.max_value=36;scale_slider.step=1;scale_slider.value=desktop_size
+	scale_slider.min_value=19.5;scale_slider.max_value=30;scale_slider.step=.5;scale_slider.value=desktop_size
 	scale_slider.value_changed.connect(func(value):
 		desktop_size=value
 		if desktop_camera: desktop_camera.size=value

@@ -288,8 +288,10 @@ func sync_scene(data: Dictionary) -> void:
 
 func place_building(key: String, model: Node3D, p: Vector3) -> void:
 	add_child(model)
-	# Shared work-point is a courtyard entrance; the facade sits behind it.
-	model.position = p + Vector3(0,0,-.72)
+	# Procedural models were authored for the old close-up diorama. Keep their
+	# footprint inside the authoritative layout6 plot when seen from above.
+	model.scale *= .78
+	model.position = p + Vector3(0,0,-.34)
 	structures[key] = model
 
 func request(payload: Dictionary) -> void:

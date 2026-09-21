@@ -33,6 +33,7 @@ func run() -> void:
 	if not require(state.level<state.icon_level and state.level<state.normal_level,"desktop below icons and normal apps"): return
 	if not require(not state.can_become_key,"desktop cannot steal keyboard focus"): return
 	if not require(desktop.surface.world_3d==scene.get_world_3d(),"both windows share exact World3D"): return
+	if not require(desktop.desktop_camera.projection==Camera3D.PROJECTION_ORTHOGONAL and desktop.desktop_camera.position.y>40 and desktop.desktop_camera.size<=20.5,"desktop uses full-screen top-down map camera"): return
 	var preferred=state.active_display
 	desktop.command(2,4294967294)
 	state=desktop.command(1,0)
