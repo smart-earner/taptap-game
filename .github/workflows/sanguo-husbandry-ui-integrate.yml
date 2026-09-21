@@ -1,0 +1,79 @@
+name: Husbandry playable reviewed integration
+on:
+  push:
+    branches: ['feat/sanguo-husbandry-v2']
+    paths: ['.github/workflows/sanguo-husbandry-ui-integrate.yml']
+permissions:
+  contents: write
+concurrency:
+  group: sanguo-husbandry-ui-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.ref == 'refs/heads/feat/sanguo-husbandry-v2'
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Apply the exact release-tested UI and safety patch
+        run: python3 sanguo-town/checkpoints/husbandry-v2/apply-ui.py
+      - name: Native Debug tests and actual Mac client compilation
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/husbandry-v2
+          { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/husbandry-v2/environment.txt
+          python3 scripts/export_life_catalog.py --check | tee dist/husbandry-v2/catalog.txt
+          swift test 2>&1 | tee dist/husbandry-v2/debug.txt
+          swift build --product SanguoMac 2>&1 | tee dist/husbandry-v2/client.txt
+      - name: Full native Release regression
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift test -c release 2>&1 | tee dist/husbandry-v2/release.txt
+      - name: Actual two-day comparison, seven-day run and city replay
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift run -c release SanguoLifeCLI --seconds 172800 --cadence 120 --husbandry --seal --preview --output dist/husbandry-v2/day2 | tee dist/husbandry-v2/day2.txt
+          swift run -c release SanguoLifeCLI --seconds 172800 --cadence 172800 --husbandry --seal --output dist/husbandry-v2/day2-once | tee dist/husbandry-v2/day2-once.txt
+          cmp dist/husbandry-v2/day2/world.json dist/husbandry-v2/day2-once/world.json
+          swift run -c release SanguoLifeCLI --seconds 604800 --cadence 86400 --husbandry --seal --output dist/husbandry-v2/day7 | tee dist/husbandry-v2/day7.txt
+      - name: Package and verify an actual relocated development app
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/build-macos.sh 2>&1 | tee dist/husbandry-v2/app-build.txt
+          mkdir -p /tmp/husbandry-relocated
+          ditto dist/SanguoTown-Development.app /tmp/husbandry-relocated/SanguoTown-Development.app
+          (cd /tmp; /tmp/husbandry-relocated/SanguoTown-Development.app/Contents/MacOS/SanguoMac --life-catalog-check) | tee dist/husbandry-v2/relocated.txt
+          codesign --verify --deep --strict /tmp/husbandry-relocated/SanguoTown-Development.app
+          ditto -c -k --keepParent dist/SanguoTown-Development.app dist/husbandry-v2/SanguoTown-Development.zip
+      - name: Commit verified source to this branch only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sanguo-town/Package.swift sanguo-town/Sources/SanguoLife sanguo-town/Sources/SanguoLifeVisual sanguo-town/Sources/SanguoLifeCLI sanguo-town/Sources/SanguoMac/LifeScene.swift sanguo-town/Sources/SanguoMac/LifeViews.swift sanguo-town/Sources/SanguoMac/HusbandryPanel.swift sanguo-town/Tests/SanguoLifeTests
+          git diff --cached --name-only > sanguo-town/dist/husbandry-v2/changed.txt
+          git commit -m 'feat(life): integrate native-verified husbandry city art, opt-in UI and meat meals'
+          current=$(git ls-remote origin refs/heads/feat/sanguo-husbandry-v2 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/sanguo-husbandry-v2
+          git rev-parse HEAD > sanguo-town/dist/husbandry-v2/commit.txt
+          git archive --format=zip --output=sanguo-town/dist/husbandry-v2/source.zip HEAD sanguo-town
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-husbandry-v2-${{ github.sha }}
+          path: sanguo-town/dist/husbandry-v2
+          retention-days: 14
+          if-no-files-found: warn
