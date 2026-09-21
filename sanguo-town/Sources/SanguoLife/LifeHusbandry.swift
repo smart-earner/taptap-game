@@ -16,7 +16,7 @@ public enum LifeHusbandryRules {
 }
 
 public enum LifePigPhase: String, Codable, Sendable {
-    case inTransit, needsCare, caring, growing, ready, leading, processing
+    case inTransit, awaitingEscort, arriving, needsCare, caring, growing, ready, leading, processing
 }
 
 public struct LifePig: Codable, Equatable, Identifiable, Sendable {
@@ -39,7 +39,7 @@ public struct LifePig: Codable, Equatable, Identifiable, Sendable {
         guard let due, time >= due else { return }
         switch phase {
         case .inTransit:
-            phase = .needsCare
+            phase = .awaitingEscort
             self.due = nil
         case .growing:
             phase = segmentsFed == LifeHusbandryRules.growthSegments ? .ready : .needsCare
@@ -78,7 +78,7 @@ public struct LifePig: Codable, Equatable, Identifiable, Sendable {
         guard passive == (due != nil), due.map({ $0 > time }) ?? true else {
             throw LifeError.invalid("牲畜被动时钟不合法")
         }
-        let staffed = [.caring, .leading, .processing].contains(phase)
+        let staffed = [.arriving, .caring, .leading, .processing].contains(phase)
         guard staffed == (taskID != nil), phase == .caring || !feedConsumed else {
             throw LifeError.invalid("牲畜任务或饲料状态不合法")
         }

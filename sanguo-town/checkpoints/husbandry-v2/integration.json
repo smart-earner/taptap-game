@@ -1,1 +1,189 @@
-{"changes":[{"path":"sanguo-town/Sources/SanguoLife/LifeHusbandry.swift","before":"114e472da0474c892dacd84d337d5b197e3477b02c290c808fec3d3d7f5bc6e4","after":"852b3bdbd42b82a62845aa61391a3ad1da3820cbafafbe58842a6d492b0f7343","edits":[{"from":18,"to":19,"text":"    case inTransit, awaitingEscort, arriving, needsCare, caring, growing, ready, leading, processing\n"},{"from":41,"to":42,"text":"            phase = .awaitingEscort\n"},{"from":80,"to":81,"text":"        let staffed = [.arriving, .caring, .leading, .processing].contains(phase)\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifeInventory.swift","before":"92a78cffb0080f21311a2f24d7f4c550726b9b66e2247393763a5dc3f688ccec","after":"97055784e0d81ad3d9f2dc8c694f93b29bf986c7484f07628cda614b5080c35b","edits":[{"from":46,"to":47,"text":"        try check((format==1 && rules==\"life-0.7.2-v1\" && husbandry==nil) || (format==2 && rules==\"life-0.7.2-v2\" && husbandry != nil),\"存档版本不受支持，未重建存档\")\n        try validateHusbandry()\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifeMealsAndProjects.swift","before":"9d2c9ce7e4e4544b2e0c636b3dc8fd8dfe0a27b649dd12fa2b230235c74e3c60","after":"ea5bb3342be36a2d1cda479c0f04adc457ab24daf236d38993de557600690b63","edits":[{"from":19,"to":19,"text":"                if quality==100 { world.counters[\"hearty_meals_consumed\",default:0]+=1 }\n"},{"from":125,"to":126,"text":"        [\"pasture\":\"牧栏\",\"butcher\":\"肉食台\",\"hall\":\"府署\",\"repair\":\"府署修缮\",\"house\":\"民居\",\"farm\":\"农庄\",\"granary\":\"粮仓\",\"market\":\"集市\",\"workshop\":\"工造院\",\"tavern\":\"饭馆\",\"stable\":\"马厩\",\"station\":\"驿站\",\"barracks\":\"营地\",\"seal\":\"开城木印\"][kind] ?? kind\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifePersistence.swift","before":"68b6ae1f767c37eb54eebcc606607c6e37263f9b3b7688ce40ff1553d63ffded","after":"36487f5398ba913ab2cef9de5e549caf8a90f908c3da25a538ac27adbc74044e","edits":[{"from":38,"to":39,"text":"public enum LifeCommand: Sendable {case husbandry(Bool),policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String)}\n"},{"from":56,"to":56,"text":"        case .husbandry(let enabled):try draft.setHusbandry(enabled:enabled)\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifePlanner.swift","before":"66f9ef701236ebacda6b31546edd52b6bd84314a30b7b26b9ba51f871067687b","after":"fcf9a2eb1f91140af68bbcef449509a341ab672c1cb3948cbd5a1f5f4e3c67e9","edits":[{"from":10,"to":10,"text":"        planHusbandry()\n"},{"from":51,"to":52,"text":"        let valid=Set([\"warehouse\",\"trees\",\"mine\",\"quarry\",\"kitchen-out\",\"forge-out\",\"ration-out\",\"butcher-out\"]+Array(world.fields.keys))\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifeRuntime.swift","before":"f22ca37b1e431cf568b2d7a248f6c26d2366dd9ef3189f3d1698042fc50b38c9","after":"07fced598b2f6ca2071f2cbc7006048b6bf092cdcd0dac27c9b80955f2ec49cc","edits":[{"from":50,"to":50,"text":"        for pig in world.husbandry?.pigs.values ?? [:].values { if let due=pig.due { n=min(n,due) } }\n"},{"from":63,"to":63,"text":"        settleHusbandry()\n"},{"from":160,"to":160,"text":"            if task.current.kind==\"work\" { beginHusbandryWork(id) }\n"},{"from":167,"to":167,"text":"        case \"pig_arrive\", \"pig_care\", \"pig_process\": finishHusbandryTask(t)\n"},{"from":220,"to":221,"text":"        return [\"pasture-feed\":\"牧栏饲料点\",\"butcher-out\":\"肉食台出货区\",\"warehouse\":\"粮仓\",\"kitchen-in\":\"厨房\",\"kitchen-out\":\"厨房出餐台\",\"home-meals\":\"住宅餐点\",\"hall-meals\":\"官署餐点\",\"trees\":\"林地\",\"quarry\":\"采石点\",\"mine\":\"矿点\",\"forge-in\":\"工坊\",\"forge-out\":\"工坊\",\"recruit\":\"官署接待点\",\"ration-in\":\"制粮台\",\"ration-out\":\"军粮架\"][location] ?? location\n"}]},{"path":"sanguo-town/Sources/SanguoLife/LifeWorld.swift","before":"3f6ed94636c0455998d9bcc650f006cb4c498e0191e11f3490e78c7ff50f0b0e","after":"1f4d37118383a62b3b0606f79a073348f27887fb5ee24a8f3d23f8c5e3d0fea0","edits":[{"from":90,"to":90,"text":"    public var husbandry: LifeHusbandry? = nil // Absent in v1 saves; enabled only by an explicit decision.\n"},{"from":146,"to":147,"text":"        \"seal\":.init(1190,745),\"ration\":.init(1500,610),\n        \"pasture\":.init(540,790),\"butcher\":.init(570,900)]\n"}]},{"path":"sanguo-town/Sources/SanguoLifeCLI/Main.swift","before":"c60ce682cba1358f0b398d24f29fe4514470fca5a38e5f77c2fbdfa896d3112b","after":"05707e4e4e32b4388d17302d85a27aa4dd2fd427eb448525816247f76ab822ca","edits":[{"from":11,"to":11,"text":"        if args.contains(\"--husbandry\"){try engine.setHusbandry(enabled:true)}\n"},{"from":21,"to":21,"text":"        if let h=w.husbandry {print(\"养殖：购入\(h.purchasedTotal)，出栏\(h.processedTotal)，现存\(h.pigs.count)，肉食饭消费\(w.counters[\"hearty_meals_consumed\",default:0])；\(h.status)\")}\n"}]},{"path":"sanguo-town/Tests/SanguoLifeTests/HusbandryModelTests.swift","before":"1d3dbfb8380adce3625a58b8fefdcf5fd3bd2544acdafb2adf2f447c7bc3405f","after":"2bccf24c04f60d33b86356303b8079fc6941d8cae81e3db60694d1ab0e194232","edits":[{"from":9,"to":10,"text":"        XCTAssertEqual(pig.phase, .awaitingEscort)\n"},{"from":16,"to":16,"text":"        pig.phase = .needsCare // Fixture: escorted to the completed pen.\n"},{"from":38,"to":38,"text":"        pig.phase = .needsCare\n"}]}],"copies":[{"source":"LifeHusbandryRuntime.swift","target":"sanguo-town/Sources/SanguoLife/LifeHusbandryRuntime.swift","sha256":"46bcad803a98e893fc42afa4651d2424df03d8c73ae1669451f3d3c9f534951d"},{"source":"HusbandryRuntimeTests.swift","target":"sanguo-town/Tests/SanguoLifeTests/HusbandryRuntimeTests.swift","sha256":"a1dcd37d4ddaef8bbfd3be5d24f7aaf7b0106a81ff27eaaf20e3820f6f383e36"}]}
+{
+  "changes": [
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifeHusbandry.swift",
+      "before": "114e472da0474c892dacd84d337d5b197e3477b02c290c808fec3d3d7f5bc6e4",
+      "after": "852b3bdbd42b82a62845aa61391a3ad1da3820cbafafbe58842a6d492b0f7343",
+      "edits": [
+        {
+          "from": 18,
+          "to": 19,
+          "text": "    case inTransit, awaitingEscort, arriving, needsCare, caring, growing, ready, leading, processing\n"
+        },
+        {
+          "from": 41,
+          "to": 42,
+          "text": "            phase = .awaitingEscort\n"
+        },
+        {
+          "from": 80,
+          "to": 81,
+          "text": "        let staffed = [.arriving, .caring, .leading, .processing].contains(phase)\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifeInventory.swift",
+      "before": "92a78cffb0080f21311a2f24d7f4c550726b9b66e2247393763a5dc3f688ccec",
+      "after": "97055784e0d81ad3d9f2dc8c694f93b29bf986c7484f07628cda614b5080c35b",
+      "edits": [
+        {
+          "from": 46,
+          "to": 47,
+          "text": "        try check((format==1 && rules==\"life-0.7.2-v1\" && husbandry==nil) || (format==2 && rules==\"life-0.7.2-v2\" && husbandry != nil),\"存档版本不受支持，未重建存档\")\n        try validateHusbandry()\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifeMealsAndProjects.swift",
+      "before": "9d2c9ce7e4e4544b2e0c636b3dc8fd8dfe0a27b649dd12fa2b230235c74e3c60",
+      "after": "ea5bb3342be36a2d1cda479c0f04adc457ab24daf236d38993de557600690b63",
+      "edits": [
+        {
+          "from": 19,
+          "to": 19,
+          "text": "                if quality==100 { world.counters[\"hearty_meals_consumed\",default:0]+=1 }\n"
+        },
+        {
+          "from": 125,
+          "to": 126,
+          "text": "        [\"pasture\":\"牧栏\",\"butcher\":\"肉食台\",\"hall\":\"府署\",\"repair\":\"府署修缮\",\"house\":\"民居\",\"farm\":\"农庄\",\"granary\":\"粮仓\",\"market\":\"集市\",\"workshop\":\"工造院\",\"tavern\":\"饭馆\",\"stable\":\"马厩\",\"station\":\"驿站\",\"barracks\":\"营地\",\"seal\":\"开城木印\"][kind] ?? kind\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifePersistence.swift",
+      "before": "68b6ae1f767c37eb54eebcc606607c6e37263f9b3b7688ce40ff1553d63ffded",
+      "after": "36487f5398ba913ab2cef9de5e549caf8a90f908c3da25a538ac27adbc74044e",
+      "edits": [
+        {
+          "from": 38,
+          "to": 39,
+          "text": "public enum LifeCommand: Sendable {case husbandry(Bool),policy(String),seal,recruit(String?),growth(Bool),rations(Int64),prefect(String)}\n"
+        },
+        {
+          "from": 56,
+          "to": 56,
+          "text": "        case .husbandry(let enabled):try draft.setHusbandry(enabled:enabled)\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifePlanner.swift",
+      "before": "66f9ef701236ebacda6b31546edd52b6bd84314a30b7b26b9ba51f871067687b",
+      "after": "fcf9a2eb1f91140af68bbcef449509a341ab672c1cb3948cbd5a1f5f4e3c67e9",
+      "edits": [
+        {
+          "from": 10,
+          "to": 10,
+          "text": "        planHusbandry()\n"
+        },
+        {
+          "from": 51,
+          "to": 52,
+          "text": "        let valid=Set([\"warehouse\",\"trees\",\"mine\",\"quarry\",\"kitchen-out\",\"forge-out\",\"ration-out\",\"butcher-out\"]+Array(world.fields.keys))\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifeRuntime.swift",
+      "before": "f22ca37b1e431cf568b2d7a248f6c26d2366dd9ef3189f3d1698042fc50b38c9",
+      "after": "07fced598b2f6ca2071f2cbc7006048b6bf092cdcd0dac27c9b80955f2ec49cc",
+      "edits": [
+        {
+          "from": 50,
+          "to": 50,
+          "text": "        for pig in world.husbandry?.pigs.values ?? [:].values { if let due=pig.due { n=min(n,due) } }\n"
+        },
+        {
+          "from": 63,
+          "to": 63,
+          "text": "        settleHusbandry()\n"
+        },
+        {
+          "from": 160,
+          "to": 160,
+          "text": "            if task.current.kind==\"work\" { beginHusbandryWork(id) }\n"
+        },
+        {
+          "from": 167,
+          "to": 167,
+          "text": "        case \"pig_arrive\", \"pig_care\", \"pig_process\": finishHusbandryTask(t)\n"
+        },
+        {
+          "from": 220,
+          "to": 221,
+          "text": "        return [\"pasture-feed\":\"牧栏饲料点\",\"butcher-out\":\"肉食台出货区\",\"warehouse\":\"粮仓\",\"kitchen-in\":\"厨房\",\"kitchen-out\":\"厨房出餐台\",\"home-meals\":\"住宅餐点\",\"hall-meals\":\"官署餐点\",\"trees\":\"林地\",\"quarry\":\"采石点\",\"mine\":\"矿点\",\"forge-in\":\"工坊\",\"forge-out\":\"工坊\",\"recruit\":\"官署接待点\",\"ration-in\":\"制粮台\",\"ration-out\":\"军粮架\"][location] ?? location\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLife/LifeWorld.swift",
+      "before": "3f6ed94636c0455998d9bcc650f006cb4c498e0191e11f3490e78c7ff50f0b0e",
+      "after": "1f4d37118383a62b3b0606f79a073348f27887fb5ee24a8f3d23f8c5e3d0fea0",
+      "edits": [
+        {
+          "from": 90,
+          "to": 90,
+          "text": "    public var husbandry: LifeHusbandry? = nil // Absent in v1 saves; enabled only by an explicit decision.\n"
+        },
+        {
+          "from": 146,
+          "to": 147,
+          "text": "        \"seal\":.init(1190,745),\"ration\":.init(1500,610),\n        \"pasture\":.init(540,790),\"butcher\":.init(570,900)]\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Sources/SanguoLifeCLI/Main.swift",
+      "before": "c60ce682cba1358f0b398d24f29fe4514470fca5a38e5f77c2fbdfa896d3112b",
+      "after": "05707e4e4e32b4388d17302d85a27aa4dd2fd427eb448525816247f76ab822ca",
+      "edits": [
+        {
+          "from": 11,
+          "to": 11,
+          "text": "        if args.contains(\"--husbandry\"){try engine.setHusbandry(enabled:true)}\n"
+        },
+        {
+          "from": 21,
+          "to": 21,
+          "text": "        if let h=w.husbandry {print(\"养殖：购入\\(h.purchasedTotal)，出栏\\(h.processedTotal)，现存\\(h.pigs.count)，肉食饭消费\\(w.counters[\"hearty_meals_consumed\",default:0])；\\(h.status)\")}\n"
+        }
+      ]
+    },
+    {
+      "path": "sanguo-town/Tests/SanguoLifeTests/HusbandryModelTests.swift",
+      "before": "1d3dbfb8380adce3625a58b8fefdcf5fd3bd2544acdafb2adf2f447c7bc3405f",
+      "after": "2bccf24c04f60d33b86356303b8079fc6941d8cae81e3db60694d1ab0e194232",
+      "edits": [
+        {
+          "from": 9,
+          "to": 10,
+          "text": "        XCTAssertEqual(pig.phase, .awaitingEscort)\n"
+        },
+        {
+          "from": 16,
+          "to": 16,
+          "text": "        pig.phase = .needsCare // Fixture: escorted to the completed pen.\n"
+        },
+        {
+          "from": 38,
+          "to": 38,
+          "text": "        pig.phase = .needsCare\n"
+        }
+      ]
+    }
+  ],
+  "copies": [
+    {
+      "source": "LifeHusbandryRuntime.swift",
+      "target": "sanguo-town/Sources/SanguoLife/LifeHusbandryRuntime.swift",
+      "sha256": "46bcad803a98e893fc42afa4651d2424df03d8c73ae1669451f3d3c9f534951d"
+    },
+    {
+      "source": "HusbandryRuntimeTests.swift",
+      "target": "sanguo-town/Tests/SanguoLifeTests/HusbandryRuntimeTests.swift",
+      "sha256": "a1dcd37d4ddaef8bbfd3be5d24f7aaf7b0106a81ff27eaaf20e3820f6f383e36"
+    }
+  ]
+}

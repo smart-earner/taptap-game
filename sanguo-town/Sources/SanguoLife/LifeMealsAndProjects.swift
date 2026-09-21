@@ -17,6 +17,7 @@ extension LifeRuntime {
                 let quality=parts.reduce(Int64(0)){$0+$1.amount*(world.lots[$1.lotID]!.quality=="hearty" ? 100:40)}/1000
                 guard world.consume(.meal,quantity:1000,at:a.dining) else{continue}
                 world.meals[index].served[id]=Int(quality);world.counters["resident_meals_consumed",default:0]+=1
+                if quality==100 { world.counters["hearty_meals_consumed",default:0]+=1 }
                 _=assign(kind:"eat",job:"server",subject:world.meals[index].id,at:a.node,work:45,only:id)
             }
             if world.time>=world.meals[index].deadline {
@@ -123,6 +124,6 @@ extension LifeRuntime {
         }
     }
     public func buildingName(_ kind:String)->String {
-        ["hall":"府署","repair":"府署修缮","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"饭馆","stable":"马厩","station":"驿站","barracks":"营地","seal":"开城木印"][kind] ?? kind
+        ["pasture":"牧栏","butcher":"肉食台","hall":"府署","repair":"府署修缮","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"饭馆","stable":"马厩","station":"驿站","barracks":"营地","seal":"开城木印"][kind] ?? kind
     }
 }

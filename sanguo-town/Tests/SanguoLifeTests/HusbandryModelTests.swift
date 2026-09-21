@@ -7,13 +7,14 @@ final class HusbandryModelTests: XCTestCase {
         pig.advancePassive(to: 299)
         XCTAssertEqual(pig.phase, .inTransit)
         pig.advancePassive(to: 300)
-        XCTAssertEqual(pig.phase, .needsCare)
+        XCTAssertEqual(pig.phase, .awaitingEscort)
         XCTAssertNil(pig.due)
         try pig.validate(at: 300)
     }
     func testNeedsSixFundedCareSegments() throws {
         var pig = LifePig(id: "pig-1", orderedAt: 0)
         pig.advancePassive(to: 300)
+        pig.phase = .needsCare // Fixture: escorted to the completed pen.
         var clock: Int64 = 300
         for i in 0..<6 {
             try pig.beginCare(task: "care-\(i)")
@@ -36,6 +37,7 @@ final class HusbandryModelTests: XCTestCase {
     func testDuplicateCareCannotChargeTwice() throws {
         var pig = LifePig(id: "pig-1", orderedAt: 0)
         pig.advancePassive(to: 300)
+        pig.phase = .needsCare
         try pig.beginCare(task: "care")
         XCTAssertThrowsError(try pig.beginCare(task: "other"))
         pig.feedConsumed = true

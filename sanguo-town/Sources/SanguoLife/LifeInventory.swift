@@ -44,7 +44,8 @@ extension LifeWorld {
     mutating func pruneLots() {for id in Array(lots.keys) where lots[id]!.amount==0 {lots[id]=nil}}
     public func validate() throws {
         func check(_ b:Bool,_ text:String) throws {if !b{throw LifeError.invalid(text)}}
-        try check(format==1 && rules=="life-0.7.2-v1","存档版本不受支持，未重建存档")
+        try check((format==1 && rules=="life-0.7.2-v1" && husbandry==nil) || (format==2 && rules=="life-0.7.2-v2" && husbandry != nil),"存档版本不受支持，未重建存档")
+        try validateHusbandry()
         try check(time>=0 && time<=315_360_000 && sequence>0 && sequence<Int64.max/2,"时间或序列越界")
         try check(agents.count<=256 && tasks.count<=2048 && lots.count<=50000,"实体数量超过安全上限")
         try check(treasury>=0 && reservedCash>=0 && reservedCash<=treasury,"国库预留不合法")

@@ -88,6 +88,7 @@ public struct LifeRecord: Codable, Equatable, Identifiable, Sendable {
     public var time: Int64
 }
 public struct LifeWorld: Codable, Equatable, Sendable {
+    public var husbandry: LifeHusbandry? = nil // Absent in v1 saves; enabled only by an explicit decision.
     public var format = 1
     public var rules = "life-0.7.2-v1"
     public var time: Int64 = 0
@@ -144,7 +145,8 @@ public enum LifeMap {
         "barracks":.init(1600,700),"farm":.init(360,720),"well":.init(740,610),
         "trees":.init(200,900),"quarry":.init(390,160),"mine":.init(180,160),"gate":.init(1570,210),
         "field-0":.init(250,380),"field-1":.init(420,380),"field-2":.init(250,510),"field-3":.init(420,510),
-        "seal":.init(1190,745),"ration":.init(1500,610)]
+        "seal":.init(1190,745),"ration":.init(1500,610),
+        "pasture":.init(540,790),"butcher":.init(570,900)]
     public static func point(_ id:String) -> LifePoint { places[id] ?? places["hall"]! }
     public static func path(_ from:String,_ to:String) -> [LifePoint] {
         let a=point(from),b=point(to)

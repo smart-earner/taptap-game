@@ -9,6 +9,7 @@ import SanguoLifeVisual
         let cadence=Int64(value("--cadence") ?? "30") ?? 30
         guard seconds>=0,seconds<=2_592_000,cadence>0 else{throw LifeError.invalid("--seconds必须0..2592000，--cadence必须正数")}
         let c=try LifeCatalog.bundled();var engine=try LifeRuntime(catalog:c,wallUTC:0)
+        if args.contains("--husbandry"){try engine.setHusbandry(enabled:true)}
         if args.contains("--seal"){try engine.requestSeal()}
         var samples:[LifeWorld]=[engine.world]
         while engine.world.time<seconds {
@@ -19,6 +20,7 @@ import SanguoLifeVisual
         print("规则\(w.rules)，模拟\(seconds)秒，人口\(w.agents.count)，满意\(w.happiness)，供餐\(w.foodCoverage)/10000")
         print("真实收割\(w.counters["harvests",default:0])次，搬运\(w.counters["deliveries",default:0])次，已消费\(w.counters["resident_meals_consumed",default:0])餐；发现\(w.discovered.count)/30将；拥有\(w.owned)")
         for r in LifeResource.allCases {print("\(r.title)：\(w.amount(r))mU；生产\(w.produced[r.rawValue,default:0])，消费\(w.consumed[r.rawValue,default:0])")}
+        if let h=w.husbandry {print("养殖：购入\(h.purchasedTotal)，出栏\(h.processedTotal)，现存\(h.pigs.count)，肉食饭消费\(w.counters["hearty_meals_consumed",default:0])；\(h.status)")}
         print("项目：\(w.projects.values.sorted{$0.id<$1.id}.map{"\($0.id) \($0.completedWork)/\($0.totalWork)"})")
         print(w.records.suffix(10).map{"\($0.time): \($0.text)"}.joined(separator:"\n"))
         if let out=value("--output") {
