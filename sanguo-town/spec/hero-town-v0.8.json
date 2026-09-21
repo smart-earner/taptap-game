@@ -1,0 +1,2092 @@
+{
+  "spec_version": "0.8.0",
+  "rules_version": "hero-town-0.8.0",
+  "status": "development_contract_not_runtime_acceptance",
+  "source_commit": "3f89632",
+  "save_format": 3,
+  "layout_version": 5,
+  "scope": {
+    "cities": 1,
+    "resident_pool": 30,
+    "ordinary_residents": false,
+    "immigration": false,
+    "legion": false,
+    "cross_city": false,
+    "hero_learning": false,
+    "manual_cast": false,
+    "breeding": false
+  },
+  "units": {
+    "amount": "mU",
+    "per_display": 1000,
+    "volume": "uV",
+    "per_volume": 1000000,
+    "time": "simulation_second",
+    "real_to_simulation": 1
+  },
+  "clock": {
+    "cycle_s": 2880,
+    "growth_day_s": 86400,
+    "meals": [
+      600,
+      1980
+    ],
+    "meal_lead_s": 180,
+    "meal_grace_s": 180,
+    "day_shift": [
+      240,
+      1920
+    ],
+    "service_shift": [
+      0,
+      2160
+    ],
+    "rest_window": [
+      2160,
+      2880
+    ],
+    "continuous_rest_s": 600,
+    "max_work_and_travel_s": 1920,
+    "planner_interval_s": 30,
+    "economy_window_s": 21600
+  },
+  "bootstrap": {
+    "seed": 20260921,
+    "city": "plain",
+    "cash": 400,
+    "starters": [
+      "xunyu",
+      "liubei",
+      "zhangfei",
+      "zhaoyun",
+      "huangyueying"
+    ],
+    "home": "house-1",
+    "beds": 5,
+    "stocks_mU": {
+      "grain": 24000,
+      "meat": 0,
+      "meal": 10000,
+      "rations": 0,
+      "wood": 20000,
+      "stone": 8000,
+      "iron": 4000,
+      "tools": 2000
+    },
+    "stock_locations": {
+      "meal": "house-1.meal",
+      "others": "granary-1.stock"
+    },
+    "buildings": [
+      "hall-1",
+      "house-1",
+      "farm-1",
+      "granary-1"
+    ],
+    "public_devices": [
+      "kitchen-1",
+      "woodtable-1",
+      "well-1",
+      "delivery-1"
+    ],
+    "initial_prefect": "xunyu",
+    "initial_lease_expires_s": 0,
+    "crop": {
+      "id": "bed-0",
+      "crop": "millet",
+      "growth_s": 3240,
+      "water_mask": 3
+    },
+    "other_beds_empty": 3,
+    "hall_repair": {
+      "cash": 20,
+      "materials_mU": {
+        "wood": 4000,
+        "stone": 2000
+      },
+      "work_s": 600
+    },
+    "pig_count": 0,
+    "mount_count": 0
+  },
+  "resources": [
+    {
+      "id": "grain",
+      "name": "食粮",
+      "unit": "袋",
+      "volume_coeff": 1000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "meat",
+      "name": "肉料",
+      "unit": "筐",
+      "volume_coeff": 1000,
+      "buy": 10,
+      "sell": 5
+    },
+    {
+      "id": "meal",
+      "name": "饭菜",
+      "unit": "人份",
+      "volume_coeff": 250,
+      "buy": null,
+      "sell": null
+    },
+    {
+      "id": "rations",
+      "name": "军粮",
+      "unit": "人份",
+      "volume_coeff": 250,
+      "buy": 3,
+      "sell": 1
+    },
+    {
+      "id": "wood",
+      "name": "木材",
+      "unit": "捆",
+      "volume_coeff": 2000,
+      "buy": 3,
+      "sell": 1
+    },
+    {
+      "id": "stone",
+      "name": "石材",
+      "unit": "筐",
+      "volume_coeff": 2000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "iron",
+      "name": "铁料",
+      "unit": "组",
+      "volume_coeff": 1000,
+      "buy": 8,
+      "sell": 4
+    },
+    {
+      "id": "tools",
+      "name": "器材",
+      "unit": "箱",
+      "volume_coeff": 1000,
+      "buy": 12,
+      "sell": 6
+    }
+  ],
+  "recipes": [
+    {
+      "id": "cook_basic",
+      "job": "cook",
+      "station": "kitchen",
+      "input_mU": {
+        "grain": 1000,
+        "wood": 250
+      },
+      "output_mU": {
+        "meal": 4000
+      },
+      "meal_quality": "basic",
+      "prepare_s": 30,
+      "passive_s": 30,
+      "finish_s": 10
+    },
+    {
+      "id": "cook_meat",
+      "job": "cook",
+      "station": "kitchen",
+      "input_mU": {
+        "grain": 1000,
+        "wood": 250,
+        "meat": 500
+      },
+      "output_mU": {
+        "meal": 4000
+      },
+      "meal_quality": "hearty",
+      "prepare_s": 45,
+      "passive_s": 45,
+      "finish_s": 10
+    },
+    {
+      "id": "ration_plain",
+      "job": "rationer",
+      "station": "ration",
+      "input_mU": {
+        "grain": 1000,
+        "wood": 250
+      },
+      "output_mU": {
+        "rations": 4000
+      },
+      "prepare_s": 30,
+      "passive_s": 120,
+      "finish_s": 10
+    },
+    {
+      "id": "forge",
+      "job": "smith",
+      "station": "forge",
+      "input_mU": {
+        "iron": 1000,
+        "wood": 1500
+      },
+      "output_mU": {
+        "tools": 2000
+      },
+      "prepare_s": 120,
+      "passive_s": 60,
+      "finish_s": 15
+    }
+  ],
+  "crops": [
+    {
+      "id": "millet",
+      "sow_s": 45,
+      "water_work_s": 20,
+      "mature_s": 3600,
+      "harvest_s": 60,
+      "output_mU": {
+        "grain": 16000
+      },
+      "unlock": {
+        "farm": 1
+      }
+    },
+    {
+      "id": "rice",
+      "sow_s": 60,
+      "water_work_s": 20,
+      "mature_s": 7200,
+      "harvest_s": 90,
+      "output_mU": {
+        "grain": 36000
+      },
+      "unlock": {
+        "farm": 1,
+        "civic_water": 1
+      }
+    }
+  ],
+  "meal_quality": {
+    "basic": 40,
+    "hearty": 100
+  },
+  "pig": {
+    "segments": 6,
+    "segment_growth_s": 2880,
+    "care_work_s": 30,
+    "feed_mU": {
+      "grain": 250
+    },
+    "butcher_s": 90,
+    "meat_mU": 8000,
+    "source": "paid_juvenile_contract",
+    "death_from_shortage": false,
+    "target": 2,
+    "slots": 2,
+    "buy_cash": 20,
+    "transit_s": 300,
+    "budget_cash_per_window": 40
+  },
+  "heroes": [
+    {
+      "id": "xunyu",
+      "name": "荀彧",
+      "attributes": {
+        "administration": 94,
+        "strategy": 88,
+        "valor": 35,
+        "command": 55
+      },
+      "skill_ids": [
+        "agriculture",
+        "cookery",
+        "appeasement",
+        "kings_counsel"
+      ],
+      "starting": true,
+      "preferred_group": "food",
+      "recruitment_profile": "founding",
+      "minimum_owned": 0,
+      "tier": 0,
+      "art_family": "official",
+      "art": "dark_teal_robe_bamboo",
+      "display_order": 0
+    },
+    {
+      "id": "zhaoyun",
+      "name": "赵云",
+      "attributes": {
+        "administration": 62,
+        "strategy": 74,
+        "valor": 94,
+        "command": 92
+      },
+      "skill_ids": [
+        "patrol",
+        "drill",
+        "escort",
+        "dragon_courage"
+      ],
+      "starting": true,
+      "preferred_group": "logistics",
+      "recruitment_profile": "founding",
+      "minimum_owned": 0,
+      "tier": 0,
+      "art_family": "spear",
+      "art": "white_armor_blue_cape",
+      "display_order": 1
+    },
+    {
+      "id": "lusu",
+      "name": "鲁肃",
+      "attributes": {
+        "administration": 86,
+        "strategy": 84,
+        "valor": 40,
+        "command": 70
+      },
+      "skill_ids": [
+        "commerce",
+        "logistics",
+        "diplomatic_plan"
+      ],
+      "starting": false,
+      "preferred_group": "trade",
+      "recruitment_profile": "trade",
+      "minimum_owned": 5,
+      "tier": 0,
+      "art_family": "official",
+      "art": "green_robe_accounts",
+      "display_order": 2
+    },
+    {
+      "id": "liang",
+      "name": "诸葛亮",
+      "attributes": {
+        "administration": 92,
+        "strategy": 96,
+        "valor": 35,
+        "command": 85
+      },
+      "skill_ids": [
+        "construction",
+        "metallurgy",
+        "restoration",
+        "logistics",
+        "sleeping_dragon"
+      ],
+      "starting": false,
+      "preferred_group": "craft",
+      "recruitment_profile": "craft",
+      "minimum_owned": 5,
+      "tier": 0,
+      "art_family": "scholar",
+      "art": "grey_white_robe_fan",
+      "display_order": 3
+    },
+    {
+      "id": "guanyu",
+      "name": "关羽",
+      "attributes": {
+        "administration": 60,
+        "strategy": 72,
+        "valor": 96,
+        "command": 90
+      },
+      "skill_ids": [
+        "rationcraft",
+        "drill",
+        "escort",
+        "martial_sage"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 5,
+      "tier": 0,
+      "art_family": "bearded",
+      "art": "green_robe_long_beard",
+      "display_order": 4
+    },
+    {
+      "id": "zhangfei",
+      "name": "张飞",
+      "attributes": {
+        "administration": 42,
+        "strategy": 55,
+        "valor": 97,
+        "command": 88
+      },
+      "skill_ids": [
+        "gathering",
+        "construction",
+        "escort",
+        "thunder_roar"
+      ],
+      "starting": true,
+      "preferred_group": "supply",
+      "recruitment_profile": "founding",
+      "minimum_owned": 0,
+      "tier": 0,
+      "art_family": "heavy",
+      "art": "brown_armor_short_beard",
+      "display_order": 5
+    },
+    {
+      "id": "caocao",
+      "name": "曹操",
+      "attributes": {
+        "administration": 94,
+        "strategy": 92,
+        "valor": 72,
+        "command": 96
+      },
+      "skill_ids": [
+        "agriculture",
+        "logistics",
+        "commerce",
+        "drill",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "food",
+      "recruitment_profile": "supply",
+      "minimum_owned": 5,
+      "tier": 0,
+      "art_family": "official",
+      "display_order": 6
+    },
+    {
+      "id": "liubei",
+      "name": "刘备",
+      "attributes": {
+        "administration": 84,
+        "strategy": 78,
+        "valor": 76,
+        "command": 82
+      },
+      "skill_ids": [
+        "appeasement",
+        "agriculture",
+        "logistics"
+      ],
+      "starting": true,
+      "preferred_group": "food",
+      "recruitment_profile": "founding",
+      "minimum_owned": 0,
+      "tier": 0,
+      "art_family": "official",
+      "display_order": 7
+    },
+    {
+      "id": "sunquan",
+      "name": "孙权",
+      "attributes": {
+        "administration": 88,
+        "strategy": 81,
+        "valor": 64,
+        "command": 84
+      },
+      "skill_ids": [
+        "commerce",
+        "logistics",
+        "patrol",
+        "drill"
+      ],
+      "starting": false,
+      "preferred_group": "trade",
+      "recruitment_profile": "trade",
+      "minimum_owned": 5,
+      "tier": 0,
+      "art_family": "official",
+      "display_order": 8
+    },
+    {
+      "id": "simayi",
+      "name": "司马懿",
+      "attributes": {
+        "administration": 91,
+        "strategy": 97,
+        "valor": 36,
+        "command": 93
+      },
+      "skill_ids": [
+        "logistics",
+        "commerce",
+        "rearguard",
+        "drill"
+      ],
+      "starting": false,
+      "preferred_group": "food",
+      "recruitment_profile": "supply",
+      "minimum_owned": 8,
+      "tier": 1,
+      "art_family": "scholar",
+      "display_order": 9
+    },
+    {
+      "id": "guojia",
+      "name": "郭嘉",
+      "attributes": {
+        "administration": 74,
+        "strategy": 97,
+        "valor": 29,
+        "command": 70
+      },
+      "skill_ids": [
+        "escort",
+        "rearguard",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 8,
+      "tier": 1,
+      "art_family": "scholar",
+      "display_order": 10
+    },
+    {
+      "id": "jiaxu",
+      "name": "贾诩",
+      "attributes": {
+        "administration": 85,
+        "strategy": 96,
+        "valor": 28,
+        "command": 72
+      },
+      "skill_ids": [
+        "commerce",
+        "rearguard",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "trade",
+      "recruitment_profile": "trade",
+      "minimum_owned": 8,
+      "tier": 1,
+      "art_family": "scholar",
+      "display_order": 11
+    },
+    {
+      "id": "pangtong",
+      "name": "庞统",
+      "attributes": {
+        "administration": 85,
+        "strategy": 96,
+        "valor": 36,
+        "command": 82
+      },
+      "skill_ids": [
+        "construction",
+        "metallurgy",
+        "restoration",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "craft",
+      "recruitment_profile": "craft",
+      "minimum_owned": 8,
+      "tier": 1,
+      "art_family": "scholar",
+      "display_order": 12
+    },
+    {
+      "id": "xunyou",
+      "name": "荀攸",
+      "attributes": {
+        "administration": 89,
+        "strategy": 95,
+        "valor": 30,
+        "command": 75
+      },
+      "skill_ids": [
+        "rationcraft",
+        "logistics",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "food",
+      "recruitment_profile": "supply",
+      "minimum_owned": 8,
+      "tier": 1,
+      "art_family": "scholar",
+      "display_order": 13
+    },
+    {
+      "id": "chenqun",
+      "name": "陈群",
+      "attributes": {
+        "administration": 96,
+        "strategy": 83,
+        "valor": 26,
+        "command": 55
+      },
+      "skill_ids": [
+        "appeasement",
+        "agriculture"
+      ],
+      "starting": false,
+      "preferred_group": "food",
+      "recruitment_profile": "supply",
+      "minimum_owned": 12,
+      "tier": 2,
+      "art_family": "official",
+      "display_order": 14
+    },
+    {
+      "id": "manchong",
+      "name": "满宠",
+      "attributes": {
+        "administration": 86,
+        "strategy": 82,
+        "valor": 64,
+        "command": 80
+      },
+      "skill_ids": [
+        "patrol",
+        "construction",
+        "rationcraft"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 12,
+      "tier": 2,
+      "art_family": "official",
+      "display_order": 15
+    },
+    {
+      "id": "zhangzhao",
+      "name": "张昭",
+      "attributes": {
+        "administration": 94,
+        "strategy": 86,
+        "valor": 24,
+        "command": 48
+      },
+      "skill_ids": [
+        "commerce",
+        "appeasement",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "trade",
+      "recruitment_profile": "trade",
+      "minimum_owned": 12,
+      "tier": 2,
+      "art_family": "official",
+      "display_order": 16
+    },
+    {
+      "id": "huangyueying",
+      "name": "黄月英",
+      "attributes": {
+        "administration": 80,
+        "strategy": 94,
+        "valor": 30,
+        "command": 55
+      },
+      "skill_ids": [
+        "carpentry",
+        "metallurgy",
+        "restoration"
+      ],
+      "starting": true,
+      "preferred_group": "craft",
+      "recruitment_profile": "founding",
+      "minimum_owned": 0,
+      "tier": 0,
+      "art_family": "artisan",
+      "display_order": 17
+    },
+    {
+      "id": "zhouyu",
+      "name": "周瑜",
+      "attributes": {
+        "administration": 85,
+        "strategy": 95,
+        "valor": 71,
+        "command": 96
+      },
+      "skill_ids": [
+        "drill",
+        "escort",
+        "logistics",
+        "metallurgy"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 12,
+      "tier": 2,
+      "art_family": "light",
+      "display_order": 18
+    },
+    {
+      "id": "luxun",
+      "name": "陆逊",
+      "attributes": {
+        "administration": 90,
+        "strategy": 95,
+        "valor": 65,
+        "command": 94
+      },
+      "skill_ids": [
+        "drill",
+        "rearguard",
+        "agriculture",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "food",
+      "recruitment_profile": "supply",
+      "minimum_owned": 12,
+      "tier": 2,
+      "art_family": "scholar",
+      "display_order": 19
+    },
+    {
+      "id": "lumeng",
+      "name": "吕蒙",
+      "attributes": {
+        "administration": 73,
+        "strategy": 85,
+        "valor": 82,
+        "command": 90
+      },
+      "skill_ids": [
+        "drill",
+        "escort",
+        "patrol"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 18,
+      "tier": 3,
+      "art_family": "light",
+      "display_order": 20
+    },
+    {
+      "id": "zhangliao",
+      "name": "张辽",
+      "attributes": {
+        "administration": 65,
+        "strategy": 78,
+        "valor": 92,
+        "command": 94
+      },
+      "skill_ids": [
+        "drill",
+        "escort",
+        "patrol",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 18,
+      "tier": 3,
+      "art_family": "heavy",
+      "display_order": 21
+    },
+    {
+      "id": "xuhuang",
+      "name": "徐晃",
+      "attributes": {
+        "administration": 58,
+        "strategy": 72,
+        "valor": 91,
+        "command": 88
+      },
+      "skill_ids": [
+        "rationcraft",
+        "drill",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 18,
+      "tier": 3,
+      "art_family": "heavy",
+      "display_order": 22
+    },
+    {
+      "id": "xiahoudun",
+      "name": "夏侯惇",
+      "attributes": {
+        "administration": 70,
+        "strategy": 65,
+        "valor": 90,
+        "command": 86
+      },
+      "skill_ids": [
+        "gathering",
+        "construction",
+        "drill"
+      ],
+      "starting": false,
+      "preferred_group": "supply",
+      "recruitment_profile": "field",
+      "minimum_owned": 18,
+      "tier": 3,
+      "art_family": "heavy",
+      "display_order": 23
+    },
+    {
+      "id": "xuchu",
+      "name": "许褚",
+      "attributes": {
+        "administration": 28,
+        "strategy": 40,
+        "valor": 98,
+        "command": 70
+      },
+      "skill_ids": [
+        "gathering",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "supply",
+      "recruitment_profile": "field",
+      "minimum_owned": 18,
+      "tier": 3,
+      "art_family": "heavy",
+      "display_order": 24
+    },
+    {
+      "id": "machao",
+      "name": "马超",
+      "attributes": {
+        "administration": 40,
+        "strategy": 58,
+        "valor": 97,
+        "command": 88
+      },
+      "skill_ids": [
+        "patrol",
+        "escort",
+        "drill"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 24,
+      "tier": 4,
+      "art_family": "light",
+      "display_order": 25
+    },
+    {
+      "id": "huangzhong",
+      "name": "黄忠",
+      "attributes": {
+        "administration": 58,
+        "strategy": 68,
+        "valor": 94,
+        "command": 87
+      },
+      "skill_ids": [
+        "drill",
+        "escort",
+        "rearguard"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 24,
+      "tier": 4,
+      "art_family": "archer",
+      "display_order": 26
+    },
+    {
+      "id": "weiyan",
+      "name": "魏延",
+      "attributes": {
+        "administration": 52,
+        "strategy": 73,
+        "valor": 92,
+        "command": 90
+      },
+      "skill_ids": [
+        "patrol",
+        "rationcraft",
+        "escort"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 24,
+      "tier": 4,
+      "art_family": "heavy",
+      "display_order": 27
+    },
+    {
+      "id": "ganning",
+      "name": "甘宁",
+      "attributes": {
+        "administration": 43,
+        "strategy": 70,
+        "valor": 94,
+        "command": 86
+      },
+      "skill_ids": [
+        "patrol",
+        "escort",
+        "logistics"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 24,
+      "tier": 4,
+      "art_family": "light",
+      "display_order": 28
+    },
+    {
+      "id": "lvbu",
+      "name": "吕布",
+      "attributes": {
+        "administration": 24,
+        "strategy": 38,
+        "valor": 100,
+        "command": 92
+      },
+      "skill_ids": [
+        "drill",
+        "escort",
+        "gathering"
+      ],
+      "starting": false,
+      "preferred_group": "guard",
+      "recruitment_profile": "route",
+      "minimum_owned": 24,
+      "tier": 4,
+      "art_family": "light",
+      "display_order": 29
+    }
+  ],
+  "recruitment": {
+    "max_wishes": 1,
+    "max_watches": 3,
+    "profiles": {
+      "field": {
+        "condition": {
+          "harvested_lots": 1
+        },
+        "wait_s": [
+          300,
+          1800,
+          300
+        ],
+        "cash": [
+          10,
+          20,
+          20
+        ],
+        "materials_mU": [
+          {},
+          {
+            "grain": 2000
+          },
+          {}
+        ]
+      },
+      "supply": {
+        "condition": {
+          "consecutive_full_meals": 4
+        },
+        "wait_s": [
+          300,
+          2400,
+          600
+        ],
+        "cash": [
+          15,
+          25,
+          20
+        ],
+        "materials_mU": [
+          {},
+          {
+            "meal": 4000
+          },
+          {}
+        ]
+      },
+      "trade": {
+        "condition": {
+          "building_market": 1,
+          "external_settlements": 3
+        },
+        "wait_s": [
+          600,
+          3600,
+          600
+        ],
+        "cash": [
+          20,
+          40,
+          30
+        ],
+        "materials_mU": [
+          {},
+          {
+            "grain": 2000
+          },
+          {}
+        ]
+      },
+      "craft": {
+        "condition": {
+          "building_workshop": 1,
+          "forge_batches": 1
+        },
+        "wait_s": [
+          600,
+          5400,
+          900
+        ],
+        "cash": [
+          25,
+          50,
+          35
+        ],
+        "materials_mU": [
+          {},
+          {
+            "tools": 2000
+          },
+          {}
+        ]
+      },
+      "route": {
+        "condition": {
+          "building_station": 1,
+          "consecutive_full_meals": 4
+        },
+        "wait_s": [
+          600,
+          3600,
+          600
+        ],
+        "cash": [
+          20,
+          40,
+          30
+        ],
+        "materials_mU": [
+          {},
+          {
+            "rations": 4000
+          },
+          {}
+        ]
+      },
+      "feast": {
+        "condition": {
+          "building_tavern": 1,
+          "public_meals_consumed": 16
+        },
+        "wait_s": [
+          300,
+          2400,
+          600
+        ],
+        "cash": [
+          15,
+          25,
+          20
+        ],
+        "materials_mU": [
+          {},
+          {
+            "meal": 4000
+          },
+          {}
+        ]
+      }
+    },
+    "prepare_s": 60,
+    "finish_s": 30,
+    "arrival_s": 300,
+    "stages": [
+      "reception",
+      "cooperation",
+      "settlement"
+    ],
+    "new_hero_consumer": "next_meal",
+    "money_reserve_scope": "current_stage",
+    "full_path_authorization": true,
+    "tier_price_multiplier": [
+      1,
+      1,
+      2,
+      2,
+      3
+    ],
+    "tier_wait_multiplier": [
+      1,
+      2,
+      2,
+      3,
+      3
+    ]
+  },
+  "work_groups": {
+    "food": [
+      "farmer",
+      "cook",
+      "server",
+      "herder",
+      "butcher",
+      "rationer",
+      "groom"
+    ],
+    "supply": [
+      "logger",
+      "miner"
+    ],
+    "craft": [
+      "carpenter",
+      "smith",
+      "builder",
+      "restorer"
+    ],
+    "logistics": [
+      "porter",
+      "clerk",
+      "courier"
+    ],
+    "trade": [
+      "merchant"
+    ],
+    "guard": [
+      "guard",
+      "quartermaster",
+      "handyman"
+    ]
+  },
+  "scheduler": {
+    "preference_modes": [
+      "automatic",
+      "prefer",
+      "rest_optional"
+    ],
+    "change_job_s": 15,
+    "max_new_parents": 8,
+    "max_new_children": 32,
+    "max_orders": 2048,
+    "min_food_workers_available": 2,
+    "optional_concurrent_projects": 1,
+    "max_builders": 2,
+    "admin_work_s": 30,
+    "admin_period_s": 600,
+    "admin_lease_s": 600,
+    "admin_block_sleep": true,
+    "night_patrol_min_owned": 8,
+    "night_patrol_max_per_cycle": 1,
+    "night_patrol_work_s": 120,
+    "night_patrol_window": [
+      2040,
+      2160
+    ],
+    "night_patrol_no_travel_after": 2160
+  },
+  "food": {
+    "portion_mU": 1000,
+    "kitchen_target_meals": 2,
+    "protect_meals": 4,
+    "production_target_meals": 8,
+    "hearty_target_bp": {
+      "supply": 5000,
+      "trade": 2500,
+      "industry": 0,
+      "military": 0,
+      "balanced": 2500
+    },
+    "recovery_enter_bp": 9000,
+    "recovery_exit_bp": 9500,
+    "recovery_consecutive": 2,
+    "init_satisfaction": 70,
+    "finance_floor": 20,
+    "emergency_reserve": 40,
+    "total_cash_protected": 60,
+    "emergency_budget": 40,
+    "market_contract_fee": 2,
+    "investment_bp": {
+      "conservative": 2500,
+      "balanced": 4000,
+      "active": 6000
+    }
+  },
+  "buildings": [
+    {
+      "id": "hall",
+      "max": 1,
+      "cash": 100,
+      "work_s": 1200,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 4000
+      },
+      "capacity": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "house",
+      "max": 4,
+      "cash": 60,
+      "work_s": 900,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 2000
+      },
+      "capacity": [
+        5,
+        8,
+        10
+      ]
+    },
+    {
+      "id": "farm",
+      "max": 2,
+      "cash": 60,
+      "work_s": 900,
+      "materials_mU": {
+        "wood": 6000,
+        "stone": 2000
+      },
+      "capacity": [
+        4,
+        8,
+        12
+      ]
+    },
+    {
+      "id": "granary",
+      "max": 2,
+      "cash": 60,
+      "work_s": 1200,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 2000
+      },
+      "capacity": [
+        256,
+        512,
+        1024
+      ]
+    },
+    {
+      "id": "market",
+      "max": 1,
+      "cash": 100,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 10000,
+        "stone": 4000
+      },
+      "capacity": [
+        24,
+        48,
+        72
+      ]
+    },
+    {
+      "id": "workshop",
+      "max": 2,
+      "cash": 120,
+      "work_s": 2400,
+      "materials_mU": {
+        "wood": 12000,
+        "stone": 6000,
+        "tools": 1000
+      },
+      "capacity": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "tavern",
+      "max": 1,
+      "cash": 80,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 10000,
+        "stone": 4000
+      },
+      "capacity": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "stable",
+      "max": 1,
+      "cash": 100,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 12000,
+        "stone": 4000
+      },
+      "capacity": [
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "id": "station",
+      "max": 1,
+      "cash": 100,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 10000,
+        "stone": 4000,
+        "tools": 1000
+      },
+      "capacity": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "barracks",
+      "max": 1,
+      "cash": 120,
+      "work_s": 2400,
+      "materials_mU": {
+        "wood": 14000,
+        "stone": 8000,
+        "tools": 2000
+      },
+      "capacity": [
+        4,
+        6,
+        8
+      ]
+    }
+  ],
+  "building_upgrade": {
+    "cash_material_multipliers": [
+      1,
+      2,
+      4
+    ],
+    "work_multipliers": [
+      1,
+      2,
+      4
+    ],
+    "phases_bp": [
+      0,
+      2000,
+      4500,
+      8000,
+      10000
+    ]
+  },
+  "attachments": [
+    {
+      "id": "pasture",
+      "cash": 60,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "butcher",
+      "cash": 40,
+      "work_s": 900,
+      "materials_mU": {
+        "wood": 3000,
+        "stone": 2000
+      }
+    },
+    {
+      "id": "ration",
+      "cash": 40,
+      "work_s": 600,
+      "materials_mU": {
+        "wood": 3000,
+        "stone": 2000
+      }
+    },
+    {
+      "id": "delivery",
+      "cash": 30,
+      "work_s": 600,
+      "materials_mU": {
+        "wood": 3000,
+        "stone": 2000
+      }
+    },
+    {
+      "id": "cart",
+      "cash": 30,
+      "work_s": 300,
+      "materials_mU": {
+        "wood": 6000,
+        "tools": 1000
+      }
+    }
+  ],
+  "civics": {
+    "base_cash": {
+      "road": 120,
+      "water": 120,
+      "housing": 120,
+      "trade": 160,
+      "industry": 160,
+      "academy": 140,
+      "garden": 120,
+      "defense": 160
+    },
+    "material_base_mU": {
+      "wood": 12000,
+      "stone": 6000,
+      "tools": 1000
+    },
+    "cash_material_multipliers": [
+      1,
+      2,
+      3
+    ],
+    "work_s": [
+      3600,
+      7200,
+      14400
+    ],
+    "minimum_owned": [
+      5,
+      8,
+      12
+    ],
+    "qualified_windows": [
+      0,
+      2,
+      4
+    ]
+  },
+  "landmarks": {
+    "ids": [
+      "welfare",
+      "commerce",
+      "industry",
+      "military"
+    ],
+    "minimum_owned": [
+      8,
+      12,
+      18
+    ],
+    "qualified_windows": [
+      0,
+      2,
+      4
+    ],
+    "stage_cash": [
+      180,
+      360,
+      720
+    ],
+    "stage_materials_mU": [
+      {
+        "wood": 16000,
+        "stone": 8000,
+        "tools": 1000
+      },
+      {
+        "wood": 24000,
+        "stone": 16000,
+        "tools": 2000
+      },
+      {
+        "wood": 40000,
+        "stone": 24000,
+        "tools": 4000
+      }
+    ],
+    "stage_work_s": [
+      7200,
+      14400,
+      28800
+    ],
+    "max_active": 1,
+    "stages": [
+      {
+        "id": "welfare-1",
+        "project": "welfare",
+        "stage": 1,
+        "conditions": {
+          "house": 1
+        },
+        "effects": {
+          "home_meal_volume_first_two": 2
+        }
+      },
+      {
+        "id": "welfare-2",
+        "project": "welfare",
+        "stage": 2,
+        "conditions": {
+          "tavern": 1
+        },
+        "effects": {
+          "public_kitchen_slots": 1,
+          "delivery_1_volume": 8
+        }
+      },
+      {
+        "id": "welfare-3",
+        "project": "welfare",
+        "stage": 3,
+        "conditions": {
+          "water": 1
+        },
+        "effects": {
+          "environment": 5
+        }
+      },
+      {
+        "id": "commerce-1",
+        "project": "commerce",
+        "stage": 1,
+        "conditions": {
+          "market": 1,
+          "station": 1
+        },
+        "effects": {
+          "carrier_slots": 1
+        }
+      },
+      {
+        "id": "commerce-2",
+        "project": "commerce",
+        "stage": 2,
+        "conditions": {
+          "tavern": 1
+        },
+        "effects": {
+          "tavern_visitors": 1
+        }
+      },
+      {
+        "id": "commerce-3",
+        "project": "commerce",
+        "stage": 3,
+        "conditions": {
+          "trade": 2
+        },
+        "effects": {
+          "trade_quota": 16
+        }
+      },
+      {
+        "id": "industry-1",
+        "project": "industry",
+        "stage": 1,
+        "conditions": {
+          "workshop": 1
+        },
+        "effects": {
+          "carpentry_slots": 1
+        }
+      },
+      {
+        "id": "industry-2",
+        "project": "industry",
+        "stage": 2,
+        "conditions": {
+          "workshop": 1
+        },
+        "effects": {
+          "forge_slots": 1
+        }
+      },
+      {
+        "id": "industry-3",
+        "project": "industry",
+        "stage": 3,
+        "conditions": {
+          "industry": 2
+        },
+        "effects": {
+          "restoration_slots": 1
+        }
+      },
+      {
+        "id": "military-1",
+        "project": "military",
+        "stage": 1,
+        "conditions": {
+          "barracks": 1,
+          "ration": 1
+        },
+        "effects": {
+          "ration_output_volume": 16
+        }
+      },
+      {
+        "id": "military-2",
+        "project": "military",
+        "stage": 2,
+        "conditions": {
+          "barracks": 2
+        },
+        "effects": {
+          "guard_drill_work_rate_bp": 500
+        }
+      },
+      {
+        "id": "military-3",
+        "project": "military",
+        "stage": 3,
+        "conditions": {
+          "defense": 2
+        },
+        "effects": {
+          "security": 5
+        }
+      }
+    ]
+  },
+  "stories": {
+    "duration_s": 15,
+    "max_per_cycle": 2,
+    "pair_cooldown_s": 2880,
+    "proximity_units": 80,
+    "resources_delta": 0,
+    "experience_delta": 0,
+    "relationship_bonus": false,
+    "blocking": false,
+    "definitions": [
+      {
+        "id": "S01",
+        "trigger": "same_meal_consumed",
+        "pair": "any"
+      },
+      {
+        "id": "S02",
+        "trigger": "wood_unloaded_at_active_site",
+        "pair": [
+          "zhangfei",
+          "huangyueying"
+        ]
+      },
+      {
+        "id": "S03",
+        "trigger": "meal_delivered_to_home",
+        "pair": [
+          "liubei",
+          "zhaoyun"
+        ]
+      },
+      {
+        "id": "S04",
+        "trigger": "forge_completed",
+        "pair": [
+          "huangyueying",
+          "liang"
+        ]
+      },
+      {
+        "id": "S05",
+        "trigger": "external_settled",
+        "one_of_pair": "lusu"
+      },
+      {
+        "id": "S06",
+        "trigger": "idle_or_guard_end_at_gate",
+        "pair": "any"
+      }
+    ]
+  },
+  "performance": {
+    "desktop_fps": 15,
+    "low_fps": 8,
+    "inspect_fps": 30,
+    "hero_draw_cap": 30,
+    "visitor_cap": 4,
+    "animal_draw_cap": 6,
+    "cpu_one_core_target_percent": 8,
+    "hidden_cpu_target_percent": 2,
+    "memory_target_mb": 500
+  },
+  "save": {
+    "autosave_s": 120,
+    "rolling_backups": 3,
+    "offline_cap_s": 2592000,
+    "max_detailed_events": 4096,
+    "max_command_receipts_per_segment": 10000,
+    "auto_memories": 60,
+    "pinned_memories": 20,
+    "import_old_saves": false
+  },
+  "dependencies": {
+    "skills": "hero-system-v0.7.json",
+    "attributes_and_skills": "heroes-v0.7.2.json",
+    "legacy_values_authoritative": false
+  },
+  "dependency_sha256": {
+    "hero-system-v0.7.json": "61013a95d5e5010d25b932572e99adec6f6fc55b751260516e82cae087a4e77e",
+    "heroes-v0.7.2.json": "aefba06ff8e19c98e7001c158b69df81cae8226513deeeaf73120f8d4ed9ec14"
+  },
+  "skill_contract": {
+    "library_version": "0.7.1",
+    "job_weights_bp": {
+      "farmer": {
+        "administration": 7000,
+        "strategy": 3000
+      },
+      "herder": {
+        "administration": 6000,
+        "command": 4000
+      },
+      "butcher": {
+        "valor": 8000,
+        "strategy": 2000
+      },
+      "cook": {
+        "administration": 6000,
+        "strategy": 4000
+      },
+      "server": {
+        "administration": 7000,
+        "command": 3000
+      },
+      "rationer": {
+        "administration": 5000,
+        "command": 5000
+      },
+      "logger": {
+        "valor": 8000,
+        "command": 2000
+      },
+      "miner": {
+        "valor": 8000,
+        "strategy": 2000
+      },
+      "carpenter": {
+        "strategy": 6000,
+        "administration": 4000
+      },
+      "smith": {
+        "strategy": 7000,
+        "valor": 3000
+      },
+      "builder": {
+        "command": 5000,
+        "administration": 5000
+      },
+      "porter": {
+        "command": 6000,
+        "valor": 4000
+      },
+      "clerk": {
+        "administration": 7000,
+        "strategy": 3000
+      },
+      "merchant": {
+        "administration": 6000,
+        "strategy": 4000
+      },
+      "courier": {
+        "command": 6000,
+        "strategy": 4000
+      },
+      "guard": {
+        "command": 6000,
+        "valor": 4000
+      },
+      "quartermaster": {
+        "command": 7000,
+        "administration": 3000
+      },
+      "groom": {
+        "command": 6000,
+        "administration": 4000
+      },
+      "restorer": {
+        "strategy": 8000,
+        "administration": 2000
+      },
+      "handyman": {
+        "administration": 6000,
+        "command": 4000
+      }
+    },
+    "enabled_roles": [
+      "self",
+      "prefect"
+    ],
+    "disabled_metrics": [
+      "training_rate_bp",
+      "escort_score",
+      "wounded_reduction_bp"
+    ],
+    "self_prefect_stacking": false,
+    "admin_lease_required": true
+  },
+  "storage": {
+    "crop_output_volume": 64,
+    "source_output_volume": 24,
+    "device_input_volume": 64,
+    "device_output_volume": 64,
+    "home_meal_volume": [
+      8,
+      12,
+      16
+    ],
+    "delivery_volume": 16,
+    "walking_volume": 4,
+    "cart_volume": 12
+  },
+  "sources": [
+    {
+      "id": "trees",
+      "nodes": 24,
+      "parallel": 2,
+      "work_s": 105,
+      "output_mU": {
+        "wood": 4000
+      },
+      "replant_s": 30,
+      "regrow_s": 7200
+    },
+    {
+      "id": "quarry",
+      "nodes": 1,
+      "parallel": 1,
+      "work_s": 135,
+      "output_mU": {
+        "stone": 4000
+      }
+    },
+    {
+      "id": "mine",
+      "nodes": 1,
+      "parallel": 1,
+      "work_s": 300,
+      "output_mU": {
+        "iron": 2000
+      }
+    }
+  ],
+  "collections": {
+    "seal": {
+      "id": "founders_seal",
+      "cash": 10,
+      "materials_mU": {
+        "wood": 2000
+      },
+      "work_s": 360
+    },
+    "weapons": [
+      {
+        "id": "silver-spear",
+        "name": "银纹长枪",
+        "condition": {
+          "workshop": 1
+        },
+        "cash": 50,
+        "contact_s": 600,
+        "work_s": 300,
+        "materials_mU": {
+          "wood": 2000,
+          "iron": 2000
+        },
+        "attributes": {
+          "command": 2,
+          "valor": 2
+        }
+      },
+      {
+        "id": "dragon-spear",
+        "name": "龙胆亮银枪",
+        "condition": {
+          "hero": "zhaoyun",
+          "workshop": 1
+        },
+        "cash": 480,
+        "contact_s": 14400,
+        "work_s": 900,
+        "materials_mU": {
+          "iron": 12000,
+          "tools": 2000
+        },
+        "attributes": {
+          "command": 3,
+          "valor": 4
+        }
+      },
+      {
+        "id": "crescent-blade",
+        "name": "青龙偃月刀",
+        "condition": {
+          "hero": "guanyu",
+          "defense": 1
+        },
+        "cash": 520,
+        "contact_s": 21600,
+        "work_s": 1080,
+        "materials_mU": {
+          "iron": 15000,
+          "wood": 3000
+        },
+        "attributes": {
+          "valor": 6
+        }
+      },
+      {
+        "id": "serpent-spear",
+        "name": "丈八蛇矛",
+        "condition": {
+          "hero": "zhangfei",
+          "industry": 1
+        },
+        "cash": 480,
+        "contact_s": 21600,
+        "work_s": 1080,
+        "materials_mU": {
+          "iron": 12000,
+          "wood": 4500
+        },
+        "attributes": {
+          "valor": 6
+        }
+      },
+      {
+        "id": "qinggang",
+        "name": "青釭剑",
+        "condition": {
+          "external_settlements": 3,
+          "academy": 1,
+          "workshop": 1
+        },
+        "cash": 560,
+        "contact_s": 28800,
+        "work_s": 1200,
+        "materials_mU": {
+          "iron": 12000,
+          "tools": 3000
+        },
+        "attributes": {
+          "strategy": 4,
+          "valor": 2
+        }
+      },
+      {
+        "id": "seven-star",
+        "name": "七星宝刀",
+        "condition": {
+          "academy": 1,
+          "letter_read": true,
+          "workshop": 1
+        },
+        "cash": 580,
+        "contact_s": 36000,
+        "work_s": 1500,
+        "materials_mU": {
+          "iron": 10000,
+          "tools": 4000
+        },
+        "attributes": {
+          "strategy": 3,
+          "administration": 3
+        }
+      }
+    ],
+    "mounts": [
+      {
+        "id": "yellow-horse",
+        "name": "黄骠马",
+        "condition": {
+          "stable": 1
+        },
+        "cash": 120,
+        "contact_s": 1800,
+        "passive_s": 7200,
+        "work_s": 300,
+        "materials_mU": {
+          "grain": 1500
+        },
+        "speed_bp": 500
+      },
+      {
+        "id": "red-hare",
+        "name": "赤兔",
+        "condition": {
+          "mount": "yellow-horse",
+          "external_settlements": 3
+        },
+        "cash": 600,
+        "contact_s": 28800,
+        "passive_s": 43200,
+        "work_s": 1200,
+        "materials_mU": {
+          "grain": 5000
+        },
+        "speed_bp": 1000
+      },
+      {
+        "id": "dilu",
+        "name": "的卢",
+        "condition": {
+          "mount": "yellow-horse",
+          "water": 1
+        },
+        "cash": 500,
+        "contact_s": 21600,
+        "passive_s": 36000,
+        "work_s": 1000,
+        "materials_mU": {
+          "grain": 4000
+        },
+        "speed_bp": 800
+      },
+      {
+        "id": "jueying",
+        "name": "绝影",
+        "condition": {
+          "mount": "yellow-horse",
+          "road": 1
+        },
+        "cash": 560,
+        "contact_s": 28800,
+        "passive_s": 43200,
+        "work_s": 1200,
+        "materials_mU": {
+          "grain": 5000
+        },
+        "speed_bp": 1200
+      }
+    ],
+    "contact_prep_s": 60,
+    "contact_finish_s": 30,
+    "contact_cash_bp": 4000,
+    "mount_care": {
+      "materials_mU": {
+        "grain": 250
+      },
+      "work_s": 30,
+      "period_s": 2880
+    },
+    "weapons_per_hero": 1,
+    "mounts_per_hero": 1
+  }
+}
