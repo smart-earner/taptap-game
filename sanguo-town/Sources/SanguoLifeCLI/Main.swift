@@ -28,7 +28,7 @@ import SanguoLifeVisual
             let encoder=JSONEncoder();encoder.outputFormatting=[.sortedKeys]
             try encoder.encode(w).write(to:dir.appendingPathComponent("world.json"),options:.atomic)
             if args.contains("--trace"){try encoder.encode(samples).write(to:dir.appendingPathComponent("trace.json"),options:.atomic)}
-            if args.contains("--preview") {try preview(catalog:c,to:dir)}
+            if args.contains("--preview") {if args.contains("--husbandry") {try HusbandryPreview.export(catalog:c,to:dir)} else {try preview(catalog:c,to:dir)}}
         }
     }
     static func preview(catalog:LifeCatalog,to dir:URL) throws {

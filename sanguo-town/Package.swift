@@ -15,7 +15,7 @@ var targets: [Target] = [
     .target(name: "SanguoLife", resources: [.process("Resources")]),
     .target(name: "SanguoLifeVisual", dependencies: ["SanguoLife", "SanguoPresentation"]),
     .executableTarget(name: "SanguoLifeCLI", dependencies: ["SanguoLife", "SanguoLifeVisual"]),
-    .testTarget(name: "SanguoLifeTests", dependencies: ["SanguoLife"]),
+    .testTarget(name: "SanguoLifeTests", dependencies: ["SanguoLife", "SanguoLifeVisual"]),
     .target(name: "SanguoCore"),
     .executableTarget(name:"SanguoGrowth",dependencies:["SanguoCore","SanguoPresentation"]),
     .target(name: "SanguoPresentation", dependencies: ["SanguoCore"]),

@@ -146,7 +146,7 @@ public struct LifeRuntime: Sendable {
             for key in world.lots.keys.sorted() where world.lots[key]!.location==id {world.lots[key]!.location=task.target}
             world.storages[task.target]!.incoming-=task.space
             world.counters["deliveries",default:0]+=1
-            world.record("delivery","\(world.agents[task.worker]!.name)将\(String(format:"%.1f",Double(task.quantity)/1000))份\(task.resource!.title)送达\(label(task.target))。")
+            world.record("delivery","\(world.agents[task.worker]!.name)将\(String(format:"%.2f",Double(task.quantity)/1000))份\(task.resource!.title)送达\(label(task.target))。")
         }
         if task.kind=="export" && task.current.kind=="external_sale" {
             _=world.consume(task.resource!,quantity:task.quantity,at:task.id)

@@ -63,7 +63,7 @@ struct LifeView:View {
     var body:some View {
         VStack(spacing:0){
             HStack{
-                VStack(alignment:.leading,spacing:3){Text("小城志 · 城市生活").font(.title2.bold());Text("life-0.7.2-v1 · 独立试玩存档，旧城不迁移").font(.caption).foregroundStyle(.secondary)}
+                VStack(alignment:.leading,spacing:3){Text("小城志 · 城市生活").font(.title2.bold());Text("生活试玩 v2 · 可选肉食供应，经典城池不迁移").font(.caption).foregroundStyle(.secondary)}
                 Spacer()
                 Picker("查看",selection:$page){Text("我的城").tag(0);Text("武将宝鉴 · 30").tag(1);Text("城务记录").tag(2)}.pickerStyle(.segmented).frame(width:310)
                 Button(desktop.enabled ? "隐藏桌面城景":"铺满桌面"){desktop.setEnabled(!desktop.enabled)}.disabled(model.world==nil)
@@ -85,7 +85,7 @@ struct LifeView:View {
                             GroupBox("正在做什么"){
                                 VStack(alignment:.leading,spacing:6){
                                     ForEach(w.projects.values.filter{!$0.completed}.sorted{$0.id<$1.id}){p in
-                                        Text(p.kind=="seal" ? "雕制开城木印":"\(["house":"民居","repair":"府署修缮","market":"集市","workshop":"工造院","tavern":"饭馆"][p.kind] ?? p.kind)")
+                                        Text(p.kind=="seal" ? "雕制开城木印":"\(["house":"民居","repair":"府署修缮","market":"集市","workshop":"工造院","tavern":"饭馆","pasture":"牧栏","butcher":"肉食台"][p.kind] ?? p.kind)")
                                         ProgressView(value:Double(p.completedWork)/Double(max(1,p.totalWork)))
                                         Text("\(p.completedWork)/\(p.totalWork) 人工秒 · 第\(p.phase+1)段").font(.caption)
                                     }
@@ -99,6 +99,7 @@ struct LifeView:View {
                                     Button("打开宝鉴，选择一位想招募的人"){page=1}
                                 }.font(.callout)
                             }
+                            HusbandryPanel(model:model,world:w)
                             GroupBox("实际物资"){
                                 VStack(spacing:5){ForEach(LifeResource.allCases,id:\.self){r in HStack{Text(r.title);Spacer();Text(String(format:"%.1f",Double(w.amount(r))/1000)).monospacedDigit()}}}
                                 Text("合计包括在途；只有送达工作点才可使用。").font(.caption).foregroundStyle(.secondary)
@@ -110,7 +111,7 @@ struct LifeView:View {
                                 }
                             }
                             if desktop.enabled {Picker("显示器",selection:$desktop.screenID){Text("主屏幕").tag(0);ForEach(Array(NSScreen.screens.enumerated()),id:\.offset){_,s in Text(s.localizedName).tag((s.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.intValue ?? 0)}}}
-                            Text("本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。养猪、军团作战、多城和完整收藏装备仍未接入。").font(.caption).foregroundStyle(.secondary)
+                            Text("本版已接真实供餐、种植、搬运、基础城建、招募与昼夜。可选养殖与肉食已接入；军团作战、多城和完整收藏装备仍待完成。").font(.caption).foregroundStyle(.secondary)
                         }.padding(14)}.frame(width:300)
                     }
                 } else if page==1 {codex(w,c)}

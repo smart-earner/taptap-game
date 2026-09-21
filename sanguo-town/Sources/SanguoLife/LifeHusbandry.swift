@@ -34,6 +34,16 @@ public struct LifePig: Codable, Equatable, Identifiable, Sendable {
         self.due = orderedAt + LifeHusbandryRules.deliverySeconds
     }
 
+    /// Funded care is not completed growth. The sixth feeding cannot show 100% maturity.
+    public func growthProgress(at time: Int64) -> Double {
+        if [.ready, .leading, .processing].contains(phase) { return 1 }
+        if phase == .growing, let due {
+            let part = max(0, min(1, 1 - Double(max(0, due-time)) / Double(LifeHusbandryRules.segmentSeconds)))
+            return (Double(max(0, segmentsFed-1)) + part) / Double(LifeHusbandryRules.growthSegments)
+        }
+        return Double(segmentsFed) / Double(LifeHusbandryRules.growthSegments)
+    }
+
     /// Passive events cannot depend on animation frames, visibility or an open window.
     mutating func advancePassive(to time: Int64) {
         guard let due, time >= due else { return }

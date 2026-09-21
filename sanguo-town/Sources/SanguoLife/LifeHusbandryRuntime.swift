@@ -214,7 +214,7 @@ extension LifeRuntime {
 extension LifeWorld {
     func validateHusbandry() throws {
         guard let h = husbandry else { return }
-        guard h.targetCount == 2, h.pigs.count <= LifeHusbandryRules.capacity,
+        guard h.targetCount == 2, h.pigs.count <= h.targetCount,
               h.purchasePeriod >= 0, h.purchasePeriod <= time / LifeHusbandryRules.fiscalSeconds,
               h.purchaseSpent >= 0, h.purchaseSpent <= h.purchaseLimit,
               h.purchasedTotal >= 0, h.processedTotal >= 0,
@@ -231,10 +231,21 @@ extension LifeWorld {
                       ["pig_care", "pig_arrive", "pig_process"].contains(task.kind) else {
                     throw LifeError.invalid("牲畜没有实际照料或承运人员")
                 }
+                if task.kind == "pig_arrive" && pig.phase != .arriving {
+                    throw LifeError.invalid("到货牵引阶段与牲畜状态不一致")
+                }
+                if task.kind == "pig_process" {
+                    guard [.leading, .processing].contains(pig.phase),
+                          (task.current.kind == "work") == (pig.phase == .processing),
+                          task.target == "butcher-out", task.space == LifeHusbandryRules.meatPerPig * LifeResource.meat.volume else {
+                        throw LifeError.invalid("出栏任务与牲畜/出货区状态不一致")
+                    }
+                }
                 if task.kind == "pig_care" {
                     let reserved = task.reservations.reduce(Int64(0)) { $0 + $1.amount }
                     guard pig.phase == .caring,
                           reserved == (pig.feedConsumed ? 0 : LifeHusbandryRules.feedPerSegment),
+                          (task.current.kind == "work") == pig.feedConsumed,
                           task.reservations.allSatisfy({ lots[$0.lotID]?.resource == .grain && lots[$0.lotID]?.location == "pasture-feed" }) else {
                         throw LifeError.invalid("照料饲料重复收费或来源不合法")
                     }

@@ -14,11 +14,12 @@ public struct LifeActorFrame: Sendable {
     public var costume:Costume, motion:Motion
     public var cargo:LifeResource?, quantity:Int64
     public var sleeping:Bool
+    public var quality:String = "basic"
 }
 /// Read-only, shared between SpriteKit and recorded HTML. Never mutates the simulation.
 public enum LifeVisual {
     public static let width=1920.0, height=1080.0
-    public static let jobNames=["prefect":"太守","farmer":"农夫","logger":"伐木工","miner":"矿工","cook":"厨师","porter":"挑夫","builder":"营造工","carpenter":"木匠","clerk":"仓吏","handyman":"杂役","guard_day":"日巡","guard_night":"夜巡","guard":"巡兵","flex":"机动居民","courier":"驿卒","smith":"铁匠","rationer":"制粮工","merchant":"商贩","server":"堂役"]
+    public static let jobNames=["herder":"牧工","butcher":"肉食工","prefect":"太守","farmer":"农夫","logger":"伐木工","miner":"矿工","cook":"厨师","porter":"挑夫","builder":"营造工","carpenter":"木匠","clerk":"仓吏","handyman":"杂役","guard_day":"日巡","guard_night":"夜巡","guard":"巡兵","flex":"机动居民","courier":"驿卒","smith":"铁匠","rationer":"制粮工","merchant":"商贩","server":"堂役"]
     public static func scene(_ w:LifeWorld) -> [LifeArtElement] {
         let night=w.isNight, earth=night ? "#455956":"#B1BC82",road=night ? "#647370":"#DCCBA3"
         var elements:[LifeArtElement]=[]
@@ -89,7 +90,7 @@ public enum LifeVisual {
             guard let lot=lots.first else{continue}
             let p=LifeMap.point(s.node),q=lots.reduce(Int64(0)){$0+$1.amount}
             for i in 0..<min(4,max(1,Int(q/4000))) {
-                var art=cargo(lot.resource);art.id="stock-\(id)-\(i)";art.transform = .init(x:p.x+40+Double(i)*14,y:p.y-7,sx:0.75,sy:0.75)
+                var art=cargo(lot.resource,quality:lot.quality);art.id="stock-\(id)-\(i)";art.transform = .init(x:p.x+40+Double(i)*14,y:p.y-7,sx:0.75,sy:0.75)
                 put(art.id,art,1101-p.y)
             }
         }
@@ -97,6 +98,7 @@ public enum LifeVisual {
             let p=LifeMap.point("seal")
             put("seal",.init("display-seal",children:[.rect("display-table",p.x-16,p.y,32,19,"#75593E"),.rect("wooden-seal",p.x-7,p.y+19,14,17,"#C79B56"),.line("seal-mark",[(p.x-4,p.y+25),(p.x+4,p.y+25)],"#EBDCAB",width:3)]),1100-p.y,"开城木印 · 已入藏",p)
         }
+        elements += LifePigArt.structures(w)
         return elements.sorted{$0.depth == $1.depth ? $0.id<$1.id:$0.depth<$1.depth}
     }
     public static func building(_ kind:String,at p:LifePoint,night:Bool,phase:Int?) -> VNode {
@@ -110,13 +112,17 @@ public enum LifeVisual {
         if kind=="workshop" {a.append(.rect(id+"chimney",p.x+35,p.y+67,18,42,"#8B8270"))}
         return .init(id,children:a)
     }
-    public static func cargo(_ r:LifeResource) -> VNode {
+    public static func cargo(_ r:LifeResource, quality: String = "basic") -> VNode {
         switch r {
         case .wood:return .init("logs",children:[.rect("log-a",-20,5,40,8,"#AC8654",radius:4),.rect("log-b",-19,12,37,8,"#BE9B66",radius:4),.line("tie",[(0,4),(0,21)],"#675E40",width:3)])
-        case .meal:return .init("tray",children:[.rect("tray-bottom",-17,1,34,4,"#956B46"),.ellipse("bowl",-12,5,24,10,"#E8D5AD"),.ellipse("rice",-10,9,20,6,"#F7ECCD")])
+        case .meal:
+            var parts: [VNode] = [.rect("tray-bottom",-17,1,34,4,"#956B46"),.ellipse("bowl",-12,5,24,10,"#E8D5AD"),.ellipse("rice",-10,9,20,6,"#F7ECCD")]
+            if quality == "hearty" { parts += [.rect("meat-a",-8,11,8,5,"#A66A50",radius:2),.rect("meat-b",2,10,7,6,"#B8795B",radius:2)] }
+            return .init("tray",children:parts)
         case .iron,.stone:return .init("basket",children:[.rect("basket-body",-13,1,26,15,"#AA9168",radius:2),.polygon("ore",[(-9,16),(-4,24),(2,19),(8,25),(13,14)],r == .iron ? "#7D8890":"#A0A69A")])
         case .rations,.tools:return .init("box",children:[.rect("box-body",-14,1,28,22,r == .tools ? "#77958C":"#AA8B5A",stroke:"#5D6854"),.line("box-cross",[(-13,3),(13,22)],"#E2C98D",width:2)])
-        case .grain,.meat:return .init("bag",children:[.ellipse("bag-body",-13,1,26,23,r == .grain ? "#D9BC77":"#B88B72"),.line("bag-tie",[(-7,22),(7,22)],"#776342",width:2)])
+        case .meat:return .init("meat-basket",children:[.rect("basket",-17,1,34,16,"#AA9168",radius:3),.rect("cut-a",-12,12,12,8,"#B9806B",radius:3),.rect("cut-b",2,11,12,10,"#C6927A",radius:3)])
+        case .grain:return .init("bag",children:[.ellipse("bag-body",-13,1,26,23,r == .grain ? "#D9BC77":"#B88B72"),.line("bag-tie",[(-7,22),(7,22)],"#776342",width:2)])
         }
     }
     public static func actor(_ a:LifeAgent,world w:LifeWorld,at time:Double) -> LifeActorFrame {
@@ -127,9 +133,14 @@ public enum LifeVisual {
         let sleeping=t==nil && a.node==a.home && a.restStart != nil
         if sleeping {action="在家休息"}
         if let t {
-            if !t.current.route.isEmpty {motion = .walk;action=t.current.kind=="carry" ? "负重送货":"前往工作点"}
+            if !t.current.route.isEmpty {motion = .walk;action=t.current.kind=="carry" ? "运送"+(t.resource?.title ?? "货物"):"前往工作点"
+                if t.kind=="pig_arrive" {action=t.current.kind=="lead" ? "牵幼猪入栏":"前往城门接猪"}
+                if t.kind=="pig_process" {action=t.current.kind=="lead" ? "牵猪交给肉食台":"前往牧栏交接"}}
             else {
                 switch t.kind {
+                case "pig_care": motion = .cultivate; action="喂养与照料"
+                case "pig_process": motion = .hammer; action="院内加工肉料"
+                case "pig_arrive": motion = .idle; action="安置幼猪"
                 case "sow","water","harvest":motion = .cultivate;action=["sow":"播种","water":"浇灌","harvest":"收割"][t.kind]!
                 case "gather","replant":motion=t.resource == .wood ? .chop:.hammer;action=t.kind=="replant" ? "补植林木":"采集整理"
                 case "prepare","finish":motion = .hammer;action=t.job=="cook" ? "做饭出餐":"加工制作"
@@ -144,17 +155,32 @@ public enum LifeVisual {
             }
         }
         let elapsed=max(0,time-Double(t?.started ?? w.time)),before=t.flatMap{LifeMap.position($0,at:max(Double($0.started),time-0.05))}
-        return .init(id:a.id,name:a.name,action:action,position:p,facing:before.map{p.x<$0.x ? -1:1} ?? 1,phase:elapsed,distance:elapsed*32,costume:costume,motion:motion,cargo:cargoLots.first?.resource,quantity:cargoLots.reduce(0){$0+$1.amount},sleeping:sleeping)
+        return .init(id:a.id,name:a.name,action:action,position:p,facing:before.map{p.x<$0.x ? -1:1} ?? 1,phase:elapsed,distance:elapsed*32,costume:costume,motion:motion,cargo:cargoLots.first?.resource,quantity:cargoLots.reduce(0){$0+$1.amount},sleeping:sleeping,quality:cargoLots.first?.quality ?? "basic")
     }
     public static func cropState(_ s:String)->String { ["empty":"待播","sowing":"播种","water1":"等灌溉","watering1":"浇灌","growing1":"幼苗","water2":"待二灌","watering2":"二次浇灌","growing2":"抽穗","ripe":"已成熟","harvesting":"收割"][s] ?? s }
+    public static func visibleAgents(_ w: LifeWorld, limit: Int) -> [LifeAgent] {
+        w.agents.values.filter { !($0.taskID == nil && $0.node == $0.home && $0.restStart != nil) }
+            .sorted { a, b in
+                func priority(_ a: LifeAgent) -> Int {
+                    if a.heroID != nil { return 0 }
+                    if let t=a.taskID, w.lots.values.contains(where:{$0.location==t}) { return 1 }
+                    return a.taskID != nil ? 2:3
+                }
+                let pa=priority(a), pb=priority(b)
+                return pa == pb ? a.id < b.id : pa < pb
+            }.prefix(max(0, min(limit, 160))).map { $0 }
+    }
     public static func svg(_ w:LifeWorld,at time:Double?=nil) -> String {
         let clock=time ?? Double(w.time)
         var ordered:[(Double,String)]=scene(w).map{($0.depth,SVG.node($0.art))}
-        for a in w.agents.values.sorted(by:{$0.id<$1.id}).prefix(96) {
+        for f in LifePigArt.frames(w, at:clock) {
+            ordered.append((1100-f.point.y,"<g transform=\"translate(\(f.point.x) \(f.point.y)) scale(\(f.scale))\">"+SVG.node(LifePigArt.body())+"</g>"))
+        }
+        for a in visibleAgents(w, limit:96) {
             let f=actor(a,world:w,at:clock);if f.sleeping{continue}
             let pose=CharacterRig.pose(motion:f.motion,time:f.phase,distance:f.distance,facing:f.facing,item:.none,reducedMotion:false)
             var body=SVG.node(CharacterRig.artwork(f.costume),overrides:pose.transforms,hidden:pose.hidden)
-            if let r=f.cargo {var c=cargo(r);c.transform = .init(x:0,y:25);body+=SVG.node(c)}
+            if let r=f.cargo {var c=cargo(r,quality:f.quality);c.transform = .init(x:0,y:25);body+=SVG.node(c)}
             ordered.append((1100-f.position.y,"<g transform=\"translate(\(f.position.x) \(f.position.y)) scale(.62)\">\(body)</g>"))
         }
         let shapes=ordered.sorted{$0.0<$1.0}.map(\.1).joined()

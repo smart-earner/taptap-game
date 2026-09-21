@@ -10,6 +10,8 @@ import SanguoDesktopHost
 final class LifeScene: SKScene {
     private let city = SKNode()
     private let scenery = SKNode()
+    private var animals:[String:VectorSprite]=[:]
+    private var costumes:[String:Costume]=[:]
     private var characters:[String:VectorSprite]=[:]
     private var cargo:[String:VectorSprite]=[:]
     private var labels:[String:SKLabelNode]=[:]
@@ -41,18 +43,23 @@ final class LifeScene: SKScene {
                 label.position = .init(x:item.point.x,y:item.point.y-22);label.zPosition=3000;scenery.addChild(label)
             }
         }
-        let ids=Set(world.agents.keys)
+        let frames=LifePigArt.frames(world,at:Double(world.time))
+        for node in animals.values { node.removeFromParent() }; animals=[:]
+        for f in frames { let node=VectorSprite(LifePigArt.body());animals[f.id]=node;city.addChild(node) }
+        let visibleAgents=LifeVisual.visibleAgents(world,limit:limit)
+        let ids=Set(visibleAgents.map(\.id))
         for id in Array(characters.keys) where !ids.contains(id) {characters.removeValue(forKey:id)?.removeFromParent();cargo.removeValue(forKey:id)?.removeFromParent();labels.removeValue(forKey:id)?.removeFromParent()}
-        for a in world.agents.values.sorted(by:{$0.id<$1.id}).prefix(limit) {
-            if characters[a.id]==nil {
-                let frame=LifeVisual.actor(a,world:world,at:Double(world.time))
+        for a in visibleAgents {
+            let frame=LifeVisual.actor(a,world:world,at:Double(world.time))
+            if characters[a.id]==nil || costumes[a.id] != frame.costume {
+                characters[a.id]?.removeFromParent();labels[a.id]?.removeFromParent()
+                costumes[a.id]=frame.costume
                 let sprite=VectorSprite(CharacterRig.artwork(frame.costume));characters[a.id]=sprite;city.addChild(sprite)
                 let label=SKLabelNode(fontNamed:"PingFangSC-Regular");label.fontSize=12;label.zPosition=4000;labels[a.id]=label;city.addChild(label)
             }
             cargo.removeValue(forKey:a.id)?.removeFromParent()
-            let frame=LifeVisual.actor(a,world:world,at:Double(world.time))
             if let resource=frame.cargo {
-                let item=VectorSprite(LifeVisual.cargo(resource));item.setScale(0.8);cargo[a.id]=item;city.addChild(item)
+                let item=VectorSprite(LifeVisual.cargo(resource,quality:frame.quality));item.setScale(0.8);cargo[a.id]=item;city.addChild(item)
             }
         }
         display()
@@ -60,10 +67,13 @@ final class LifeScene: SKScene {
     override func update(_ currentTime:TimeInterval){display()}
     private func display(){
         guard let w=current else{return}
-        let visible=Set(w.agents.values.sorted{a,b in
-            let pa=a.heroID != nil ? 0:(a.taskID != nil ? 1:2),pb=b.heroID != nil ? 0:(b.taskID != nil ? 1:2)
-            return pa==pb ? a.id<b.id:pa<pb
-        }.prefix(limit).map(\.id))
+        let visible=Set(LifeVisual.visibleAgents(w,limit:limit).map(\.id))
+        let animalTime=Double(w.time)+(reducedMotion ? 0:max(0,Date().timeIntervalSince(lastSync)))
+        for f in LifePigArt.frames(w,at:animalTime) {
+            animals[f.id]?.position = .init(x:f.point.x,y:f.point.y)
+            animals[f.id]?.zPosition = CGFloat(1100-f.point.y)
+            animals[f.id]?.setScale(f.scale)
+        }
         for (id,node) in characters {
             guard let a=w.agents[id] else{continue}
             let t=a.taskID.flatMap{w.tasks[$0]}
