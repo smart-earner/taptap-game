@@ -5,6 +5,7 @@ extends Control
 var town: Node
 var font: Font
 var animation_time := 0.0
+var is_night := false
 
 const WORLD_SIZE=Vector2(1920,1080)
 const INK=Color("27443b")
@@ -29,6 +30,7 @@ func _draw() -> void:
 	var scale=minf(size.x/WORLD_SIZE.x,size.y/WORLD_SIZE.y)
 	var origin=(size-WORLD_SIZE*scale)*.5
 	var night=bool(data.get("night",false))
+	is_night=night
 	var grass=Color("829483") if night else GRASS
 	# A translucent full-screen ground keeps the wallpaper present while making
 	# the city read as one continuous desktop map rather than a floating window.
@@ -42,9 +44,9 @@ func _draw() -> void:
 	# Flowing highlights make it immediately clear that this is a living view,
 	# without changing water or economic state in the simulation.
 	for i in range(12):
-		var wave_y=fposmod(float(i)*96.0+animation_time*26.0,1080.0)
-		_draw_world_line(Vector2(1772,wave_y),Vector2(1828,wave_y+18),3,Color("d8ebe0",.62),origin,scale)
-		_draw_world_line(Vector2(1844,wave_y+38),Vector2(1888,wave_y+51),2,Color("d8ebe0",.45),origin,scale)
+		var wave_y=fposmod(float(i)*96.0+animation_time*42.0,1080.0)
+		_draw_world_line(Vector2(1768,wave_y),Vector2(1838,wave_y+22),5,Color("d8ebe0",.72),origin,scale)
+		_draw_world_line(Vector2(1840,wave_y+38),Vector2(1895,wave_y+55),4,Color("d8ebe0",.58),origin,scale)
 
 	# Authoritative layout6 roads.
 	for y in [200.0,380.0,640.0,840.0,1000.0]:
@@ -84,6 +86,16 @@ func _draw() -> void:
 		_draw_tree(Vector2(205+float(i%6)*42,875+float(i/6)*39),origin,scale,float(i)*.43)
 	for i in range(8):
 		_draw_tree(Vector2(1640,245+float(i)*92),origin,scale,float(i)*.61)
+
+	# At night every hero can legitimately be asleep. Fireflies and chimney
+	# smoke keep the desktop alive without inventing workers or production.
+	if night:
+		for i in range(18):
+			var base=Vector2(250+float((i*137)%1320),250+float((i*83)%650))
+			var drift=Vector2(sin(animation_time*.9+float(i))*18.0,cos(animation_time*.7+float(i)*.71)*12.0)
+			var glow=_screen(base+drift,origin,scale)
+			var pulse=3.5+sin(animation_time*4.0+float(i))*1.4
+			draw_circle(glow,maxf(2.0,pulse*scale),Color("f0d978",.78))
 
 	# Actual residents only; identity remains in the roster, never overhead.
 	var hero_index=0
@@ -129,7 +141,16 @@ func _draw_building(plot: Dictionary,origin: Vector2,scale: float) -> void:
 	var door=Rect2(p+Vector2(-8,9)*scale,Vector2(16,21)*scale)
 	draw_rect(door,Color("41594d"))
 	for side in [-1,1]:
-		draw_rect(Rect2(p+Vector2(float(side)*25-6,-1)*scale,Vector2(12,11)*scale),Color("90aaa0"))
+		var window_color=Color("efd278") if is_night else Color("90aaa0")
+		if is_night: window_color=window_color.lightened((sin(animation_time*3.2+float(plot.index)+float(side))+1.0)*.06)
+		draw_rect(Rect2(p+Vector2(float(side)*25-6,-1)*scale,Vector2(12,11)*scale),window_color)
+	if kind in ["house","hall","tavern"]:
+		var chimney=p+Vector2(wide*.55,-32)*scale
+		draw_rect(Rect2(chimney+Vector2(-3,-8)*scale,Vector2(7,13)*scale),Color("796b56"))
+		for puff in range(3):
+			var rise=fposmod(animation_time*22.0+float(puff)*17.0+float(plot.index)*3.0,52.0)
+			var smoke_p=chimney+Vector2(sin(animation_time*1.8+float(puff))*5.0,-10.0-rise)*scale
+			draw_circle(smoke_p,(7.0+float(puff)*2.0)*scale,Color("e5e5d6",.48-float(puff)*.08))
 	var title=_building_title(kind)
 	draw_string(font,p+Vector2(-wide,47)*scale,title,HORIZONTAL_ALIGNMENT_CENTER,wide*2*scale,maxi(10,int(14*scale)),INK)
 
@@ -194,12 +215,17 @@ func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,orig
 	draw_line(p+Vector2(7,0)*scale,p+hand*scale,Color(robe),maxf(1,3*scale))
 
 func _draw_hud(data: Dictionary,night: bool) -> void:
-	var panel=Rect2(34,30,330,155)
+	var panel=Rect2(34,30,360,172)
 	draw_rect(panel,Color("f6f2df",.92))
 	draw_rect(panel,Color("d7d3ba",.9),false,2)
 	var day=int(data.get("time",0))/2880+1
 	draw_string(font,Vector2(58,70),"第 %d 日 · %s" % [day,"灯火可亲" if night else "风和日暖"],HORIZONTAL_ALIGNMENT_LEFT,-1,24,INK)
 	draw_string(font,Vector2(58,108),"%d 金币 · %d 位武将" % [int(data.get("coins",0)),data.get("heroes",[]).filter(func(hero): return int(hero.get("star",0))>0).size()],HORIZONTAL_ALIGNMENT_LEFT,-1,18,INK)
 	var records=data.get("records",[])
-	var status="太守正在安排城务" if records.is_empty() else str(records[-1].text)
-	draw_string(font,Vector2(58,144),status,HORIZONTAL_ALIGNMENT_LEFT,270,15,MUTED,TextServer.JUSTIFICATION_CONSTRAIN_ELLIPSIS)
+	var residents=data.get("heroes",[]).filter(func(hero): return int(hero.get("star",0))>0)
+	var all_sleeping=not residents.is_empty() and residents.all(func(hero): return bool(hero.get("sleeping",false)))
+	var status="夜深休息中 · 天亮后恢复城务" if all_sleeping else ("太守正在安排城务" if records.is_empty() else str(records[-1].text))
+	draw_string(font,Vector2(58,144),status,HORIZONTAL_ALIGNMENT_LEFT,305,15,MUTED,TextServer.JUSTIFICATION_CONSTRAIN_ELLIPSIS)
+	var pulse_color=Color("78a66d",.55+.35*(sin(animation_time*4.5)+1.0)*.5)
+	draw_circle(Vector2(64,178),6,pulse_color)
+	draw_string(font,Vector2(78,184),"城务时钟 %d× 运行中" % int(town.speed),HORIZONTAL_ALIGNMENT_LEFT,-1,14,MUTED)
