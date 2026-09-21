@@ -3,6 +3,7 @@
 from __future__ import annotations
 import argparse
 from collections import Counter
+from fractions import Fraction
 import hashlib
 import html
 import importlib.util
@@ -55,13 +56,28 @@ def main() -> int:
     c.eq('no intruder loss', cfg['security']['losses'], False)
     c.check('public ration packs are not imaginary carts', '不自动生成辎重车' in (ROOT/'docs/life-v0.7/06_HEROES_COLLECTION_AND_ARMY.md').read_text())
     c.check('present consumers explicitly distinguished', 'presentConsumerIDs' in (ROOT/'docs/life-v0.7/04_FOOD_AND_ECONOMY.md').read_text())
+    # Independently bind the capacity gate to the actual source, population and recipe inputs.
+    # The first script's reference vector is not accepted as proof when parameters change.
+    tree = next(x for x in cfg['sources'] if x['id']=='trees')
+    recipes = {x['id']:x for x in cfg['recipes']}
+    cycles = Fraction(cfg['clock']['growth_day_s'], cfg['clock']['cycle_s'])
+    civilian_meals = cfg['limits']['residents_city'] * cfg['food']['meals_per_cycle'] * cycles
+    military_meals = Fraction(cfg['limits']['legion_capacity'] * cfg['army']['rations_per_person_cycle_mU'],1000) * cycles
+    cooking_wood = civilian_meals * Fraction(recipes['cook_basic']['input_mU']['wood'],recipes['cook_basic']['output_mU']['meal_basic']) + military_meals * Fraction(recipes['ration_plain']['input_mU']['wood'],recipes['ration_plain']['output_mU']['rations'])
+    forest_ceiling = Fraction(cfg['clock']['growth_day_s'] * tree['nodes'] * tree['quantity_mU'], 1000 * (tree['regrow_s']+tree['work_s']+tree['replant_s']))
+    c.check('configured forest physical ceiling covers configured basic food need', forest_ceiling >= cooking_wood, {'ceiling':float(forest_ceiling),'required':float(cooking_wood),'nodes':tree['nodes']})
+    capacity = module.read_json(out/'capacity-reference.json')
+    capacity['forest_regrowth_rate_ceiling'] = float(forest_ceiling)
+    capacity['forest_capacity_inputs'] = tree
+    capacity['basic_food_wood_requirement_from_recipes'] = float(cooking_wood)
+    capacity['final_capacity_gate'] = 'check_prd_v07_delivery.py uses actual JSON inputs; not shared-worker or logistics simulation'
+    (out/'capacity-reference.json').write_text(json.dumps(capacity,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     root = ROOT/'docs/PRD.md'
     paths = [root] + [ROOT/'docs/life-v0.7'/name for name in module.CHAPTERS]
     for path in paths:
         text = path.read_text(encoding='utf-8')
         for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', text):
-            if target.startswith(('http://','https://','#')):
-                continue
+            if target.startswith(('http://','https://','#')): continue
             resolved = (path.parent/target.split('#')[0]).resolve()
             c.check('relative link/'+str(path.relative_to(ROOT))+'/'+target, resolved.exists())
     c.check('main entrypoint refers to new PRD', 'v0.7.0' in root.read_text())
@@ -82,7 +98,6 @@ def main() -> int:
     previous = (out/'PRD-v0.7-readable.html').read_text(encoding='utf-8')
     styles = re.search(r'<style>(.*?)</style>',previous,re.S)
     assert styles is not None
-    # Wrap long identifiers/URLs without hiding wide tables or clipped content.
     responsive = 'p,td,th,a,blockquote{overflow-wrap:anywhere}main{min-width:0}pre,.table-wrap{max-width:100%;box-sizing:border-box}'
     page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7 完整研发规格</title><style>'+styles[1]+responsive+'</style></head><body><aside><strong>小城志 · PRD v0.7</strong>'+toc+'</aside><main><div class="status">完整研发规格：十章正文、三份配置。新生活引擎与M4实机验收尚未执行；静态通过不等于游戏完成。</div>'+body+'</main></body></html>'
     (out/'PRD-v0.7-readable.html').write_text(page,encoding='utf-8')
