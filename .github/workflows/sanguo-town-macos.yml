@@ -42,9 +42,33 @@ jobs:
       - name: Actual life runtime and visit-cadence comparison
         run: |
           set -euo pipefail
-          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 120 --seal --preview --output dist/life-day1 2>&1 | tee dist/logs/life-day1.txt
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 120 --seal --output dist/life-day1 2>&1 | tee dist/logs/life-day1.txt
           swift run -c release SanguoLifeCLI --seconds 86400 --cadence 86400 --seal --output dist/life-once 2>&1 | tee dist/logs/life-once.txt
           cmp dist/life-day1/world.json dist/life-once/world.json
+      - name: Husbandry, actual meat meals and seven-day regression
+        run: |
+          set -euo pipefail
+          swift run -c release SanguoLifeCLI --husbandry --seal --seconds 86400 --cadence 120 --preview --output dist/food-day1 2>&1 | tee dist/logs/food-day1.txt
+          swift run -c release SanguoLifeCLI --husbandry --seal --seconds 86400 --cadence 86400 --output dist/food-once 2>&1 | tee dist/logs/food-once.txt
+          cmp dist/food-day1/world.json dist/food-once/world.json
+          swift run -c release SanguoLifeCLI --husbandry --seal --seconds 604800 --cadence 86400 --output dist/food-week 2>&1 | tee dist/logs/food-week.txt
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          rows=[]
+          for name in ('food-day1', 'food-week'):
+              root=Path('dist')/name
+              w=json.loads((root/'world.json').read_text())
+              s=json.loads((root/'food-status.json').read_text())
+              assert s['pigsProcessed'] > 0 and s['heartyMealsConsumed'] > 0
+              assert s['heartyMealsConsumed'] <= s['mealsConsumed']
+              assert s['meatProduced'] == s['pigsProcessed'] * 8000
+              assert s['purchaseSpent'] <= s['purchaseLimit']
+              rows.append({'scenario':name, 'time':w['time'], 'population':len(w['agents']), 'treasury':w['treasury'], 'food':s})
+          previous=json.loads(Path('dist/life-day1/food-status.json').read_text())
+          assert previous['enabled'] is False and previous['pigsProcessed'] == 0
+          Path('dist/food-scenarios.json').write_text(json.dumps({'scope':'actual Swift scenarios; not full PRD acceptance or 90-day balance', 'cadence_byte_equal':True, 'rows':rows},ensure_ascii=False,indent=2))
+          PY
       - name: Build and verify portable development bundle
         run: |
           set -euo pipefail
@@ -65,6 +89,9 @@ jobs:
             sanguo-town/dist/slim-spec
             sanguo-town/dist/source.zip
             sanguo-town/dist/life-day1
+            sanguo-town/dist/food-day1
+            sanguo-town/dist/food-week
+            sanguo-town/dist/food-scenarios.json
             sanguo-town/dist/SanguoTown-Development.zip
           retention-days: 14
           if-no-files-found: warn
