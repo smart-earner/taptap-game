@@ -1,0 +1,73 @@
+name: Sanguo Life v072 integration
+on:
+  push:
+    branches: ['feat/sanguo-life-runtime-v072']
+    paths: ['.github/workflows/sanguo-life-v072-integrate.yml']
+permissions:
+  contents: write
+concurrency:
+  group: sanguo-life-v072-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Decode and verify exact source checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64,hashlib,json,zlib
+          from pathlib import Path
+          root=Path('sanguo-town/checkpoints/life072')
+          parts=[(root/f'batch01.{i}').read_text().strip() for i in range(6)]
+          # Restore a detected transport omission before verifying the original payload.
+          missing='H3udy76AnJe2jYD2XLqDfCM5HPPV96KtXgOAuBH36Gw+P0bHN/eMSR5T7eBOO4x3NjmnbMdLq0Db3Nxx30rBcVZWE3Jly1/BelkzLTfv+JFYHFULrSTjWoktFtpCK/GoViinVHY/Ki7hNF5rSnebmp11eYeSE8rMbM2bBRKL1PVJzFp8DF1Fjs/gP/ATD8M8bEE6B2EXk92TGg6q8fAnS1qtzqiQB4FW+nLTXSRtvEgkQitDh8xaF+VdZAhhB2SfZtgKHb4RkRIdiQhIvlsQqqV0VUkC8hJMFDMKp9VyszgjTbnbtIpLOUVr4PuODgG2FVPAkXlpz97yKmSJqRXvpm58X+/EpmLpEalYARj2uGJszCp77yvBwAhSZimB8yxoBGBr/07bRed/+2xt'
+          if len(parts[3])==4600:
+              assert parts[3].count('q1tHnZih')==1
+              parts[3]=parts[3].replace('q1tHnZih','q1t'+missing+'HnZih')
+          expected=['4a0267a107ad2a1d2be366879899117cbe5a0fd7','c91b4bf60f1f067beb0121b04f537407b13293d1','5156f0cab019129c66f45e32f90e180961d52677','92946569a8e61c19778ab6b49b391821a30ee07e','894ac61f022a1fbd32d9e8bd5232af02da4eecbe','64680e0f0e665f5e938af511f65c052f95e2101b']
+          for i,p in enumerate(parts):
+              b=p.encode();sha=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+              print(i,len(b),sha);assert sha==expected[i],f'checkpoint segment {i} mismatch'
+          blob=''.join(parts).encode()
+          assert hashlib.sha256(blob).hexdigest()=='d0f1946844fc00fed6c7c1cc8447231d020c4a770894b1312e0d801884c057c9'
+          data=zlib.decompress(base64.b64decode(blob));assert hashlib.sha256(data).hexdigest()=='dda54928e7c88e2a76b0bab423f68c8a4a4fbc28b9e4b6c3209264be39bd13a8'
+          for p,text in json.loads(data)['files'].items():
+              assert '..' not in Path(p).parts and (p.startswith(('sanguo-town/Sources/SanguoLife/','sanguo-town/Sources/SanguoLifeCLI/','sanguo-town/Tests/SanguoLifeTests/')) or p in ['sanguo-town/Package.swift','sanguo-town/scripts/export_life_catalog.py']),p
+              out=Path(p);out.parent.mkdir(parents=True,exist_ok=True);out.write_text(text)
+          PY
+          python3 sanguo-town/scripts/export_life_catalog.py
+      - name: Actual native runtime tests
+        working-directory: sanguo-town
+        run: |
+          set -euo pipefail
+          mkdir -p dist/life-v072
+          { sw_vers; uname -m; swift --version; } | tee dist/life-v072/environment.txt
+          swift test 2>&1 | tee dist/life-v072/debug.txt
+          swift test -c release 2>&1 | tee dist/life-v072/release.txt
+          swift run -c release SanguoLifeCLI --seconds 86400 --cadence 120 --seal --output dist/life-v072/day1 2>&1 | tee dist/life-v072/day1.txt
+      - name: Commit validated runtime only to current feature branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sanguo-town/Package.swift sanguo-town/Sources/SanguoLife sanguo-town/Sources/SanguoLifeCLI sanguo-town/Tests/SanguoLifeTests sanguo-town/scripts/export_life_catalog.py
+          git commit -m 'feat(life): integrate native-tested resource tasks, crops, meals, construction and 30-hero catalog'
+          current=$(git ls-remote origin refs/heads/feat/sanguo-life-runtime-v072 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/sanguo-life-runtime-v072
+          git rev-parse HEAD > sanguo-town/dist/life-v072/commit.txt
+          git archive --format=zip --output=sanguo-town/dist/life-v072/source.zip HEAD sanguo-town
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-life-v072-core-${{ github.sha }}
+          path: sanguo-town/dist/life-v072
+          retention-days: 14
+          if-no-files-found: warn
