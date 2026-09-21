@@ -1,0 +1,76 @@
+{
+  "spec_version":"0.7.0",
+  "status":"design_contract_not_runtime_implementation",
+  "condition_language":{"form":"all tuples [metric, comparator, value]; empty means unconditional","comparators":[">=","=="],"evaluation":"closed real simulation evidence; no UI visit counters","building_level":"building.<id>","civic_level":"civic.<id>","owned_unique":"owned.<id> is boolean","counter":"deduplicated committed event count","qualified_windows":"consecutive closed 21600-second windows, never calendar login days"},
+  "heroes":[
+    {"id":"xunyu","name":"荀彧","starting":true,"attributes":{"command":55,"valor":35,"strategy":88,"administration":94,"charisma":85},"prefect":{"cook_rate_bp":800,"happiness_rise_extra":2},"commander":{},"art":"dark_teal_robe_bamboo"},
+    {"id":"zhaoyun","name":"赵云","starting":false,"attributes":{"command":92,"valor":94,"strategy":74,"administration":62,"charisma":82},"prefect":{"patrol_speed_bp":1500},"commander":{"training_rate_bp":1000,"wounded_reduction_bp":2000},"art":"white_armor_blue_cape"},
+    {"id":"lusu","name":"鲁肃","starting":false,"attributes":{"command":70,"valor":40,"strategy":84,"administration":86,"charisma":94},"prefect":{"external_buy_discount_bp":800},"commander":{},"art":"green_robe_accounts"},
+    {"id":"liang","name":"诸葛亮","starting":false,"attributes":{"command":85,"valor":35,"strategy":96,"administration":92,"charisma":84},"prefect":{"build_and_restore_rate_bp":1200},"commander":{},"art":"grey_white_robe_fan"},
+    {"id":"guanyu","name":"关羽","starting":false,"attributes":{"command":90,"valor":96,"strategy":72,"administration":60,"charisma":80},"prefect":{"ration_rate_bp":1000},"commander":{"escort_score":8},"art":"green_robe_long_beard"},
+    {"id":"zhangfei","name":"张飞","starting":false,"attributes":{"command":88,"valor":97,"strategy":55,"administration":42,"charisma":60},"prefect":{"logger_miner_rate_bp":1000},"commander":{"training_rate_bp":1200},"art":"brown_armor_short_beard"}
+  ],
+  "recruitment_stage_work":{"prepare_s":60,"finish_s":30,"last_stage_requires_bed":true},
+  "recruitment":[
+    {"hero":"zhaoyun","unlock":[["counter.harvests",">=",1]],"stages":[{"name":"接待","passive_s":600,"cash":30,"materials_mU":{}},{"name":"共事","passive_s":14400,"cash":60,"materials_mU":{"grain":8000}},{"name":"邀留","passive_s":3600,"cash":40,"materials_mU":{}}]},
+    {"hero":"lusu","unlock":[["counter.external_transactions",">=",3]],"stages":[{"name":"结识","passive_s":1200,"cash":40,"materials_mU":{}},{"name":"互市","passive_s":21600,"cash":100,"materials_mU":{"wine":2000}},{"name":"邀留","passive_s":3600,"cash":60,"materials_mU":{}}]},
+    {"hero":"liang","unlock":[["building.workshop",">=",1],["counter.forge_completed",">=",1]],"stages":[{"name":"探访","passive_s":3600,"cash":80,"materials_mU":{}},{"name":"改良","passive_s":43200,"cash":160,"materials_mU":{"tools":4000}},{"name":"邀留","passive_s":7200,"cash":100,"materials_mU":{}}]},
+    {"hero":"guanyu","unlock":[["building.station",">=",1],["counter.consecutive_full_meals",">=",4]],"stages":[{"name":"听闻","passive_s":1800,"cash":50,"materials_mU":{}},{"name":"同行","passive_s":28800,"cash":120,"materials_mU":{"rations":8000}},{"name":"邀留","passive_s":3600,"cash":80,"materials_mU":{}}]},
+    {"hero":"zhangfei","unlock":[["building.tavern",">=",1],["counter.resident_meals_consumed",">=",16]],"stages":[{"name":"相识","passive_s":1200,"cash":40,"materials_mU":{"wine":2000}},{"name":"乡宴","passive_s":14400,"cash":80,"materials_mU":{"meal_basic":16000,"wine":2000}},{"name":"邀留","passive_s":2400,"cash":60,"materials_mU":{}}]}
+  ],
+  "unique_stage_payment_bp":[4000,6000],
+  "weapons":[
+    {"id":"silver-spear","name":"银纹长枪","unlock":[["building.workshop",">=",1]],"cash":50,"external_s":600,"repair_s":300,"materials_mU":{"wood":2000,"iron":2000},"attributes":{"command":2,"valor":2}},
+    {"id":"dragon-spear","name":"龙胆亮银枪","unlock":[["owned.zhaoyun","==",true],["building.workshop",">=",1]],"cash":480,"external_s":14400,"repair_s":900,"materials_mU":{"iron":12000,"tools":2000},"attributes":{"command":3,"valor":4}},
+    {"id":"crescent-blade","name":"青龙偃月刀","unlock":[["owned.guanyu","==",true],["civic.ramparts",">=",1]],"cash":520,"external_s":21600,"repair_s":1080,"materials_mU":{"iron":15000,"planks":2000},"attributes":{"valor":6}},
+    {"id":"serpent-spear","name":"丈八蛇矛","unlock":[["owned.zhangfei","==",true],["civic.industry",">=",1]],"cash":480,"external_s":21600,"repair_s":1080,"materials_mU":{"iron":12000,"planks":3000},"attributes":{"valor":6}},
+    {"id":"qinggang","name":"青釭剑","unlock":[["counter.external_transactions",">=",3],["civic.academy",">=",1],["building.workshop",">=",1]],"cash":560,"external_s":28800,"repair_s":1200,"materials_mU":{"iron":12000,"tools":3000},"attributes":{"strategy":4,"valor":2}},
+    {"id":"seven-star","name":"七星宝刀","unlock":[["civic.academy",">=",1],["flag.letter_read","==",true],["building.workshop",">=",1]],"cash":580,"external_s":36000,"repair_s":1500,"materials_mU":{"iron":10000,"tools":4000},"attributes":{"strategy":3,"charisma":3}}
+  ],
+  "mount_care":{"work_s":30,"materials_mU":{"fodder":1000,"water":1000},"missed_care":"no death/debt; next new travel loses bonus until cared"},
+  "mounts":[
+    {"id":"yellow-horse","name":"黄骠马","unlock":[["building.stable",">=",1]],"cash":120,"external_s":1800,"taming_passive_s":7200,"taming_work_s":300,"materials_mU":{"fodder":6000,"water":6000},"empty_speed_bp":500},
+    {"id":"red-hare","name":"赤兔","unlock":[["owned.yellow-horse","==",true],["counter.external_transactions",">=",3]],"cash":600,"external_s":28800,"taming_passive_s":43200,"taming_work_s":1200,"materials_mU":{"fodder":20000,"water":20000},"empty_speed_bp":1000},
+    {"id":"dilu","name":"的卢","unlock":[["owned.yellow-horse","==",true],["civic.water",">=",1]],"cash":500,"external_s":21600,"taming_passive_s":36000,"taming_work_s":1000,"materials_mU":{"fodder":16000,"water":16000},"empty_speed_bp":800},
+    {"id":"jueying","name":"绝影","unlock":[["owned.yellow-horse","==",true],["civic.streets",">=",1]],"cash":560,"external_s":28800,"taming_passive_s":43200,"taming_work_s":1200,"materials_mU":{"fodder":20000,"water":20000},"empty_speed_bp":1200}
+  ],
+  "souvenirs":[{"id":"founders_seal","name":"开城木印","cash":10,"work_s":360,"materials_mU":{"wood":2000},"numeric_effects":{},"unique":true}],
+  "landmark_common":{"active_per_city":1,"minimum_population_by_stage":[24,40,64],"qualified_windows_by_stage":[0,2,4],"food_coverage_bp":9500,"delivery_bp":9000,"all_stages_initially_authorized":true},
+  "landmarks":[
+    {"id":"welfare","name":"丰稔里坊","stages":[
+      {"id":"welfare-1","name":"院落","cash":900,"work_s":172800,"materials_mU":{"wood":20000,"planks":12000,"stone":20000,"tools":2000},"requires":[["building.house",">=",1]],"effects":{"beds_once":4}},
+      {"id":"welfare-2","name":"共膳","cash":1800,"work_s":345600,"materials_mU":{"wood":32000,"planks":24000,"stone":36000,"tools":4000},"requires":[["building.tavern",">=",1]],"effects":{"public_kitchen_slots_once":1,"one_delivery_buffer_volume_once":8}},
+      {"id":"welfare-3","name":"园居","cash":3600,"work_s":691200,"materials_mU":{"wood":48000,"planks":36000,"stone":60000,"tools":6000},"requires":[["civic.water",">=",1]],"effects":{"cleanliness_once":5,"title":"丰稔之城"}}
+    ]},
+    {"id":"commerce","name":"南门商埠","stages":[
+      {"id":"commerce-1","name":"货栈","cash":1200,"work_s":259200,"materials_mU":{"wood":24000,"planks":16000,"stone":24000,"tools":3000},"requires":[["building.market",">=",1],["building.station",">=",1]],"effects":{"external_carrier_slots_once":1,"carrier_total_cap":4}},
+      {"id":"commerce-2","name":"客舍","cash":2400,"work_s":518400,"materials_mU":{"wood":40000,"planks":28000,"stone":40000,"tools":5000},"requires":[["building.tavern",">=",1]],"effects":{"external_diners_per_cycle_once":1}},
+      {"id":"commerce-3","name":"通商街","cash":4800,"work_s":1036800,"materials_mU":{"wood":60000,"planks":40000,"stone":72000,"tools":8000},"requires":[["civic.commerce",">=",2]],"effects":{"trade_quota_per_period_once":16}}
+    ]},
+    {"id":"industry","name":"百工院","stages":[
+      {"id":"industry-1","name":"木作","cash":1100,"work_s":216000,"materials_mU":{"wood":20000,"planks":20000,"stone":24000,"tools":3000},"requires":[["building.workshop",">=",1]],"effects":{"first_workshop_carpentry_slots_once":1}},
+      {"id":"industry-2","name":"炉场","cash":2200,"work_s":432000,"materials_mU":{"wood":36000,"planks":28000,"stone":48000,"tools":6000},"requires":[["building.workshop",">=",1]],"effects":{"first_workshop_furnace_slots_once":1}},
+      {"id":"industry-3","name":"匠阁","cash":4400,"work_s":864000,"materials_mU":{"wood":56000,"planks":40000,"stone":80000,"tools":10000},"requires":[["civic.industry",">=",2]],"effects":{"first_workshop_forge_slots_once":1,"first_workshop_restorer_slots_once":1}}
+    ]},
+    {"id":"military","name":"安远营","requires":[["army.authorized",">=",30]],"stages":[
+      {"id":"military-1","name":"辎重","cash":1300,"work_s":259200,"materials_mU":{"wood":28000,"planks":18000,"stone":28000,"tools":4000},"requires":[["building.barracks",">=",1],["extension.ration_seat",">=",1]],"effects":{"ration_output_volume_once":32}},
+      {"id":"military-2","name":"演武","cash":2600,"work_s":518400,"materials_mU":{"wood":44000,"planks":30000,"stone":48000,"tools":8000},"requires":[["building.barracks",">=",2]],"effects":{"training_rate_bp_once":500}},
+      {"id":"military-3","name":"守望","cash":5200,"work_s":1036800,"materials_mU":{"wood":64000,"planks":44000,"stone":84000,"tools":12000},"requires":[["civic.ramparts",">=",2]],"effects":{"detection_distance_once":40,"wounded_recovery_interval_override_s":3000}}
+    ]}
+  ],
+  "events":[
+    {"id":"E01","key":"first_meal","type":"feedback","conditions":[["counter.resident_meals_consumed",">=",1]],"result":"record first meal provenance","cash_reward":0},
+    {"id":"E02","key":"first_harvest","type":"opportunity","conditions":[["counter.harvests",">=",1]],"result":"discover zhaoyun","cash_reward":0},
+    {"id":"E03","key":"founders_mark","type":"opportunity","conditions":[["flag.governance_accepted","==",true],["owned.founders_seal","==",false]],"result":"offer paid optional founders_seal","cash_reward":0},
+    {"id":"E04","key":"new_neighbors","type":"feedback","conditions":[["counter.immigration_families",">=",1]],"result":"show actual household arrival","cash_reward":0},
+    {"id":"E05","key":"kitchen_busy","type":"feedback","conditions":[["qualification.kitchen_capacity_windows",">=",2]],"result":"planner diagnosis, no extra approval","cash_reward":0},
+    {"id":"E06","key":"market_connection","type":"opportunity","conditions":[["counter.external_transactions",">=",3]],"result":"discover lusu","cash_reward":0},
+    {"id":"E07","key":"craft_guest","type":"opportunity","conditions":[["building.workshop",">=",1],["counter.forge_completed",">=",1]],"result":"discover liang and silver-spear","cash_reward":0},
+    {"id":"E08","key":"old_collection_letter","type":"opportunity","conditions":[["civic.academy",">=",1],["counter.external_transactions",">=",3]],"work_s":30,"result_flag":"letter_read","cash_reward":0},
+    {"id":"E09","key":"horse_guest","type":"opportunity","conditions":[["building.stable",">=",1],["owned.yellow-horse","==",false]],"result":"discover yellow-horse","cash_reward":0},
+    {"id":"E10","key":"street_direction","type":"decision","conditions":[["population",">=",24],["qualification.food_windows",">=",2],["flag.active_landmark","==",false]],"default":"continue current plan","cash_reward":0},
+    {"id":"E11","key":"army_or_civil","type":"decision","conditions":[["population",">=",48],["stock.tools_mU",">=",8000],["counter.consecutive_safe_meals",">=",4],["army.authorized","==",0]],"default":"no recruitment","cash_reward":0},
+    {"id":"E12","key":"regional_invitation","type":"decision","conditions":[["population",">=",32],["building.station",">=",1],["counter.consecutive_safe_meals",">=",4],["flag.can_add_city","==",true]],"default":"no settlement","cash_reward":0}
+  ],
+  "metrics_registry":{"counter.harvests":"completed actual crop harvest IDs","counter.external_transactions":"distinct paid market or external diner transactions; no internal transfers/refunds/replays","counter.forge_completed":"completed forge batch IDs","counter.consecutive_full_meals":"closed C=10000 windows","counter.consecutive_safe_meals":"closed C>=9500 windows","counter.resident_meals_consumed":"whole served person-meal equivalents, quantities maintained in mU","counter.immigration_families":"actual two-person family arrivals","qualification.kitchen_capacity_windows":"consecutive closed windows: backlog and max(U,Ue)>=8000 and I<=2000","qualification.food_windows":"consecutive closed 21600s windows with all closed meal coverage>=9500","population":"resident ownership population, not visitors or army","stock.tools_mU":"free tools in the city","flag.letter_read":"E08 actual 30s work completed","flag.governance_accepted":"standing governance consent receipt","flag.active_landmark":"one noncompleted active landmark objective","flag.can_add_city":"realm has fewer than 3 cities and one unowned predefined site exists","army.authorized":"authorized capacity or 0"}
+}
