@@ -1,0 +1,44 @@
+name: Sanguo PRD v0.7
+on:
+  push:
+    branches: ['docs/sanguo-prd-v07', 'main']
+    paths:
+      - 'sanguo-town/docs/life-v0.7/**'
+      - 'sanguo-town/docs/PRD.md'
+      - 'sanguo-town/spec/*v0.7.json'
+      - 'sanguo-town/scripts/validate_prd_v07.py'
+      - '.github/workflows/sanguo-prd-v07.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanguo-prd-v07-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  specification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check static contracts and isolated reference arithmetic
+        run: |
+          set -o pipefail
+          mkdir -p dist/prd-v07
+          python3 --version | tee dist/prd-v07/environment.txt
+          python3 sanguo-town/scripts/validate_prd_v07.py --output dist/prd-v07 2>&1 | tee dist/prd-v07/check.log
+      - name: Preserve exact specification sources
+        if: always()
+        run: |
+          mkdir -p dist/prd-v07
+          git archive --format=zip --output=dist/prd-v07/source.zip HEAD sanguo-town/docs sanguo-town/spec sanguo-town/scripts .github/workflows/sanguo-prd-v07.yml
+          git rev-parse HEAD > dist/prd-v07/commit.txt
+          sha256sum dist/prd-v07/source.zip > dist/prd-v07/SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-prd-v07-${{ github.sha }}
+          path: dist/prd-v07
+          retention-days: 14
+          if-no-files-found: error
