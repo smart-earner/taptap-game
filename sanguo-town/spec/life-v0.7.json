@@ -1,93 +1,1309 @@
 {
-  "spec_version":"0.7.0",
-  "rules_version":"life-0.7",
-  "schema_version":6,
-  "layout_version":4,
-  "status":"design_contract_not_runtime_implementation",
-  "runtime_base_commit":"cbf7190f9df0a04a81a3c7b1b076bd5f30283e48",
-  "units":{"quantity_mU_per_display":1000,"volume_uV_per_display":1000000,"rate_bp":10000,"path_milli_per_map_unit":1000,"money":"integer_copper","rounding":"ceil_for_duration_and_buy; floor_for_sell; half_up_for_happiness"},
-  "clock":{"cycle_s":2880,"dawn_end":240,"day_end":1920,"dusk_end":2160,"meal_offsets":[600,1980],"meal_open_before_s":180,"meal_grace_s":180,"planner_s":30,"regional_planner_s":300,"fiscal_s":21600,"metrics_s":21600,"immigration_s":43200,"growth_day_s":86400,"offline_cap_s":2592000,"service_worker_busy_cap_s":1920,"minimum_rest_s":600,"night_guard_rest":[900,1740]},
-  "limits":{"cities":3,"districts":1,"legions_world":1,"residents_city":150,"legion_capacity":90,"visitors_city":12,"intruders_city":1,"agents_city":256,"animals_city":32,"pig_capacity":8,"collection_mount_capacity":4,"carts_city":4,"orders_city":2048,"active_order_per_agent":1,"new_parent_orders_per_plan":8,"new_child_orders_per_plan":32,"candidate_orders_per_plan":128,"auto_snapshots":60,"pinned_snapshots":20,"planning_records_city":12,"active_wishes":1,"watched_wishes":3,"active_landmarks_city":1},
-  "render":{"world_width":1920,"world_height":1080,"visible_people":[48,96,160],"visible_animals":24,"desktop_fps":15,"low_power_fps":8,"window_fps":30,"reference_actor_height":38,"minimum_actor_height_pt":22,"full_desktop_layer":true,"passthrough":true,"night_light_bp":4500,"transition_s":60},
-  "movement":{"empty_speed":48,"loaded_speed":32,"cart_speed":28,"foot_capacity":4,"cart_capacity":12,"soldier_ration_pack_capacity":8,"load_work_s":10,"unload_work_s":10,"missing_clerk_extra_s":10,"role_change_work_s":30,"service_catchment_distance":600,"resident_dining_walk_limit":240,"road_bp_per_civic_level":300},
-  "buffers":{"crop_output_volume":64,"source_output_volume":24,"station_input_volume":64,"station_output_volume":64,"community_delivery_volume":16,"initial_home_meal_volume":16,"frontier_pantry_volume":16,"return_buffer_rule":"exact shipment volume, exit-only"},
-  "resources":[
-    {"id":"paddy","name":"稻谷","volume_coeff":1000,"buy":2,"sell":1},
-    {"id":"grain","name":"食粮","volume_coeff":1000,"buy":4,"sell":2},
-    {"id":"vegetables","name":"时蔬","volume_coeff":1000,"buy":4,"sell":2},
-    {"id":"fodder","name":"草料","volume_coeff":1000,"buy":2,"sell":1},
-    {"id":"meat","name":"肉料","volume_coeff":1000,"buy":10,"sell":5},
-    {"id":"water","name":"清水","volume_coeff":1000,"buy":null,"sell":null},
-    {"id":"wood","name":"原木","volume_coeff":2000,"buy":3,"sell":1},
-    {"id":"planks","name":"木构","volume_coeff":2000,"buy":6,"sell":3},
-    {"id":"stone","name":"石材","volume_coeff":2000,"buy":4,"sell":2},
-    {"id":"ore","name":"铁矿料","volume_coeff":2000,"buy":4,"sell":2},
-    {"id":"iron","name":"铁料","volume_coeff":1000,"buy":8,"sell":4},
-    {"id":"tools","name":"器材","volume_coeff":1000,"buy":12,"sell":6},
-    {"id":"meal_basic","name":"家常饭","volume_coeff":250,"buy":null,"sell":null},
-    {"id":"meal_veg","name":"菜饭","volume_coeff":250,"buy":null,"sell":null},
-    {"id":"meal_meat","name":"肉菜饭","volume_coeff":250,"buy":null,"sell":null},
-    {"id":"rations","name":"行军口粮","volume_coeff":250,"buy":3,"sell":1},
-    {"id":"wine","name":"酒","volume_coeff":1000,"buy":16,"sell":8}
+  "spec_version": "0.7.1",
+  "rules_version": "life-0.7",
+  "schema_version": 6,
+  "layout_version": 4,
+  "status": "design_contract_not_runtime_implementation",
+  "runtime_base_commit": "cbf7190f9df0a04a81a3c7b1b076bd5f30283e48",
+  "units": {
+    "quantity_mU_per_display": 1000,
+    "volume_uV_per_display": 1000000,
+    "rate_bp": 10000,
+    "path_milli_per_map_unit": 1000,
+    "money": "integer_copper",
+    "rounding": "ceil_for_duration_and_buy; floor_for_sell; half_up_for_happiness"
+  },
+  "clock": {
+    "cycle_s": 2880,
+    "dawn_end": 240,
+    "day_end": 1920,
+    "dusk_end": 2160,
+    "meal_offsets": [
+      600,
+      1980
+    ],
+    "meal_open_before_s": 180,
+    "meal_grace_s": 180,
+    "planner_s": 30,
+    "regional_planner_s": 300,
+    "fiscal_s": 21600,
+    "metrics_s": 21600,
+    "immigration_s": 43200,
+    "growth_day_s": 86400,
+    "offline_cap_s": 2592000,
+    "service_worker_busy_cap_s": 1920,
+    "minimum_rest_s": 600,
+    "night_guard_rest": [
+      900,
+      1740
+    ]
+  },
+  "limits": {
+    "cities": 3,
+    "districts": 1,
+    "legions_world": 1,
+    "residents_city": 150,
+    "legion_capacity": 90,
+    "visitors_city": 12,
+    "intruders_city": 1,
+    "agents_city": 256,
+    "animals_city": 32,
+    "pig_capacity": 8,
+    "collection_mount_capacity": 4,
+    "carts_city": 4,
+    "orders_city": 2048,
+    "active_order_per_agent": 1,
+    "new_parent_orders_per_plan": 8,
+    "new_child_orders_per_plan": 32,
+    "candidate_orders_per_plan": 128,
+    "auto_snapshots": 60,
+    "pinned_snapshots": 20,
+    "planning_records_city": 12,
+    "active_wishes": 1,
+    "watched_wishes": 3,
+    "active_landmarks_city": 1
+  },
+  "render": {
+    "world_width": 1920,
+    "world_height": 1080,
+    "visible_people": [
+      48,
+      96,
+      160
+    ],
+    "visible_animals": 24,
+    "desktop_fps": 15,
+    "low_power_fps": 8,
+    "window_fps": 30,
+    "reference_actor_height": 38,
+    "minimum_actor_height_pt": 22,
+    "full_desktop_layer": true,
+    "passthrough": true,
+    "night_light_bp": 4500,
+    "transition_s": 60
+  },
+  "movement": {
+    "empty_speed": 48,
+    "loaded_speed": 32,
+    "cart_speed": 28,
+    "foot_capacity": 4,
+    "cart_capacity": 12,
+    "soldier_ration_pack_capacity": 8,
+    "load_work_s": 10,
+    "unload_work_s": 10,
+    "missing_clerk_extra_s": 10,
+    "role_change_work_s": 30,
+    "service_catchment_distance": 600,
+    "resident_dining_walk_limit": 240,
+    "road_bp_per_civic_level": 300
+  },
+  "buffers": {
+    "crop_output_volume": 64,
+    "source_output_volume": 24,
+    "station_input_volume": 64,
+    "station_output_volume": 64,
+    "community_delivery_volume": 16,
+    "initial_home_meal_volume": 16,
+    "frontier_pantry_volume": 16,
+    "return_buffer_rule": "exact shipment volume, exit-only"
+  },
+  "resources": [
+    {
+      "id": "paddy",
+      "name": "稻谷",
+      "volume_coeff": 1000,
+      "buy": 2,
+      "sell": 1
+    },
+    {
+      "id": "grain",
+      "name": "食粮",
+      "volume_coeff": 1000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "vegetables",
+      "name": "时蔬",
+      "volume_coeff": 1000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "fodder",
+      "name": "草料",
+      "volume_coeff": 1000,
+      "buy": 2,
+      "sell": 1
+    },
+    {
+      "id": "meat",
+      "name": "肉料",
+      "volume_coeff": 1000,
+      "buy": 10,
+      "sell": 5
+    },
+    {
+      "id": "water",
+      "name": "清水",
+      "volume_coeff": 1000,
+      "buy": null,
+      "sell": null
+    },
+    {
+      "id": "wood",
+      "name": "原木",
+      "volume_coeff": 2000,
+      "buy": 3,
+      "sell": 1
+    },
+    {
+      "id": "planks",
+      "name": "木构",
+      "volume_coeff": 2000,
+      "buy": 6,
+      "sell": 3
+    },
+    {
+      "id": "stone",
+      "name": "石材",
+      "volume_coeff": 2000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "ore",
+      "name": "铁矿料",
+      "volume_coeff": 2000,
+      "buy": 4,
+      "sell": 2
+    },
+    {
+      "id": "iron",
+      "name": "铁料",
+      "volume_coeff": 1000,
+      "buy": 8,
+      "sell": 4
+    },
+    {
+      "id": "tools",
+      "name": "器材",
+      "volume_coeff": 1000,
+      "buy": 12,
+      "sell": 6
+    },
+    {
+      "id": "meal_basic",
+      "name": "家常饭",
+      "volume_coeff": 250,
+      "buy": null,
+      "sell": null
+    },
+    {
+      "id": "meal_veg",
+      "name": "菜饭",
+      "volume_coeff": 250,
+      "buy": null,
+      "sell": null
+    },
+    {
+      "id": "meal_meat",
+      "name": "肉菜饭",
+      "volume_coeff": 250,
+      "buy": null,
+      "sell": null
+    },
+    {
+      "id": "rations",
+      "name": "行军口粮",
+      "volume_coeff": 250,
+      "buy": 3,
+      "sell": 1
+    },
+    {
+      "id": "wine",
+      "name": "酒",
+      "volume_coeff": 1000,
+      "buy": 16,
+      "sell": 8
+    }
   ],
-  "crops":[
-    {"id":"rice","sow_s":60,"water_each_mU":3000,"water_work_s":20,"mature_s":7200,"harvest_s":90,"output_mU":{"paddy":48000},"unlock":{"farm":1,"civic_water":1}},
-    {"id":"millet","sow_s":45,"water_each_mU":1000,"water_work_s":20,"mature_s":3600,"harvest_s":60,"output_mU":{"grain":16000},"unlock":{"farm":1}},
-    {"id":"vegetable","sow_s":30,"water_each_mU":2000,"water_work_s":20,"mature_s":2700,"harvest_s":45,"output_mU":{"vegetables":12000},"unlock":{"farm":1}},
-    {"id":"grass","sow_s":30,"water_each_mU":1000,"water_work_s":20,"mature_s":1800,"harvest_s":30,"output_mU":{"fodder":20000},"unlock_any":["pasture_built","authorized_mount_care"]}
+  "crops": [
+    {
+      "id": "rice",
+      "sow_s": 60,
+      "water_each_mU": 3000,
+      "water_work_s": 20,
+      "mature_s": 7200,
+      "harvest_s": 90,
+      "output_mU": {
+        "paddy": 48000
+      },
+      "unlock": {
+        "farm": 1,
+        "civic_water": 1
+      }
+    },
+    {
+      "id": "millet",
+      "sow_s": 45,
+      "water_each_mU": 1000,
+      "water_work_s": 20,
+      "mature_s": 3600,
+      "harvest_s": 60,
+      "output_mU": {
+        "grain": 16000
+      },
+      "unlock": {
+        "farm": 1
+      }
+    },
+    {
+      "id": "vegetable",
+      "sow_s": 30,
+      "water_each_mU": 2000,
+      "water_work_s": 20,
+      "mature_s": 2700,
+      "harvest_s": 45,
+      "output_mU": {
+        "vegetables": 12000
+      },
+      "unlock": {
+        "farm": 1
+      }
+    },
+    {
+      "id": "grass",
+      "sow_s": 30,
+      "water_each_mU": 1000,
+      "water_work_s": 20,
+      "mature_s": 1800,
+      "harvest_s": 30,
+      "output_mU": {
+        "fodder": 20000
+      },
+      "unlock_any": [
+        "pasture_built",
+        "authorized_mount_care"
+      ]
+    }
   ],
-  "recipes":[
-    {"id":"mill","job":"farmer","station":"mill","input_mU":{"paddy":4000},"output_mU":{"grain":3000,"fodder":1000},"prepare_s":45,"passive_s":0,"finish_s":15},
-    {"id":"cook_basic","job":"cook","station":"kitchen","input_mU":{"grain":4000,"water":2000,"wood":1000},"output_mU":{"meal_basic":16000},"prepare_s":60,"passive_s":60,"finish_s":15},
-    {"id":"cook_veg","job":"cook","station":"kitchen","input_mU":{"grain":4000,"vegetables":2000,"water":2000,"wood":1000},"output_mU":{"meal_veg":16000},"prepare_s":75,"passive_s":75,"finish_s":15},
-    {"id":"cook_meat","job":"cook","station":"kitchen","input_mU":{"grain":4000,"meat":2000,"vegetables":2000,"water":2000,"wood":1000},"output_mU":{"meal_meat":16000},"prepare_s":90,"passive_s":90,"finish_s":15},
-    {"id":"ration_plain","job":"rationer","station":"ration","input_mU":{"grain":4000,"water":1000,"wood":1000},"output_mU":{"rations":16000},"prepare_s":90,"passive_s":420,"finish_s":30},
-    {"id":"ration_meat","job":"rationer","station":"ration","input_mU":{"grain":4000,"meat":2000,"water":1000,"wood":1000},"output_mU":{"rations":20000},"prepare_s":120,"passive_s":300,"finish_s":30},
-    {"id":"saw","job":"carpenter","station":"carpentry","input_mU":{"wood":3000},"output_mU":{"planks":2000},"prepare_s":90,"passive_s":0,"finish_s":15},
-    {"id":"smelt","job":"smith","station":"furnace","input_mU":{"ore":4000,"wood":2000},"output_mU":{"iron":2000},"prepare_s":60,"passive_s":180,"finish_s":15},
-    {"id":"forge","job":"smith","station":"forge","input_mU":{"iron":1000,"planks":1000},"output_mU":{"tools":2000},"prepare_s":120,"passive_s":60,"finish_s":15},
-    {"id":"brew","job":"cook","station":"brewery","input_mU":{"grain":4000,"water":4000,"wood":1000},"output_mU":{"wine":4000},"prepare_s":90,"passive_s":2880,"finish_s":30}
+  "recipes": [
+    {
+      "id": "mill",
+      "job": "farmer",
+      "station": "mill",
+      "input_mU": {
+        "paddy": 4000
+      },
+      "output_mU": {
+        "grain": 3000,
+        "fodder": 1000
+      },
+      "prepare_s": 45,
+      "passive_s": 0,
+      "finish_s": 15
+    },
+    {
+      "id": "cook_basic",
+      "job": "cook",
+      "station": "kitchen",
+      "input_mU": {
+        "grain": 4000,
+        "water": 2000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "meal_basic": 16000
+      },
+      "prepare_s": 60,
+      "passive_s": 60,
+      "finish_s": 15
+    },
+    {
+      "id": "cook_veg",
+      "job": "cook",
+      "station": "kitchen",
+      "input_mU": {
+        "grain": 4000,
+        "vegetables": 2000,
+        "water": 2000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "meal_veg": 16000
+      },
+      "prepare_s": 75,
+      "passive_s": 75,
+      "finish_s": 15
+    },
+    {
+      "id": "cook_meat",
+      "job": "cook",
+      "station": "kitchen",
+      "input_mU": {
+        "grain": 4000,
+        "meat": 2000,
+        "vegetables": 2000,
+        "water": 2000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "meal_meat": 16000
+      },
+      "prepare_s": 90,
+      "passive_s": 90,
+      "finish_s": 15
+    },
+    {
+      "id": "ration_plain",
+      "job": "rationer",
+      "station": "ration",
+      "input_mU": {
+        "grain": 4000,
+        "water": 1000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "rations": 16000
+      },
+      "prepare_s": 90,
+      "passive_s": 420,
+      "finish_s": 30
+    },
+    {
+      "id": "ration_meat",
+      "job": "rationer",
+      "station": "ration",
+      "input_mU": {
+        "grain": 4000,
+        "meat": 2000,
+        "water": 1000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "rations": 20000
+      },
+      "prepare_s": 120,
+      "passive_s": 300,
+      "finish_s": 30
+    },
+    {
+      "id": "saw",
+      "job": "carpenter",
+      "station": "carpentry",
+      "input_mU": {
+        "wood": 3000
+      },
+      "output_mU": {
+        "planks": 2000
+      },
+      "prepare_s": 90,
+      "passive_s": 0,
+      "finish_s": 15
+    },
+    {
+      "id": "smelt",
+      "job": "smith",
+      "station": "furnace",
+      "input_mU": {
+        "ore": 4000,
+        "wood": 2000
+      },
+      "output_mU": {
+        "iron": 2000
+      },
+      "prepare_s": 60,
+      "passive_s": 180,
+      "finish_s": 15
+    },
+    {
+      "id": "forge",
+      "job": "smith",
+      "station": "forge",
+      "input_mU": {
+        "iron": 1000,
+        "planks": 1000
+      },
+      "output_mU": {
+        "tools": 2000
+      },
+      "prepare_s": 120,
+      "passive_s": 60,
+      "finish_s": 15
+    },
+    {
+      "id": "brew",
+      "job": "cook",
+      "station": "brewery",
+      "input_mU": {
+        "grain": 4000,
+        "water": 4000,
+        "wood": 1000
+      },
+      "output_mU": {
+        "wine": 4000
+      },
+      "prepare_s": 90,
+      "passive_s": 2880,
+      "finish_s": 30
+    }
   ],
-  "sources":[
-    {"id":"well","job":"handyman","resource":"water","quantity_mU":6000,"work_s":40,"slots":2},
-    {"id":"trees","job":"logger","resource":"wood","quantity_mU":4000,"work_s":105,"nodes":24,"slots":2,"replant_s":30,"regrow_s":7200},
-    {"id":"quarry","job":"miner","resource":"stone","quantity_mU":4000,"work_s":135,"slots":1},
-    {"id":"mine","job":"miner","resource":"ore","quantity_mU":4000,"work_s":165,"slots":1}
+  "sources": [
+    {
+      "id": "well",
+      "job": "handyman",
+      "resource": "water",
+      "quantity_mU": 6000,
+      "work_s": 40,
+      "slots": 2
+    },
+    {
+      "id": "trees",
+      "job": "logger",
+      "resource": "wood",
+      "quantity_mU": 4000,
+      "work_s": 105,
+      "nodes": 24,
+      "slots": 2,
+      "replant_s": 30,
+      "regrow_s": 7200
+    },
+    {
+      "id": "quarry",
+      "job": "miner",
+      "resource": "stone",
+      "quantity_mU": 4000,
+      "work_s": 135,
+      "slots": 1
+    },
+    {
+      "id": "mine",
+      "job": "miner",
+      "resource": "ore",
+      "quantity_mU": 4000,
+      "work_s": 165,
+      "slots": 1
+    }
   ],
-  "pig":{"price_including_delivery":20,"delivery_s":300,"segments":6,"segment_growth_s":2880,"care_work_s":30,"feed_mU":{"fodder":1000,"grain":250,"water":1000},"butcher_s":90,"meat_mU":8000,"first_order_cap":2,"later_order_cap":1,"breeding":false,"death_from_shortage":false},
-  "jobs":[
-    {"id":"farmer","attribute":"administration","shift":"day"},{"id":"herder","attribute":"administration","shift":"day"},{"id":"butcher","attribute":"valor","shift":"day"},{"id":"cook","attribute":"administration","shift":"service"},{"id":"server","attribute":"charisma","shift":"service"},{"id":"rationer","attribute":"administration","shift":"day"},{"id":"logger","attribute":"valor","shift":"day"},{"id":"miner","attribute":"valor","shift":"day"},{"id":"carpenter","attribute":"administration","shift":"day"},{"id":"smith","attribute":"strategy","shift":"day"},{"id":"builder","attribute":"administration","shift":"day"},{"id":"porter","attribute":"command","shift":"day_or_service"},{"id":"clerk","attribute":"administration","shift":"day"},{"id":"merchant","attribute":"charisma","shift":"day"},{"id":"courier","attribute":"command","shift":"day"},{"id":"guard","attribute":"command","shift":"roster"},{"id":"quartermaster","attribute":"administration","shift":"day"},{"id":"groom","attribute":"administration","shift":"day"},{"id":"restorer","attribute":"strategy","shift":"day"},{"id":"handyman","attribute":"administration","shift":"day_or_service"}
+  "pig": {
+    "price_including_delivery": 20,
+    "delivery_s": 300,
+    "segments": 6,
+    "segment_growth_s": 2880,
+    "care_work_s": 30,
+    "feed_mU": {
+      "fodder": 1000,
+      "grain": 250,
+      "water": 1000
+    },
+    "butcher_s": 90,
+    "meat_mU": 8000,
+    "first_order_cap": 2,
+    "later_order_cap": 1,
+    "breeding": false,
+    "death_from_shortage": false
+  },
+  "jobs": [
+    {
+      "id": "farmer",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "administration": 7000,
+        "strategy": 3000
+      }
+    },
+    {
+      "id": "herder",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "administration": 6000,
+        "command": 4000
+      }
+    },
+    {
+      "id": "butcher",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "valor": 8000,
+        "strategy": 2000
+      }
+    },
+    {
+      "id": "cook",
+      "shift": "service",
+      "attribute_weights_bp": {
+        "administration": 6000,
+        "strategy": 4000
+      }
+    },
+    {
+      "id": "server",
+      "shift": "service",
+      "attribute_weights_bp": {
+        "administration": 7000,
+        "command": 3000
+      }
+    },
+    {
+      "id": "rationer",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "administration": 5000,
+        "command": 5000
+      }
+    },
+    {
+      "id": "logger",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "valor": 8000,
+        "command": 2000
+      }
+    },
+    {
+      "id": "miner",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "valor": 8000,
+        "strategy": 2000
+      }
+    },
+    {
+      "id": "carpenter",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "strategy": 6000,
+        "administration": 4000
+      }
+    },
+    {
+      "id": "smith",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "strategy": 7000,
+        "valor": 3000
+      }
+    },
+    {
+      "id": "builder",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "command": 5000,
+        "administration": 5000
+      }
+    },
+    {
+      "id": "porter",
+      "shift": "day_or_service",
+      "attribute_weights_bp": {
+        "command": 6000,
+        "valor": 4000
+      }
+    },
+    {
+      "id": "clerk",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "administration": 7000,
+        "strategy": 3000
+      }
+    },
+    {
+      "id": "merchant",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "administration": 6000,
+        "strategy": 4000
+      }
+    },
+    {
+      "id": "courier",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "command": 6000,
+        "strategy": 4000
+      }
+    },
+    {
+      "id": "guard",
+      "shift": "roster",
+      "attribute_weights_bp": {
+        "command": 6000,
+        "valor": 4000
+      }
+    },
+    {
+      "id": "quartermaster",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "command": 7000,
+        "administration": 3000
+      }
+    },
+    {
+      "id": "groom",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "command": 6000,
+        "administration": 4000
+      }
+    },
+    {
+      "id": "restorer",
+      "shift": "day",
+      "attribute_weights_bp": {
+        "strategy": 8000,
+        "administration": 2000
+      }
+    },
+    {
+      "id": "handyman",
+      "shift": "day_or_service",
+      "attribute_weights_bp": {
+        "administration": 6000,
+        "command": 4000
+      }
+    }
   ],
-  "rates":{"attribute_baseline":50,"attribute_bp_per_point":20,"attribute_bp_cap":1000,"skill_bp_per_level":100,"skill_xp":[0,60,180,360,600],"seconds_per_xp":300,"city_trait_bp_cap":1500,"total_min_bp":8000,"total_max_bp":14000,"industry_facility_bp_per_level":200,"study_s":120,"study_xp_per_cycle":1,"study_xp_cap_per_day":10},
-  "food":{"meal_mU":1000,"meals_per_cycle":2,"grain_equivalence":4,"paddy_equivalence":3,"protection_cycles":2,"production_target_cycles":4,"cooked_target_meals":2,"quality":{"meal_basic":40,"meal_veg":70,"meal_meat":100,"rations":30},"menus_bp":{"supply":{"meal_meat":5000,"meal_veg":2500},"trade":{"meal_meat":2500,"meal_veg":2500},"industry":{"meal_veg":5000},"military":{},"balanced":{"meal_meat":2500,"meal_veg":2500}},"happiness_initial":70,"weights":{"coverage":40,"quality":10,"housing":15,"cleanliness":10,"security":15,"rest":10},"rise":3,"fall":5,"penalty_below":50,"optional_penalty_bp":1000,"enter_recovery_coverage_bp":9000,"exit_recovery_coverage_bp":9500,"recovery_meals":2,"history_meals":4,"clean_base":40,"clean_per_site":10,"clean_sites_max":6,"garden_clean_per_level":5,"initial_security":60,"initial_rest":100,"minimum_reserve_porters":2,"migration_no_fall_meals":2},
-  "development":{"occupancy_trigger_bp":9000,"input_wait_limit_bp":2000,"utilization_trigger_bp":8000,"storage_trigger_bp":8500,"trade_trigger_bp":8500,"delivery_min_bp":9000,"tier2_qualified_windows":2,"tier3_qualified_windows":4,"immigration_family":2,"immigration_min_happiness":70,"immigration_min_coverage_bp":9500,"immigration_labor_use_bp":6000,"critical_task_wait_limit_s":600,"critical_diagnostic_wait_s":180},
-  "buildings":[
-    {"id":"hall","max":1,"cash":150,"work_s":3600,"materials_mU":{"wood":8000,"planks":4000,"stone":4000}},
-    {"id":"house","max":4,"cash":120,"work_s":3600,"materials_mU":{"wood":12000,"planks":4000,"stone":4000,"tools":1000}},
-    {"id":"farm","max":2,"cash":80,"work_s":1800,"materials_mU":{"wood":8000,"stone":4000}},
-    {"id":"granary","max":2,"cash":100,"work_s":3600,"materials_mU":{"wood":8000,"planks":4000,"stone":4000}},
-    {"id":"market","max":1,"cash":120,"work_s":7200,"materials_mU":{"wood":12000,"planks":4000,"stone":4000}},
-    {"id":"workshop","max":2,"cash":180,"work_s":10800,"materials_mU":{"wood":12000,"planks":6000,"stone":8000,"tools":2000}},
-    {"id":"tavern","max":1,"cash":150,"work_s":7200,"materials_mU":{"wood":12000,"planks":6000,"stone":4000,"tools":1000}},
-    {"id":"stable","max":1,"cash":180,"work_s":10800,"materials_mU":{"wood":16000,"planks":8000,"stone":4000}},
-    {"id":"station","max":1,"cash":220,"work_s":14400,"materials_mU":{"wood":16000,"planks":8000,"stone":8000,"tools":2000}},
-    {"id":"barracks","max":1,"cash":260,"work_s":21600,"materials_mU":{"wood":20000,"planks":10000,"stone":12000,"tools":4000}}
+  "rates": {
+    "attribute_baseline": 50,
+    "attribute_bp_per_point": 20,
+    "attribute_bp_cap": 1000,
+    "skill_bp_per_level": 100,
+    "skill_xp": [
+      0,
+      60,
+      180,
+      360,
+      600
+    ],
+    "seconds_per_xp": 300,
+    "total_min_bp": 8000,
+    "total_max_bp": 14000,
+    "industry_facility_bp_per_level": 200,
+    "study_s": 120,
+    "study_xp_per_cycle": 1,
+    "study_xp_cap_per_day": 10,
+    "leader_attribute_bp_cap": 500,
+    "ability_work_bp_cap": 1200
+  },
+  "food": {
+    "meal_mU": 1000,
+    "meals_per_cycle": 2,
+    "grain_equivalence": 4,
+    "paddy_equivalence": 3,
+    "protection_cycles": 2,
+    "production_target_cycles": 4,
+    "cooked_target_meals": 2,
+    "quality": {
+      "meal_basic": 40,
+      "meal_veg": 70,
+      "meal_meat": 100,
+      "rations": 30
+    },
+    "menus_bp": {
+      "supply": {
+        "meal_meat": 5000,
+        "meal_veg": 2500
+      },
+      "trade": {
+        "meal_meat": 2500,
+        "meal_veg": 2500
+      },
+      "industry": {
+        "meal_veg": 5000
+      },
+      "military": {},
+      "balanced": {
+        "meal_meat": 2500,
+        "meal_veg": 2500
+      }
+    },
+    "happiness_initial": 70,
+    "weights": {
+      "coverage": 40,
+      "quality": 10,
+      "housing": 15,
+      "cleanliness": 10,
+      "security": 15,
+      "rest": 10
+    },
+    "rise": 3,
+    "fall": 5,
+    "penalty_below": 50,
+    "optional_penalty_bp": 1000,
+    "enter_recovery_coverage_bp": 9000,
+    "exit_recovery_coverage_bp": 9500,
+    "recovery_meals": 2,
+    "history_meals": 4,
+    "clean_base": 40,
+    "clean_per_site": 10,
+    "clean_sites_max": 6,
+    "garden_clean_per_level": 5,
+    "initial_security": 60,
+    "initial_rest": 100,
+    "minimum_reserve_porters": 2,
+    "migration_no_fall_meals": 2
+  },
+  "development": {
+    "occupancy_trigger_bp": 9000,
+    "input_wait_limit_bp": 2000,
+    "utilization_trigger_bp": 8000,
+    "storage_trigger_bp": 8500,
+    "trade_trigger_bp": 8500,
+    "delivery_min_bp": 9000,
+    "tier2_qualified_windows": 2,
+    "tier3_qualified_windows": 4,
+    "immigration_family": 2,
+    "immigration_min_happiness": 70,
+    "immigration_min_coverage_bp": 9500,
+    "immigration_labor_use_bp": 6000,
+    "critical_task_wait_limit_s": 600,
+    "critical_diagnostic_wait_s": 180
+  },
+  "buildings": [
+    {
+      "id": "hall",
+      "max": 1,
+      "cash": 150,
+      "work_s": 3600,
+      "materials_mU": {
+        "wood": 8000,
+        "planks": 4000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "house",
+      "max": 4,
+      "cash": 120,
+      "work_s": 3600,
+      "materials_mU": {
+        "wood": 12000,
+        "planks": 4000,
+        "stone": 4000,
+        "tools": 1000
+      }
+    },
+    {
+      "id": "farm",
+      "max": 2,
+      "cash": 80,
+      "work_s": 1800,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "granary",
+      "max": 2,
+      "cash": 100,
+      "work_s": 3600,
+      "materials_mU": {
+        "wood": 8000,
+        "planks": 4000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "market",
+      "max": 1,
+      "cash": 120,
+      "work_s": 7200,
+      "materials_mU": {
+        "wood": 12000,
+        "planks": 4000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "workshop",
+      "max": 2,
+      "cash": 180,
+      "work_s": 10800,
+      "materials_mU": {
+        "wood": 12000,
+        "planks": 6000,
+        "stone": 8000,
+        "tools": 2000
+      }
+    },
+    {
+      "id": "tavern",
+      "max": 1,
+      "cash": 150,
+      "work_s": 7200,
+      "materials_mU": {
+        "wood": 12000,
+        "planks": 6000,
+        "stone": 4000,
+        "tools": 1000
+      }
+    },
+    {
+      "id": "stable",
+      "max": 1,
+      "cash": 180,
+      "work_s": 10800,
+      "materials_mU": {
+        "wood": 16000,
+        "planks": 8000,
+        "stone": 4000
+      }
+    },
+    {
+      "id": "station",
+      "max": 1,
+      "cash": 220,
+      "work_s": 14400,
+      "materials_mU": {
+        "wood": 16000,
+        "planks": 8000,
+        "stone": 8000,
+        "tools": 2000
+      }
+    },
+    {
+      "id": "barracks",
+      "max": 1,
+      "cash": 260,
+      "work_s": 21600,
+      "materials_mU": {
+        "wood": 20000,
+        "planks": 10000,
+        "stone": 12000,
+        "tools": 4000
+      }
+    }
   ],
-  "building_levels":{"cash_material_multipliers":[1,2,4],"work_multipliers":[1,4,12],"house_beds":[16,28,40],"farm_beds":[4,8,12],"farm_city_beds_max":24,"warehouse_volume":[512,1024,2048],"kitchen_slots":[1,2,3],"workshop_each_station_slots":[1,2,3],"tavern_dining_seats":[4,8,12],"hall_display_slots":[2,4,6],"barracks_capacity":[30,60,90],"station_contract_slots":[1,2,3],"stable_work_animal_slots":[2,4,6],"normal_projects":2,"civic_projects":1,"landmark_projects":1,"default_builders":2,"maximum_builders":4,"phase_boundaries_bp":[0,2000,4500,8000,10000]},
-  "extensions":[
-    {"id":"pasture","max":1,"cash":60,"materials_mU":{"wood":8000,"stone":4000},"work_s":1800},
-    {"id":"butcher_table","max":1,"cash":40,"materials_mU":{"planks":2000,"stone":2000},"work_s":900},
-    {"id":"ration_seat","max":3,"cash":50,"materials_mU":{"planks":2000,"stone":2000},"work_s":900},
-    {"id":"delivery_point","max":3,"cash":50,"materials_mU":{"planks":2000,"stone":2000},"work_s":900},
-    {"id":"emergency_well_slot","max":1,"cash":30,"materials_mU":{"planks":1000,"stone":2000},"work_s":600},
-    {"id":"cart","max":4,"cash":40,"materials_mU":{"planks":4000,"tools":1000},"work_s":300}
+  "building_levels": {
+    "cash_material_multipliers": [
+      1,
+      2,
+      4
+    ],
+    "work_multipliers": [
+      1,
+      4,
+      12
+    ],
+    "house_beds": [
+      16,
+      28,
+      40
+    ],
+    "farm_beds": [
+      4,
+      8,
+      12
+    ],
+    "farm_city_beds_max": 24,
+    "warehouse_volume": [
+      512,
+      1024,
+      2048
+    ],
+    "kitchen_slots": [
+      1,
+      2,
+      3
+    ],
+    "workshop_each_station_slots": [
+      1,
+      2,
+      3
+    ],
+    "tavern_dining_seats": [
+      4,
+      8,
+      12
+    ],
+    "hall_display_slots": [
+      2,
+      4,
+      6
+    ],
+    "barracks_capacity": [
+      30,
+      60,
+      90
+    ],
+    "station_contract_slots": [
+      1,
+      2,
+      3
+    ],
+    "stable_work_animal_slots": [
+      2,
+      4,
+      6
+    ],
+    "normal_projects": 2,
+    "civic_projects": 1,
+    "landmark_projects": 1,
+    "default_builders": 2,
+    "maximum_builders": 4,
+    "phase_boundaries_bp": [
+      0,
+      2000,
+      4500,
+      8000,
+      10000
+    ]
+  },
+  "extensions": [
+    {
+      "id": "pasture",
+      "max": 1,
+      "cash": 60,
+      "materials_mU": {
+        "wood": 8000,
+        "stone": 4000
+      },
+      "work_s": 1800
+    },
+    {
+      "id": "butcher_table",
+      "max": 1,
+      "cash": 40,
+      "materials_mU": {
+        "planks": 2000,
+        "stone": 2000
+      },
+      "work_s": 900
+    },
+    {
+      "id": "ration_seat",
+      "max": 3,
+      "cash": 50,
+      "materials_mU": {
+        "planks": 2000,
+        "stone": 2000
+      },
+      "work_s": 900
+    },
+    {
+      "id": "delivery_point",
+      "max": 3,
+      "cash": 50,
+      "materials_mU": {
+        "planks": 2000,
+        "stone": 2000
+      },
+      "work_s": 900
+    },
+    {
+      "id": "emergency_well_slot",
+      "max": 1,
+      "cash": 30,
+      "materials_mU": {
+        "planks": 1000,
+        "stone": 2000
+      },
+      "work_s": 600
+    },
+    {
+      "id": "cart",
+      "max": 4,
+      "cash": 40,
+      "materials_mU": {
+        "planks": 4000,
+        "tools": 1000
+      },
+      "work_s": 300
+    }
   ],
-  "civic":{"tracks":["streets","water","homes","commerce","industry","academy","gardens","ramparts"],"cash_base":{"streets":1500,"water":1400,"homes":1400,"commerce":1800,"industry":1800,"academy":1600,"gardens":1400,"ramparts":2000},"work_s":[345600,691200,1036800],"materials_per_level_mU":{"wood":40000,"planks":20000,"stone":30000,"tools":4000},"goals":{"supply":[1,3,3,1,1,1,3,1],"trade":[3,1,1,3,1,3,1,1],"industry":[3,3,1,1,3,1,1,1],"military":[3,1,1,1,3,1,1,3],"balanced":[2,2,2,2,1,1,1,1]},"well_slots_by_level":[2,2,3,4],"housing_per_homes_level":8,"trade_per_commerce_level":4,"academy_display":[0,3,6,9],"guard_range_per_level":20},
-  "economy":{"protected_cash":100,"hard_floor":20,"emergency_cap_per_period":80,"capital_fraction_bp":{"conservative":2500,"balanced":4000,"active":6000},"trade_quota_by_level":[24,48,72],"trade_fee":2,"outbound_s":150,"return_s":150,"visitor_meal_cap_per_cycle":2,"visitor_prices":{"meal_basic":2,"meal_veg":3,"meal_meat":4},"tax_enabled":false,"salary_enabled":false,"spoilage_enabled":false},
-  "governance":{"proposal_min_gap_s":259200,"proposal_window_s":604800,"proposal_max_per_window":2,"pending_topics":3,"prominent_proposals":1,"appointment_eval_s":43200,"appointment_min_gain":8,"assignment_total_min_gain":8,"appointment_cooldown_s":259200,"handoff_work_s":120,"proxy_min_score":50,"governor_fraction_bp":5000,"same_effect_merge":"max","policy_fit":{"supply":{"xunyu":8},"trade":{"lusu":8},"industry":{"liang":8},"military":{"zhaoyun":6,"guanyu":6,"zhangfei":6},"balanced":{"xunyu":4,"liang":4}}},
-  "region":{"routes_s":{"plain:stone":1200,"plain:river":900,"stone:river":2100},"local_transfer_fee":2,"cross_load_s":30,"cross_unload_s":30,"settlement":{"cash":800,"survey_cash":200,"build_cash":600,"work_s":43200,"builder_count":2,"max_rations_mU":512000,"max_transport_cash":120,"settlers":8,"settler_arrival_s":300,"materials_mU":{"wood":48000,"planks":12000,"stone":16000,"tools":4000,"grain":32000,"water":16000},"construction_consumes_mU":{"wood":40000,"planks":12000,"stone":16000,"tools":4000},"handover_stocks_mU":{"wood":8000,"grain":32000,"water":16000}}},
-  "army":{"capacities":[30,60,90],"batch_people":2,"cash_per_person":5,"tools_per_person_mU":100,"prepaid_rations_per_person_mU":2000,"training_batch_work_s":900,"trainee_passive_s":2880,"inspection_work_s":30,"training_work_per_level_s":86400,"max_training_level":5,"rations_per_person_cycle_mU":1000,"default_period_cash_cap":40,"escort":{"minimum_active":30,"cash":400,"communal_rations_mU":60000,"tools_mU":4000,"duration_s":43200,"score_threshold":55,"training_factor":10,"fortification_factor":5,"command_divisor":5,"valor_divisor":10,"strategy_divisor":10,"success_wounded":5,"failure_wounded":12,"attempts":2},"recovery_s":3600,"recovery_rations_mU":1000},
-  "security":{"eligible_cycle_mod":10,"spawn_phase":2280,"chance_percent":25,"intruder_lifetime_s":300,"base_detection_distance":100,"confront_distance":16,"confront_work_s":10,"intruder_speed":40,"losses":false,"click_rewards":false,"hash":"FNV-1a-64","offset_basis":"14695981039346656037","prime":"1099511628211"},
-  "initial":{"seed":20260920,"population":16,"ordinary":15,"hero":"xunyu","treasury":600,"happiness":70,"stocks_mU":{"grain":64000,"water":32000,"wood":40000,"stone":12000,"iron":6000,"tools":4000,"fodder":8000,"meal_basic":32000},"buildings":["hall","house","farm","granary"],"farm_beds":4,"existing_millet_growth_s":3240,"existing_millet_water_mask":3,"carts":0,"pigs":0,"repair":{"cash":20,"work_s":600,"materials_mU":{"wood":4000,"stone":2000}},"job_counts":{"farmer":2,"logger":1,"miner":1,"cook":1,"porter":3,"builder":2,"clerk":1,"handyman":1,"guard_day":1,"guard_night":1,"flex":1}},
-  "implementation":{"swift_changed":false,"new_engine_verified":false,"m4_verified":false,"static_specification_only":true}
+  "civic": {
+    "tracks": [
+      "streets",
+      "water",
+      "homes",
+      "commerce",
+      "industry",
+      "academy",
+      "gardens",
+      "ramparts"
+    ],
+    "cash_base": {
+      "streets": 1500,
+      "water": 1400,
+      "homes": 1400,
+      "commerce": 1800,
+      "industry": 1800,
+      "academy": 1600,
+      "gardens": 1400,
+      "ramparts": 2000
+    },
+    "work_s": [
+      345600,
+      691200,
+      1036800
+    ],
+    "materials_per_level_mU": {
+      "wood": 40000,
+      "planks": 20000,
+      "stone": 30000,
+      "tools": 4000
+    },
+    "goals": {
+      "supply": [
+        1,
+        3,
+        3,
+        1,
+        1,
+        1,
+        3,
+        1
+      ],
+      "trade": [
+        3,
+        1,
+        1,
+        3,
+        1,
+        3,
+        1,
+        1
+      ],
+      "industry": [
+        3,
+        3,
+        1,
+        1,
+        3,
+        1,
+        1,
+        1
+      ],
+      "military": [
+        3,
+        1,
+        1,
+        1,
+        3,
+        1,
+        1,
+        3
+      ],
+      "balanced": [
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "well_slots_by_level": [
+      2,
+      2,
+      3,
+      4
+    ],
+    "housing_per_homes_level": 8,
+    "trade_per_commerce_level": 4,
+    "academy_display": [
+      0,
+      3,
+      6,
+      9
+    ],
+    "guard_range_per_level": 20
+  },
+  "economy": {
+    "protected_cash": 100,
+    "hard_floor": 20,
+    "emergency_cap_per_period": 80,
+    "capital_fraction_bp": {
+      "conservative": 2500,
+      "balanced": 4000,
+      "active": 6000
+    },
+    "trade_quota_by_level": [
+      24,
+      48,
+      72
+    ],
+    "trade_fee": 2,
+    "outbound_s": 150,
+    "return_s": 150,
+    "visitor_meal_cap_per_cycle": 2,
+    "visitor_prices": {
+      "meal_basic": 2,
+      "meal_veg": 3,
+      "meal_meat": 4
+    },
+    "tax_enabled": false,
+    "salary_enabled": false,
+    "spoilage_enabled": false
+  },
+  "governance": {
+    "proposal_min_gap_s": 259200,
+    "proposal_window_s": 604800,
+    "proposal_max_per_window": 2,
+    "pending_topics": 3,
+    "prominent_proposals": 1,
+    "appointment_eval_s": 43200,
+    "appointment_min_gain": 8,
+    "assignment_total_min_gain": 8,
+    "appointment_cooldown_s": 259200,
+    "handoff_work_s": 120,
+    "proxy_min_score": 50,
+    "governor_fraction_bp": 5000,
+    "same_effect_merge": "max",
+    "policy_fit_method": "weighted_job_effects_from_hero_system"
+  },
+  "region": {
+    "routes_s": {
+      "plain:stone": 1200,
+      "plain:river": 900,
+      "stone:river": 2100
+    },
+    "local_transfer_fee": 2,
+    "cross_load_s": 30,
+    "cross_unload_s": 30,
+    "settlement": {
+      "cash": 800,
+      "survey_cash": 200,
+      "build_cash": 600,
+      "work_s": 43200,
+      "builder_count": 2,
+      "max_rations_mU": 512000,
+      "max_transport_cash": 120,
+      "settlers": 8,
+      "settler_arrival_s": 300,
+      "materials_mU": {
+        "wood": 48000,
+        "planks": 12000,
+        "stone": 16000,
+        "tools": 4000,
+        "grain": 32000,
+        "water": 16000
+      },
+      "construction_consumes_mU": {
+        "wood": 40000,
+        "planks": 12000,
+        "stone": 16000,
+        "tools": 4000
+      },
+      "handover_stocks_mU": {
+        "wood": 8000,
+        "grain": 32000,
+        "water": 16000
+      }
+    }
+  },
+  "army": {
+    "capacities": [
+      30,
+      60,
+      90
+    ],
+    "batch_people": 2,
+    "cash_per_person": 5,
+    "tools_per_person_mU": 100,
+    "prepaid_rations_per_person_mU": 2000,
+    "training_batch_work_s": 900,
+    "trainee_passive_s": 2880,
+    "inspection_work_s": 30,
+    "training_work_per_level_s": 86400,
+    "max_training_level": 5,
+    "rations_per_person_cycle_mU": 1000,
+    "default_period_cash_cap": 40,
+    "escort": {
+      "minimum_active": 30,
+      "cash": 400,
+      "communal_rations_mU": 60000,
+      "tools_mU": 4000,
+      "duration_s": 43200,
+      "score_threshold": 55,
+      "training_factor": 10,
+      "fortification_factor": 5,
+      "command_divisor": 5,
+      "valor_divisor": 10,
+      "strategy_divisor": 10,
+      "success_wounded": 5,
+      "failure_wounded": 12,
+      "attempts": 2
+    },
+    "recovery_s": 3600,
+    "recovery_rations_mU": 1000
+  },
+  "security": {
+    "eligible_cycle_mod": 10,
+    "spawn_phase": 2280,
+    "chance_percent": 25,
+    "intruder_lifetime_s": 300,
+    "base_detection_distance": 100,
+    "confront_distance": 16,
+    "confront_work_s": 10,
+    "intruder_speed": 40,
+    "losses": false,
+    "click_rewards": false,
+    "hash": "FNV-1a-64",
+    "offset_basis": "14695981039346656037",
+    "prime": "1099511628211"
+  },
+  "initial": {
+    "seed": 20260920,
+    "population": 16,
+    "ordinary": 15,
+    "hero": "xunyu",
+    "treasury": 600,
+    "happiness": 70,
+    "stocks_mU": {
+      "grain": 64000,
+      "water": 32000,
+      "wood": 40000,
+      "stone": 12000,
+      "iron": 6000,
+      "tools": 4000,
+      "fodder": 8000,
+      "meal_basic": 32000
+    },
+    "buildings": [
+      "hall",
+      "house",
+      "farm",
+      "granary"
+    ],
+    "farm_beds": 4,
+    "existing_millet_growth_s": 3240,
+    "existing_millet_water_mask": 3,
+    "carts": 0,
+    "pigs": 0,
+    "repair": {
+      "cash": 20,
+      "work_s": 600,
+      "materials_mU": {
+        "wood": 4000,
+        "stone": 2000
+      }
+    },
+    "job_counts": {
+      "farmer": 2,
+      "logger": 1,
+      "miner": 1,
+      "cook": 1,
+      "porter": 3,
+      "builder": 2,
+      "clerk": 1,
+      "handyman": 1,
+      "guard_day": 1,
+      "guard_night": 1,
+      "flex": 1
+    }
+  },
+  "implementation": {
+    "swift_changed": false,
+    "new_engine_verified": false,
+    "m4_verified": false,
+    "static_specification_only": true
+  },
+  "hero_system": "hero-system-v0.7.json"
 }

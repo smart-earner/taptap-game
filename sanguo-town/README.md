@@ -1,12 +1,14 @@
 # 桌面三国·小城志
 
-**最新研发规格：PRD v0.7.0｜当前可运行：town-0.5＋desktop-0.1**
+> 人物设计已更新为PRD v0.7.1：政治、智力、武力、统率＋每将1—5个标准技能引用；详见[能力规范](docs/life-v0.7/06A_ATTRIBUTE_AND_SKILL_SYSTEM.md)。这次是规格与Python参考结算更新，Swift游戏仍town-0.5＋desktop-0.1，尚未接入新能力系统。
+
+**最新研发规格：PRD v0.7.1｜当前可运行：town-0.5＋desktop-0.1**
 
 城池一点点变好，军团慢慢壮大；玩家只作方向、重要用人和重大扩张决定。
 
 ## 阅读最新完整PRD
 
-- **[PRD v0.7完整入口](docs/PRD.md)**：十章规范、三份JSON及明确的开发验收。
+- **[PRD v0.7完整入口](docs/PRD.md)**：十章规范、四份JSON及明确的开发验收。
 - [城市成长与建设](docs/life-v0.7/01_CITY_GROWTH.md)：容量、入住、服务与需求驱动升级。
 - [农牧加工](docs/life-v0.7/02_PRODUCTION.md) / [工种与物流](docs/life-v0.7/03_AGENTS_AND_LOGISTICS.md) / [饭食与财政](docs/life-v0.7/04_FOOD_AND_ECONOMY.md)。
 - [太守、都督和三城](docs/life-v0.7/05_GOVERNANCE_AND_REGION.md) / [六将、收藏和军团](docs/life-v0.7/06_HEROES_COLLECTION_AND_ARMY.md)。

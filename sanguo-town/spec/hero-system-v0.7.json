@@ -1,0 +1,758 @@
+{
+  "spec_version": "0.7.1",
+  "status": "design_and_reference_resolver_not_game_integration",
+  "attribute_labels": {
+    "administration": "政治",
+    "strategy": "智力",
+    "valor": "武力",
+    "command": "统率"
+  },
+  "attribute_range": [
+    0,
+    100
+  ],
+  "hero_skill_count": [
+    1,
+    5
+  ],
+  "ordinary_skill_count": [
+    0,
+    2
+  ],
+  "signature_limit": 1,
+  "skill_levels": 1,
+  "job_weights_bp": {
+    "farmer": {
+      "administration": 7000,
+      "strategy": 3000
+    },
+    "herder": {
+      "administration": 6000,
+      "command": 4000
+    },
+    "butcher": {
+      "valor": 8000,
+      "strategy": 2000
+    },
+    "cook": {
+      "administration": 6000,
+      "strategy": 4000
+    },
+    "server": {
+      "administration": 7000,
+      "command": 3000
+    },
+    "rationer": {
+      "administration": 5000,
+      "command": 5000
+    },
+    "logger": {
+      "valor": 8000,
+      "command": 2000
+    },
+    "miner": {
+      "valor": 8000,
+      "strategy": 2000
+    },
+    "carpenter": {
+      "strategy": 6000,
+      "administration": 4000
+    },
+    "smith": {
+      "strategy": 7000,
+      "valor": 3000
+    },
+    "builder": {
+      "command": 5000,
+      "administration": 5000
+    },
+    "porter": {
+      "command": 6000,
+      "valor": 4000
+    },
+    "clerk": {
+      "administration": 7000,
+      "strategy": 3000
+    },
+    "merchant": {
+      "administration": 6000,
+      "strategy": 4000
+    },
+    "courier": {
+      "command": 6000,
+      "strategy": 4000
+    },
+    "guard": {
+      "command": 6000,
+      "valor": 4000
+    },
+    "quartermaster": {
+      "command": 7000,
+      "administration": 3000
+    },
+    "groom": {
+      "command": 6000,
+      "administration": 4000
+    },
+    "restorer": {
+      "strategy": 8000,
+      "administration": 2000
+    },
+    "handyman": {
+      "administration": 6000,
+      "command": 4000
+    }
+  },
+  "appointment_weights_bp": {
+    "prefect": {
+      "administration": 5000,
+      "strategy": 3000,
+      "command": 2000
+    },
+    "governor": {
+      "command": 4000,
+      "administration": 4000,
+      "strategy": 2000
+    },
+    "commander": {
+      "command": 6000,
+      "valor": 3000,
+      "strategy": 1000
+    }
+  },
+  "rates": {
+    "baseline": 50,
+    "worker_bp_per_point": 20,
+    "worker_attribute_cap": 1000,
+    "leader_bp_per_point": 10,
+    "leader_attribute_cap": 500,
+    "governor_scale_bp": 5000,
+    "job_xp_bp_per_level": 100,
+    "job_level_max": 5,
+    "work_ability_cap": 1200,
+    "work_total_min": 8000,
+    "work_total_max": 14000,
+    "purchase_attribute_bp_per_point": 10,
+    "purchase_total_cap": 1000
+  },
+  "metrics": {
+    "work_rate_bp": {
+      "event": "work_phase_start",
+      "cap": 1200,
+      "allowed_roles": [
+        "worker",
+        "prefect",
+        "governor"
+      ]
+    },
+    "purchase_discount_bp": {
+      "event": "quote_created",
+      "cap": 1000,
+      "allowed_roles": [
+        "worker",
+        "prefect",
+        "governor"
+      ]
+    },
+    "patrol_speed_bp": {
+      "event": "patrol_segment_start",
+      "cap": 2000,
+      "allowed_roles": [
+        "worker",
+        "prefect",
+        "governor"
+      ]
+    },
+    "training_rate_bp": {
+      "event": "training_phase_start",
+      "cap": 1200,
+      "allowed_roles": [
+        "commander"
+      ]
+    },
+    "escort_score": {
+      "event": "escort_departure",
+      "cap": 10,
+      "allowed_roles": [
+        "commander"
+      ]
+    },
+    "wounded_reduction_bp": {
+      "event": "escort_departure",
+      "cap": 3000,
+      "allowed_roles": [
+        "commander"
+      ]
+    },
+    "happiness_rise_extra": {
+      "event": "meal_window_open",
+      "cap": 2,
+      "allowed_roles": [
+        "prefect",
+        "governor"
+      ]
+    }
+  },
+  "stacking": "filter role/event/jobs, scale governor then max per metric+family across holders; sum families then cap; same personID never repeated in source list",
+  "skills": [
+    {
+      "id": "agriculture",
+      "name": "农桑",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "agriculture",
+          "jobs": [
+            "farmer"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "husbandry",
+      "name": "畜养",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "husbandry",
+          "jobs": [
+            "herder",
+            "butcher",
+            "groom"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "cookery",
+      "name": "庖厨",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "cookery",
+          "jobs": [
+            "cook",
+            "server"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "carpentry",
+      "name": "木作",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "carpentry",
+          "jobs": [
+            "carpenter"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "metallurgy",
+      "name": "冶铸",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "metallurgy",
+          "jobs": [
+            "smith"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "restoration",
+      "name": "修复",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "restoration",
+          "jobs": [
+            "restorer"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "construction",
+      "name": "营造",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "construction",
+          "jobs": [
+            "builder"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "rationcraft",
+      "name": "制粮",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "rationcraft",
+          "jobs": [
+            "rationer",
+            "quartermaster"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "gathering",
+      "name": "力作",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "gathering",
+          "jobs": [
+            "logger",
+            "miner"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "logistics",
+      "name": "转运",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 400,
+          "event": "work_phase_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "logistics",
+          "jobs": [
+            "porter",
+            "courier",
+            "clerk"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "commerce",
+      "name": "通商",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "purchase_discount_bp",
+          "value": 500,
+          "event": "quote_created",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "bargaining"
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "appeasement",
+      "name": "安抚",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "happiness_rise_extra",
+          "value": 1,
+          "event": "meal_window_open",
+          "roles": [
+            "prefect",
+            "governor"
+          ],
+          "family": "appeasement",
+          "requires_coverage_bp": 9500
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "drill",
+      "name": "练兵",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "training_rate_bp",
+          "value": 500,
+          "event": "training_phase_start",
+          "roles": [
+            "commander"
+          ],
+          "family": "training"
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "patrol",
+      "name": "巡检",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "patrol_speed_bp",
+          "value": 800,
+          "event": "patrol_segment_start",
+          "roles": [
+            "worker",
+            "prefect",
+            "governor"
+          ],
+          "family": "patrol"
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "escort",
+      "name": "护送",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "escort_score",
+          "value": 4,
+          "event": "escort_departure",
+          "roles": [
+            "commander"
+          ],
+          "family": "escort"
+        }
+      ],
+      "category": "tactic"
+    },
+    {
+      "id": "rearguard",
+      "name": "保全",
+      "kind": "common",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "wounded_reduction_bp",
+          "value": 1000,
+          "event": "escort_departure",
+          "roles": [
+            "commander"
+          ],
+          "family": "preservation"
+        }
+      ],
+      "category": "tactic"
+    },
+    {
+      "id": "kings_counsel",
+      "name": "王佐之才",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 600,
+          "event": "work_phase_start",
+          "roles": [
+            "prefect",
+            "governor"
+          ],
+          "family": "statecraft",
+          "jobs": [
+            "cook",
+            "rationer",
+            "clerk"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "dragon_courage",
+      "name": "一身是胆",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "wounded_reduction_bp",
+          "value": 2000,
+          "event": "escort_departure",
+          "roles": [
+            "commander"
+          ],
+          "family": "preservation"
+        }
+      ],
+      "category": "tactic"
+    },
+    {
+      "id": "diplomatic_plan",
+      "name": "榻上筹策",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 600,
+          "event": "work_phase_start",
+          "roles": [
+            "prefect",
+            "governor"
+          ],
+          "family": "coordination",
+          "jobs": [
+            "porter",
+            "courier",
+            "merchant",
+            "clerk"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "sleeping_dragon",
+      "name": "卧龙筹策",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "work_rate_bp",
+          "value": 800,
+          "event": "work_phase_start",
+          "roles": [
+            "prefect",
+            "governor"
+          ],
+          "family": "engineering",
+          "jobs": [
+            "builder",
+            "restorer"
+          ]
+        }
+      ],
+      "category": "specialty"
+    },
+    {
+      "id": "martial_sage",
+      "name": "武圣",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "escort_score",
+          "value": 6,
+          "event": "escort_departure",
+          "roles": [
+            "commander"
+          ],
+          "family": "breakthrough"
+        }
+      ],
+      "category": "tactic"
+    },
+    {
+      "id": "thunder_roar",
+      "name": "燕人咆哮",
+      "kind": "signature",
+      "level": 1,
+      "activation": "automatic",
+      "effects": [
+        {
+          "metric": "training_rate_bp",
+          "value": 800,
+          "event": "training_phase_start",
+          "roles": [
+            "commander"
+          ],
+          "family": "training"
+        }
+      ],
+      "category": "specialty"
+    }
+  ],
+  "feature_flags": {
+    "skill_learning": false,
+    "skill_reroll": false,
+    "skill_consumables": false,
+    "manual_casting": false,
+    "tactical_battle_skill_timeline": false
+  },
+  "migration": {
+    "source_attributes": {
+      "administration": "administration",
+      "strategy": "strategy",
+      "valor": "valor",
+      "command": "command"
+    },
+    "charisma": "preserve under legacyAttributes only; not converted or summed",
+    "removed_seven_star_bonus": "charisma+3 -> administration+3 for new rules only",
+    "retroactive_task_recalculation": false,
+    "runtime_base_unchanged": true
+  },
+  "policy_fit_job_weights_bp": {
+    "supply": {
+      "farmer": 3000,
+      "cook": 3000,
+      "server": 1000,
+      "herder": 1000,
+      "porter": 1000,
+      "handyman": 1000
+    },
+    "trade": {
+      "merchant": 3500,
+      "porter": 2500,
+      "courier": 2000,
+      "cook": 1000,
+      "clerk": 1000
+    },
+    "industry": {
+      "builder": 2000,
+      "carpenter": 2500,
+      "smith": 2500,
+      "miner": 1500,
+      "porter": 1500
+    },
+    "military": {
+      "rationer": 3000,
+      "quartermaster": 2000,
+      "guard": 2000,
+      "porter": 1500,
+      "smith": 1500
+    },
+    "balanced": {
+      "farmer": 1500,
+      "cook": 2000,
+      "builder": 2000,
+      "porter": 2000,
+      "smith": 1000,
+      "merchant": 1500
+    }
+  },
+  "policy_fit_max_bonus": 10,
+  "policy_fit_normalizer_bp": 1700
+}

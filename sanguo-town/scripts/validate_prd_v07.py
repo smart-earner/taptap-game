@@ -20,6 +20,7 @@ CHAPTERS = [
     '00_PRODUCT.md', '01_CITY_GROWTH.md', '02_PRODUCTION.md',
     '03_AGENTS_AND_LOGISTICS.md', '04_FOOD_AND_ECONOMY.md',
     '05_GOVERNANCE_AND_REGION.md', '06_HEROES_COLLECTION_AND_ARMY.md',
+    '06A_ATTRIBUTE_AND_SKILL_SYSTEM.md',
     '07_CONTENT_AND_PROGRESSION.md', '08_DESKTOP_UI_AND_ART.md',
     '09_ENGINEERING_AND_ACCEPTANCE.md',
 ]
@@ -172,8 +173,11 @@ def main():
     cfg = read_json(ROOT / 'spec/life-v0.7.json')
     content = read_json(ROOT / 'spec/content-v0.7.json')
     docs = {n: (ROOT / 'docs/life-v0.7' / n).read_text(encoding='utf-8') for n in CHAPTERS}
+    from hero_reference_v071 import Source, work_rate as hero_work_rate, resolve as hero_resolve, escort_score as hero_escort, validate as validate_heroes
+    ability = read_json(ROOT/'spec/hero-system-v0.7.json')
+    validate_heroes(ability, content, cfg)
     c = Checks()
-    c.eq('matching specification versions', [cfg['spec_version'], content['spec_version']], ['0.7.0', '0.7.0'])
+    c.eq('matching specification versions', [cfg['spec_version'], content['spec_version']], ['0.7.1', '0.7.1'])
     c.check('not an implemented engine claim', cfg['implementation']['new_engine_verified'] is False and cfg['implementation']['swift_changed'] is False)
     for key, count in [('resources', 17), ('crops', 4), ('recipes', 10), ('jobs', 20), ('buildings', 10)]:
         rows = cfg[key]; ids = [x['id'] for x in rows]
@@ -215,7 +219,7 @@ def main():
         c.check('source worker/' + s['id'], s['job'] in jobs)
         c.check('source buffer/' + s['id'], volume({s['resource']: s['quantity_mU']}) <= cfg['buffers']['source_output_volume'] * 1000000)
     c.eq('basic meal ordinary', cooked_time(recipes['cook_basic'], 10000), 135)
-    c.eq('basic meal Xun Yu', cooked_time(recipes['cook_basic'], 10800), 130)
+    c.eq('generic skill-based founding cooking', cooked_time(recipes['cook_basic'], hero_work_rate(ability, {'id':'worker','attributes':dict.fromkeys(ability['attribute_labels'],50),'skill_ids':[]}, 'cook', leaders=[Source(next(h for h in content['heroes'] if h['starting']), 'prefect', True)])), 127)
     c.eq('pig passive duration', cfg['pig']['segments'] * cfg['pig']['segment_growth_s'], 17280)
     c.eq('pig care duration', cfg['pig']['segments'] * cfg['pig']['care_work_s'], 180)
     c.eq('personnel envelope', cfg['limits']['residents_city'] + cfg['limits']['legion_capacity'] + cfg['limits']['visitors_city'] + cfg['limits']['intruders_city'], 253)
@@ -256,9 +260,9 @@ def main():
     c.eq('unique collectible count', len(all_uniques), 17)
     c.eq('unique IDs across all collection categories', len({x['id'] for x in all_uniques}), 17)
     c.eq('one founding hero', [x['id'] for x in content['heroes'] if x['starting']], ['xunyu'])
-    c.eq('Zhao Yun escort example', escort_score(30, 1, 1, heroes['zhaoyun']['attributes']), 59)
-    c.eq('Guan Yu escort example', escort_score(30, 1, 1, heroes['guanyu']['attributes'], 8), 67)
-    c.eq('Zhao Yun wounded', ceildiv(5 * 8000, 10000), 4)
+    c.eq('Zhao Yun escort example', hero_escort(ability, heroes['zhaoyun'],30,1,1), 63)
+    c.eq('Guan Yu escort example', hero_escort(ability, heroes['guanyu'],30,1,1), 69)
+    c.eq('Zhao Yun wounded', ceildiv(5 * (10000-hero_resolve(ability,[Source(heroes['zhaoyun'],'commander',True)],'wounded_reduction_bp')),10000), 4)
     c.eq('equipment crosses valor threshold', escort_score(30, 0, 0, {'command': 50, 'valor': 61, 'strategy': 50}) - escort_score(30, 0, 0, {'command': 50, 'valor': 59, 'strategy': 50}), 1)
     for hero in heroes.values():
         c.check('hero attributes/' + hero['id'], all(type(v) is int and 0 <= v <= 100 for v in hero['attributes'].values()))
@@ -355,7 +359,7 @@ def main():
         c.check('substantive chapter/' + name, len(text) > 1500)
         c.check('no unresolved placeholder/' + name, not re.search(r'\b(?:TODO|TBD|FIXME)\b', text))
         c.check('no internal tool marker/' + name, 'turn' not in text or not re.search(r'turn\d+(?:file|search|view)', text))
-    combined = '# 桌面三国·小城志 PRD v0.7.0\n\n完整研发规格；当前新生活引擎尚未实现。\n\n' + '\n\n---\n\n'.join(docs.values())
+    combined = '# 桌面三国·小城志 PRD v0.7.1\n\n完整研发规格；当前新生活引擎尚未实现。\n\n' + '\n\n---\n\n'.join(docs.values())
     (out / 'PRD-v0.7-complete.md').write_text(combined, encoding='utf-8')
     body, headings = markdown_html(combined)
     toc = ''.join('<a class="h' + str(n) + '" href="#' + anchor + '">' + html.escape(title) + '</a>' for n, title, anchor in headings if n <= 2)
@@ -364,7 +368,7 @@ def main():
     page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7 完整研发规格</title><style>' + css + '</style></head><body><aside><strong>小城志 · PRD v0.7</strong>' + toc + '</aside><main><div class="status">研发规格与数值基线，不是新客户端交付。此页面无外部资源请求；参考链接只在主动点击后打开。应用验收状态保留 NOT_RUN。</div>' + body + raw + '</main></body></html>'
     (out / 'PRD-v0.7-readable.html').write_text(page, encoding='utf-8')
     hashes = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'spec/life-v0.7.json', ROOT/'spec/content-v0.7.json'] + [ROOT/'docs/life-v0.7'/n for n in CHAPTERS]}
-    report = {'scope':'static_specification_and_isolated_reference_models_only','spec_version':'0.7.0','passed':len(c.rows)-len(c.failures),'failed':len(c.failures),'application_cases':len(cases),'application_cases_executed':0,'swift_engine_tested':False,'m4_tested':False,'checks':fractions_json(c.rows),'sha256':hashes}
+    report = {'scope':'static_specification_and_isolated_reference_models_only','spec_version':'0.7.1','passed':len(c.rows)-len(c.failures),'failed':len(c.failures),'application_cases':len(cases),'application_cases_executed':0,'swift_engine_tested':False,'m4_tested':False,'checks':fractions_json(c.rows),'sha256':hashes}
     for name, value in [('validation.json', report), ('capacity-reference.json', capacity), ('acceptance-plan.json', cases)]:
         (out / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({k: report[k] for k in ['scope','passed','failed','application_cases','application_cases_executed']}, ensure_ascii=False))

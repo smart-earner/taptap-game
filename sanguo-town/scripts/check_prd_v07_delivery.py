@@ -80,7 +80,7 @@ def main() -> int:
             if target.startswith(('http://','https://','#')): continue
             resolved = (path.parent/target.split('#')[0]).resolve()
             c.check('relative link/'+str(path.relative_to(ROOT))+'/'+target, resolved.exists())
-    c.check('main entrypoint refers to new PRD', 'v0.7.0' in root.read_text())
+    c.check('main entrypoint refers to new PRD', 'v0.7.1' in root.read_text())
     c.check('original v0.6 entrypoint preserved', (ROOT/'docs/reference/PRD-v0.6.md').exists())
     original = (ROOT/'docs/reference/PRD-v0.6.md').read_bytes()
     blob = hashlib.sha1(b'blob '+str(len(original)).encode()+b'\0'+original).hexdigest()
@@ -90,7 +90,7 @@ def main() -> int:
     c.eq('acceptance count retained',len(acceptance),72)
     c.check('base checks completed before export', module.read_json(out/'validation.json')['failed']==0)
     combined = '\n\n---\n\n'.join(p.read_text(encoding='utf-8') for p in paths)
-    for title, value in [('附录A 核心数值JSON',cfg),('附录B 人物与内容JSON',content),('附录C 确定性开局JSON',seed)]:
+    for title, value in [('附录A 核心数值JSON',cfg),('附录B 人物与内容JSON',content),('附录C 确定性开局JSON',seed),('附录D 四维与技能库JSON',module.read_json(ROOT/'spec/hero-system-v0.7.json'))]:
         combined += '\n\n# '+title+'\n\n```json\n'+json.dumps(value,ensure_ascii=False,indent=2)+'\n```\n'
     (out/'PRD-v0.7-complete.md').write_text(combined,encoding='utf-8')
     body, headings = module.markdown_html(combined)
@@ -99,10 +99,10 @@ def main() -> int:
     styles = re.search(r'<style>(.*?)</style>',previous,re.S)
     assert styles is not None
     responsive = 'p,td,th,a,blockquote{overflow-wrap:anywhere}main{min-width:0}pre,.table-wrap{max-width:100%;box-sizing:border-box}'
-    page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7 完整研发规格</title><style>'+styles[1]+responsive+'</style></head><body><aside><strong>小城志 · PRD v0.7</strong>'+toc+'</aside><main><div class="status">完整研发规格：十章正文、三份配置。新生活引擎与M4实机验收尚未执行；静态通过不等于游戏完成。</div>'+body+'</main></body></html>'
+    page = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小城志 PRD v0.7.1 完整研发规格</title><style>'+styles[1]+responsive+'</style></head><body><aside><strong>小城志 · PRD v0.7.1</strong>'+toc+'</aside><main><div class="status">完整研发规格：十章与能力专章、四份配置。新生活引擎与M4实机验收尚未执行；静态通过不等于游戏完成。</div>'+body+'</main></body></html>'
     (out/'PRD-v0.7-readable.html').write_text(page,encoding='utf-8')
-    source_paths = paths + [ROOT/'spec/life-v0.7.json',ROOT/'spec/content-v0.7.json',ROOT/'spec/bootstrap-v0.7.json',Path(__file__).resolve(),ROOT/'scripts/validate_prd_v07.py']
-    report = {'scope':'cross_file_delivery_and_bootstrap_spec_only','spec_version':'0.7.0','passed':len(c.rows)-len(c.failures),'failed':len(c.failures),'application_cases_executed':0,'engine_tested':False,'checks':c.rows,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths},'complete_markdown_bytes':len(combined.encode('utf-8'))}
+    source_paths = paths + [ROOT/'spec/hero-system-v0.7.json',ROOT/'scripts/hero_reference_v071.py',ROOT/'scripts/validate_hero_v071.py',ROOT/'spec/life-v0.7.json',ROOT/'spec/content-v0.7.json',ROOT/'spec/bootstrap-v0.7.json',Path(__file__).resolve(),ROOT/'scripts/validate_prd_v07.py']
+    report = {'scope':'cross_file_delivery_and_bootstrap_spec_only','spec_version':'0.7.1','passed':len(c.rows)-len(c.failures),'failed':len(c.failures),'application_cases_executed':0,'engine_tested':False,'checks':c.rows,'sha256':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths},'complete_markdown_bytes':len(combined.encode('utf-8'))}
     (out/'delivery-validation.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({k:report[k] for k in ['scope','passed','failed','application_cases_executed','complete_markdown_bytes']},ensure_ascii=False))
     for row in c.failures: print('FAIL:',row['name'],row['actual'])

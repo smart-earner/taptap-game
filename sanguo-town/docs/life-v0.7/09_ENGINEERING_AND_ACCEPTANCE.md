@@ -2,13 +2,13 @@
 
 ## 9.1 目标版本和实现边界
 
-目标schemaVersion=6、rulesVersion=life-0.7、contentVersion=0.7.0、layoutVersion=4。基线可运行软件为town-0.5＋desktop-0.1，旧单元测试只证明旧代码；本次PRD交付不改Swift运行源，不发新Mac包，不沿用旧201项宣称新生活层已通过。
+目标schemaVersion=6、rulesVersion=life-0.7、contentVersion=0.7.1、layoutVersion=4。基线可运行软件为town-0.5＋desktop-0.1，旧单元测试只证明旧代码；本次PRD交付不改Swift运行源，不发新Mac包，不沿用旧201项宣称新生活层已通过。
 
 历史schema1—4解码保留。schema5是未正式交付的life-0.6目标，若遇实验档必须按带manifest的实验迁移适配器处理；没有适配器就BLOCKED，不按旧格式猜。未知更高版本只读报错、保留原文件。
 
 ## 9.2 模块职责
 
-SanguoCore/Life：配置校验、单位/账本、任务调度、生产、食品、服务、城市规划、人物效果、区域、新城、迁移。SanguoPresentation：只读投影、路径插值、昼夜着色和动作。SanguoDesktopHost：屏幕、层级、穿透与显示设置。SanguoMac：查看与发授权命令；不能私下写库存。
+SanguoCore/Life：配置校验、单位/账本、任务调度、生产、食品、服务、城市规划、标准属性/技能解析、区域、新城、迁移。SanguoPresentation：只读投影、路径插值、昼夜着色和动作。SanguoDesktopHost：屏幕、层级、穿透与显示设置。SanguoMac：查看与发授权命令；不能私下写库存。
 
 开源目录中新增与更新的每批代码必须有对应自动测试、真实构建和BUILD_STATUS条目。优先V1真实食物链，不继续以旧自动产率＋新动画暂代实现。P0未实现的目标禁用并说明，不接受空回调按钮。
 
@@ -18,7 +18,7 @@ SanguoCore/Life：配置校验、单位/账本、任务调度、生产、食品�
 |---|---|---|
 |LifeState|epoch:Int64,seed:UInt64,contentHash,cities,agents,orders,lots,devices,events,nextSequence|一个世界一个时钟；配置hash固定|
 |CityLife|cityID,capacityPopulation,residentIDs,presentConsumerIDs,permits,metrics,food,treasuryAllocations|常住归属人口和实际在城就餐名单分开|
-|Agent|id,origin,cityID/location,homeID,personID?,role,shift,activeOrderID?,route,cargo,skills,rest|一人一独占任务，一地或一条旅程|
+|Agent|id,origin,cityID/location,homeID,personID?,role,shift,activeOrderID?,route,cargo,jobXP,skillIDs,baseAttributes,legacyAttributes?,rest|一人一独占任务，一地或一条旅程|
 |Order|id,parentID?,consumerKey,authorityID,kind,priority,state,workerIDs,createdAt,deadline,remainingWorkBP,rateSnapshot,passiveDueAt,recipeVersion,reservations|WAIT_INPUT不独占工人；完成一次|
 |CargoLot|id,originLotID,resourceID,amount_mU,locationType,locationID,ownerRealm,allocatedCity,originEventID|数量非负；库存/携货/WIP互斥|
 |Storage|id,acceptedTypes,capacity_uV,lotIDs,incomingReservations|在库＋预留入库≤容量，返货/旧档溢出例外只出不进|
@@ -54,9 +54,11 @@ Envelope={id,expectedRevision,principal,action,issuedAt}。principal为player、
 
 ## 9.5 参数加载与升级
 
-`spec/life-v0.7.json`是生产/经济/容量数据；`spec/content-v0.7.json`是特色、事件与收藏。时间和整数单位不得硬编码到动画中。启动校验唯一ID、引用、非负、上下限、无环依赖、每配方输出可容纳、所有概率与比重范围、报价向量。校验失败停止新规则写存档，旧版仍可打开。
+`spec/life-v0.7.json`是生产/经济/容量数据；`spec/content-v0.7.json`是特色、事件与收藏；`spec/hero-system-v0.7.json`定义四维、工种权重、22技能与效果原语。人物只引用技能ID；未知效果、重复技能、非法范围阻止新规则写入。时间和整数单位不得硬编码到动画中。启动校验唯一ID、引用、非负、上下限、无环依赖、每配方输出可容纳、所有概率与比重范围、报价向量。校验失败停止新规则写存档，旧版仍可打开。
 
-已开始订单保留quote/recipe/rate/remainingWork/输出快照，热更新不重扣和不改变过去工时。若任何规则从0.7.0变更，发布contentVersion补丁并列出受影响向量。模拟中不直接读用户可随意编辑的未签配置；开发配置模式另有profile与明显标识，不污染正常档。
+已开始订单保留quote/recipe/rate/remainingWork/输出快照，热更新不重扣和不改变过去工时。若任何规则从0.7.1变更，发布contentVersion补丁并列出受影响向量。模拟中不直接读用户可随意编辑的未签配置；开发配置模式另有profile与明显标识，不污染正常档。
+
+能力迁移另按06A执行：四个旧键逐项保留，旧魅力仅写legacyAttributes；已开始阶段/出征不重算；按explicitMigrationMap添加初始skillIDs一次，不按显示姓名匹配。技能学习、洗练、手动放招默认关闭。
 
 ## 9.6 安全迁移与旧义务
 
@@ -110,7 +112,7 @@ M4/16GB/macOS15+作为参考测试机，不声称是用户的完整配置。目�
 |FD02|餐后179/180/181秒卸餐|前两者计该餐，181保留后用不追填|
 |FD03|N16，E64，取1粮酿酒|拒绝；同粮变4民用饭允许|
 |FD04|无肉菜但家常足|C100，正常生活，不判饥荒|
-|FD05|C/H/R100,Q40,D/S60，当前70|目标84，普通下一73，荀彧75|
+|FD05|C/H/R100,Q40,D/S60，当前70|目标84，普通下一73，安抚且覆盖≥95%则74|
 |FD06|两餐C<90%，随后两餐≥95%|进入/退出保供，农业/饭/物流不减速|
 |FD07|外出居民同时在家名单|校验拒绝重复消费；按旅程口粮一次|
 |FD08|居民吃16饭＋外客2肉菜|居民收入0，外客实际交付收入8，未交付不收|
@@ -123,13 +125,13 @@ M4/16GB/macOS15+作为参考测试机，不声称是用户的完整配置。目�
 |CT07|切兴商到备战|已建商街不降，在制按原报价，不自动开战|
 |CT08|特色3阶段完成重放/改方向|效果各一次，旧外观保留，不免费重建|
 |HR01|新开局|16=荀彧1普通15，仅荀彧已加入|
-|HR02|荀彧太守普通厨师basic|56+60+14=130，材料与16产出不变|
+|HR02|荀彧太守普通厨师basic|A厨政=91，主管410＋庖厨400＋王佐600；rate11410，53+60+14=127；产出16不变|
 |HR03|鲁肃买10粮含2运费|39铜，不把运费打折|
 |HR04|同键太守与都督效果|取较大不相加；不同键总rate受上限|
-|HR05|施工中途诸葛亮上任|原人工段不回算，新段有效+1200|
+|HR05|施工中途诸葛亮上任|原人工段不回算；新builder段主管380＋营造400＋卧龙800=1580，rate11580（普通L1，无其他项）|
 |HR06|同件兵器分给两人/在途换装备|拒绝冲突，不产生分身|
-|HR07|赵云30人训练1城防1护送|score59成功；基础5伤→4，出发后换人不改|
-|HR08|普通指挥C50V59I50装备武勇+2|武勇分从0到1；未跨门槛时显示0增量|
+|HR07|赵云30人训练1城防1护送|score63成功；护送4，一身是胆减伤20%，基础5伤→4，出发后换人不改|
+|HR08|普通指挥C50V59I50装备武力+2|武力分从0到1；未跨门槛时显示0增量|
 |GV01|每天/3天/7天访问同命令轨迹|同截止完整状态一致，不发访问奖励|
 |GV02|投资额度用完后切方针和恢复|本期额度/现金不刷新|
 |GV03|对外购粮应急80预算、单价4费2|最多19份78铜，不能买20份82铜|
