@@ -48,6 +48,17 @@ func run() -> void:
 			if rendered.get_pixel(x,y).a<.98: translucent_pixels+=1
 			if rendered.get_pixel(x,y).a>.05: opaque_pixels+=1
 	if not require(translucent_pixels>100 and opaque_pixels>100,"render keeps wallpaper translucency and visible 2D town"): return
+	await create_timer(.35).timeout
+	await RenderingServer.frame_post_draw
+	var animated=desktop.surface.get_texture().get_image()
+	var changed_pixels=0
+	for y in range(0,rendered.get_height(),16):
+		for x in range(0,rendered.get_width(),16):
+			var before_color=rendered.get_pixel(x,y)
+			var after_color=animated.get_pixel(x,y)
+			var difference=absf(before_color.r-after_color.r)+absf(before_color.g-after_color.g)+absf(before_color.b-after_color.b)+absf(before_color.a-after_color.a)
+			if difference>.02: changed_pixels+=1
+	if not require(changed_pixels>20,"desktop 2D layer visibly animates between frames"): return
 	var output=ProjectSettings.globalize_path("res://../dist/godot-desktop-tests")
 	DirAccess.make_dir_recursive_absolute(output)
 	rendered.save_png(output+"/desktop-layer.png")

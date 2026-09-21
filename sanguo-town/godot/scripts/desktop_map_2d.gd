@@ -4,6 +4,7 @@ extends Control
 # as the management window but owns no economy, commands or simulation clock.
 var town: Node
 var font: Font
+var animation_time := 0.0
 
 const WORLD_SIZE=Vector2(1920,1080)
 const INK=Color("27443b")
@@ -18,7 +19,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	font=ThemeDB.fallback_font
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	animation_time += delta
 	queue_redraw()
 
 func _draw() -> void:
@@ -37,6 +39,12 @@ func _draw() -> void:
 	# River, bank and the fixed bridge side of the city.
 	_draw_world_rect(Rect2(1740,0,180,1080),Color(WATER,0.96),origin,scale)
 	_draw_world_rect(Rect2(1715,0,25,1080),Color(BANK,0.96),origin,scale)
+	# Flowing highlights make it immediately clear that this is a living view,
+	# without changing water or economic state in the simulation.
+	for i in range(12):
+		var wave_y=fposmod(float(i)*96.0+animation_time*26.0,1080.0)
+		_draw_world_line(Vector2(1772,wave_y),Vector2(1828,wave_y+18),3,Color("d8ebe0",.62),origin,scale)
+		_draw_world_line(Vector2(1844,wave_y+38),Vector2(1888,wave_y+51),2,Color("d8ebe0",.45),origin,scale)
 
 	# Authoritative layout6 roads.
 	for y in [200.0,380.0,640.0,840.0,1000.0]:
@@ -73,14 +81,18 @@ func _draw() -> void:
 
 	# Forest blocks and the eastern shelter belt.
 	for i in range(24):
-		_draw_tree(Vector2(205+float(i%6)*42,875+float(i/6)*39),origin,scale)
+		_draw_tree(Vector2(205+float(i%6)*42,875+float(i/6)*39),origin,scale,float(i)*.43)
 	for i in range(8):
-		_draw_tree(Vector2(1640,245+float(i)*92),origin,scale)
+		_draw_tree(Vector2(1640,245+float(i)*92),origin,scale,float(i)*.61)
 
 	# Actual residents only; identity remains in the roster, never overhead.
+	var hero_index=0
 	for hero in data.get("heroes",[]):
 		if not hero.has("x") or bool(hero.get("sleeping",false)): continue
-		_draw_hero(Vector2(float(hero.x),float(hero.y)),str(hero.get("profile","balanced")),origin,scale)
+		var route: Array=hero.get("route",[])
+		var walking=route.size()>=2 and int(town.speed)>0
+		_draw_hero(_hero_position(hero),str(hero.get("profile","balanced")),walking,str(hero.get("motion","")),origin,scale,float(hero_index)*.83)
+		hero_index+=1
 
 	_draw_hud(data,night)
 
@@ -135,21 +147,51 @@ func _draw_mine(world: Vector2,origin: Vector2,scale: float) -> void:
 func _building_title(kind: String) -> String:
 	return {"hall":"官署","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"酒馆","stable":"马厩","station":"驿站","barracks":"营地","goldmine":"金矿","smelter":"冶金坊"}.get(kind,kind)
 
-func _draw_tree(world: Vector2,origin: Vector2,scale: float) -> void:
+func _hero_position(hero: Dictionary) -> Vector2:
+	var target=Vector2(float(hero.x),float(hero.y))
+	var route: Array=hero.get("route",[])
+	if route.size()<2 or int(town.speed)<=0: return target
+	var started=float(hero.get("started",town.snapshot.get("time",0)))
+	var due=float(hero.get("due",started+1))
+	var clock=minf(float(town.snapshot.get("time",0))+float(town.since_snapshot)*float(town.speed),due)
+	var fraction=clampf((clock-started)/maxf(1.0,due-started),0.0,1.0)
+	var total=0.0
+	for i in range(route.size()-1):
+		total+=Vector2(float(route[i].x),float(route[i].y)).distance_to(Vector2(float(route[i+1].x),float(route[i+1].y)))
+	var distance=total*fraction
+	for i in range(route.size()-1):
+		var a=Vector2(float(route[i].x),float(route[i].y))
+		var b=Vector2(float(route[i+1].x),float(route[i+1].y))
+		var length=a.distance_to(b)
+		if distance<=length: return a.lerp(b,distance/maxf(.001,length))
+		distance-=length
+	return target
+
+func _draw_tree(world: Vector2,origin: Vector2,scale: float,phase: float) -> void:
 	var p=_screen(world,origin,scale)
 	draw_rect(Rect2(p+Vector2(-3,5)*scale,Vector2(6,18)*scale),Color("7d6848"))
-	draw_circle(p,17*scale,Color("668963"))
-	draw_circle(p+Vector2(-9,-3)*scale,12*scale,Color("78996b"))
-	draw_circle(p+Vector2(9,-4)*scale,12*scale,Color("89a46f"))
+	var crown=p+Vector2(sin(animation_time*1.55+phase)*2.8,0)*scale
+	draw_circle(crown,17*scale,Color("668963"))
+	draw_circle(crown+Vector2(-9,-3)*scale,12*scale,Color("78996b"))
+	draw_circle(crown+Vector2(9,-4)*scale,12*scale,Color("89a46f"))
 
-func _draw_hero(world: Vector2,profile: String,origin: Vector2,scale: float) -> void:
-	var p=_screen(world,origin,scale)
+func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,origin: Vector2,scale: float,phase: float) -> void:
+	var step=sin(animation_time*9.0+phase)
+	var working=motion in ["hammer","chop","cultivate"] and int(town.speed)>0
+	var bob=absf(step)*2.0 if walking else (sin(animation_time*5.0+phase)*1.2 if working else 0.0)
+	var p=_screen(world,origin,scale)+Vector2(0,-bob)*scale
 	var robe={"command":"4d6b63","martial":"6f6046","civic":"627568","craft":"775f4f","balanced":"536c62"}.get(profile,"536c62")
-	draw_circle(p+Vector2(0,-10)*scale,6*scale,Color("d5a66d"))
-	draw_rect(Rect2(p+Vector2(-6,-4)*scale,Vector2(12,18)*scale),Color(robe))
-	draw_rect(Rect2(p+Vector2(-7,-18)*scale,Vector2(14,5)*scale),Color("263d39"))
-	draw_line(p+Vector2(-4,14)*scale,p+Vector2(-5,22)*scale,Color("293e38"),maxf(1,2*scale))
-	draw_line(p+Vector2(4,14)*scale,p+Vector2(5,22)*scale,Color("293e38"),maxf(1,2*scale))
+	draw_circle(p+Vector2(0,-12)*scale,7*scale,Color("d5a66d"))
+	draw_rect(Rect2(p+Vector2(-7,-5)*scale,Vector2(14,21)*scale),Color(robe))
+	draw_rect(Rect2(p+Vector2(-8,-21)*scale,Vector2(16,6)*scale),Color("263d39"))
+	var leg_swing=step*5.0 if walking else 0.0
+	draw_line(p+Vector2(-4,16)*scale,p+Vector2(-5-leg_swing,26)*scale,Color("293e38"),maxf(1,3*scale))
+	draw_line(p+Vector2(4,16)*scale,p+Vector2(5+leg_swing,26)*scale,Color("293e38"),maxf(1,3*scale))
+	var arm_swing=step*6.0 if walking else 0.0
+	draw_line(p+Vector2(-7,0)*scale,p+Vector2(-11-arm_swing,12)*scale,Color(robe),maxf(1,3*scale))
+	var hand=Vector2(13+arm_swing,10)
+	if working: hand=Vector2(11+step*8,-6+absf(step)*12)
+	draw_line(p+Vector2(7,0)*scale,p+hand*scale,Color(robe),maxf(1,3*scale))
 
 func _draw_hud(data: Dictionary,night: bool) -> void:
 	var panel=Rect2(34,30,330,155)
