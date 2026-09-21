@@ -1,43 +1,44 @@
 # 桌面三国·小城志
 
-**desktop-0.1：可选桌面融入模式｜经营规则town-0.5｜PRD v0.5及桌面增补**
+**最新研发规格：PRD v0.7.0｜当前可运行：town-0.5＋desktop-0.1**
 
-城池一点点变好，军团慢慢壮大；玩家只在重要方向上做决定。
+城池一点点变好，军团慢慢壮大；玩家只作方向、重要用人和重大扩张决定。
 
-本批新增透明、无标题栏、鼠标穿透的桌面城景。保留原壁纸；普通窗口在前，管理从菜单栏进入。默认关闭，点击普通城景中的“融入桌面”，或菜单栏“开启桌面融入模式”。位置、大小、屏幕和关注城市在“桌面城景设置…”调整；随时回到普通窗口。不是始终置顶，也不是更换系统壁纸。
+## 阅读最新完整PRD
 
-## 入口
+- **[PRD v0.7完整入口](docs/PRD.md)**：十章规范、三份JSON及明确的开发验收。
+- [城市成长与建设](docs/life-v0.7/01_CITY_GROWTH.md)：容量、入住、服务与需求驱动升级。
+- [农牧加工](docs/life-v0.7/02_PRODUCTION.md) / [工种与物流](docs/life-v0.7/03_AGENTS_AND_LOGISTICS.md) / [饭食与财政](docs/life-v0.7/04_FOOD_AND_ECONOMY.md)。
+- [太守、都督和三城](docs/life-v0.7/05_GOVERNANCE_AND_REGION.md) / [六将、收藏和军团](docs/life-v0.7/06_HEROES_COLLECTION_AND_ARMY.md)。
+- [四条特色工程与常驻内容](docs/life-v0.7/07_CONTENT_AND_PROGRESSION.md) / [全桌面、美术和交互](docs/life-v0.7/08_DESKTOP_UI_AND_ART.md)。
+- [工程、迁移和72项验收](docs/life-v0.7/09_ENGINEERING_AND_ACCEPTANCE.md) / [规格验证状态](docs/life-v0.7/VALIDATION.md)。
 
-- [桌面模式需求、使用方法与兼容边界](docs/PRD_DESKTOP_MODE.md)
-- [PRD v0.5](docs/PRD.md) / [架构](docs/ARCHITECTURE.md)
-- [town-0.5玩法与边界](docs/CITY_IDENTITY.md)
-- [最新开发状态](docs/BUILD_STATUS.md) / [桌面测试报告](docs/desktop-test-report.json)
-- [原经营测试报告](docs/identity-test-report.json)
-- [源码](Sources) / [测试](Tests) / [构建说明](docs/DEVELOPMENT.md)
-
-## 运行
+v0.7是下一版完整开发依据，不是对已实现软件改一个版本号。真实任务生产、全桌面生活地图、昼夜作息、饭食满意度、新武将效果及逐车新城仍需按V1—V5实际实现。所有新应用验收尚未运行，不能沿用旧201项运行测试给新规则背书。
 
 ```sh
 cd sanguo-town
-swift test
-python3 scripts/validate_spec.py
-# macOS15及以上、Apple Silicon、Swift6 / Xcode：
-swift run SanguoMac
-bash scripts/build-macos.sh
+python3 scripts/validate_prd_v07.py --output dist/prd-v07
+python3 scripts/check_prd_v07_delivery.py --output dist/prd-v07
 ```
 
-首次从普通窗口接受治理，新显示模式不会自动迁移旧存档。开城后点“融入桌面”；露出桌面即可查看。需要决定方向时从菜单栏打开主公府。只改显示偏好，不改WorldState，不重复计算收益。仅一块屏幕显示一个选定城市。重启记住偏好，但不强行阻止系统恢复普通窗口。
+以上输出完整阅读HTML/Markdown、数值和跨章报告、独立容量参照与NOT_RUN应用验收计划。不是Swift游戏仿真。旧v0.6入口原文归档，历史规格CI固定检出其原提交，避免混用新旧文档。
 
-## 本批实际验证
+## 当前客户端
 
-被测源码：`abaaed75c66861dcb4542a242f312d330439eb95`。
+[桌面模式原型的使用与边界](docs/PRD_DESKTOP_MODE.md) / [已实现状态](docs/BUILD_STATUS.md) / [实际桌面测试报告](docs/desktop-test-report.json)。
 
-[macOS原生run 35516594162](https://github.com/smart-earner/taptap-game/actions/runs/35516594162)：macOS15.7.9 arm64／Xcode16.4／Swift6.1.2，Debug201项与Release同套201项通过，45个经营检查点通过；原生客户端和开发.app构建成功。201=既有178＋跨平台显示16＋原生窗口对象7。Linux只执行其中194项，不含AppKit窗口测试。
+现有desktop-0.1显示透明、无标题栏、鼠标穿透的局部桌面城景，不改壁纸，普通窗口在前，菜单栏管理。首次默认关闭，普通城景按钮“融入桌面”可开启；屏幕、关注城市、大小、位置在设置中调节。它还不是v0.7的完整1920×1080参考生活地图。
 
-## 明确边界
+```sh
+# macOS 15及以上、Apple Silicon和Swift6 / Xcode SDK：
+swift run SanguoMac
+bash scripts/build-macos.sh
+# 核心回归（并不验证新PRD尚未实现的规则）：
+swift test
+```
 
-这是桌面层原型，不是全部游戏或发行验收完成。窗口层级、鼠标穿透属性及面板复用已做原生对象测试；用户M4上的实际壁纸合成、桌面图标拖拽、Spaces、台前调度、全屏、睡眠和能耗仍待实测。透明图标层使遮挡检测不完全可靠，桌面模式12fps（低电量6fps），可手动暂停；不承诺被工作窗口完全覆盖时零渲染。
+现有运行源码验证为`abaaed75c66861dcb4542a242f312d330439eb95`及其未更改的后续文档提交。[原生测试run35516594162](https://github.com/smart-earner/taptap-game/actions/runs/35516594162)验证了当时的201项测试和Mac开发包；不是本轮新生活层的测试结果。
 
-不读取壁纸图像、桌面文件或工作窗口，不请求输入监控或录屏。没有新增键盘与行情联动。开发包只作ad-hoc签名，未公证，内部经营版本仍0.5.0。系统阻止时不要关闭安全保护，可按构建说明从源码本机构建。
+用户M4上的真实Finder点击、多屏、Spaces、台前调度、睡眠及能耗仍未完成验收。开发包ad-hoc签名、未公证。桌面原型受透明图标层遮挡报告影响，不保证被工作窗口覆盖时零渲染；可手动暂停。未接入键盘或行情采集。
 
-后期经济、通用物流、都督完整跨城任用、完整战斗、骑乘与培养分支仍是既有待办；本批未修改这些规则。原诗词游戏页面与源码不变，CI保持只读。
+本次只有PRD、配置与规格脚本/只读CI更新，没有修改Swift运行代码和原诗词游戏。不要以旧的演示包代替新生活版交付。
