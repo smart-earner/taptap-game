@@ -1,0 +1,53 @@
+name: Husbandry reviewed integration
+on:
+  push:
+    branches: ['feat/sanguo-husbandry-v2']
+    paths: ['.github/workflows/sanguo-husbandry-integrate.yml']
+permissions:
+  contents: write
+concurrency:
+  group: sanguo-husbandry-core-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.ref == 'refs/heads/feat/sanguo-husbandry-v2'
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Integrate exact locally tested source batch
+        run: python3 sanguo-town/checkpoints/husbandry-v2/apply.py
+      - name: Native core tests, client compilation and real two-day run
+        working-directory: sanguo-town
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/husbandry-core
+          { sw_vers; uname -m; swift --version; } | tee dist/husbandry-core/environment.txt
+          swift test --filter Husbandry 2>&1 | tee dist/husbandry-core/tests.txt
+          swift build --product SanguoMac 2>&1 | tee dist/husbandry-core/client.txt
+          swift run SanguoLifeCLI --seconds 172800 --cadence 172800 --husbandry --seal --output dist/husbandry-core/day2 2>&1 | tee dist/husbandry-core/day2.txt
+      - name: Save the verified integration on this branch, never main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add sanguo-town/Sources/SanguoLife sanguo-town/Sources/SanguoLifeCLI sanguo-town/Tests/SanguoLifeTests sanguo-town/checkpoints/husbandry-v2/integration.json
+          git diff --cached --name-only > sanguo-town/dist/husbandry-core/changed.txt
+          git commit -m 'feat(life): integrate native-tested paid husbandry, meat supply and safe opt-in'
+          current=$(git ls-remote origin refs/heads/feat/sanguo-husbandry-v2 | cut -f1)
+          test "$current" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/feat/sanguo-husbandry-v2
+          git rev-parse HEAD > sanguo-town/dist/husbandry-core/commit.txt
+          git archive --format=zip --output=sanguo-town/dist/husbandry-core/source.zip HEAD sanguo-town
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sanguo-husbandry-core-${{ github.sha }}
+          path: sanguo-town/dist/husbandry-core
+          retention-days: 14
+          if-no-files-found: warn
