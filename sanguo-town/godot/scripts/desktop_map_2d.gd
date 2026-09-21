@@ -6,6 +6,8 @@ var town: Node
 var font: Font
 var animation_time := 0.0
 var is_night := false
+var show_hud := true
+var solid_background := false
 
 const WORLD_SIZE=Vector2(1920,1080)
 const INK=Color("27443b")
@@ -34,9 +36,9 @@ func _draw() -> void:
 	var grass=Color("829483") if night else GRASS
 	# A translucent full-screen ground keeps the wallpaper present while making
 	# the city read as one continuous desktop map rather than a floating window.
-	draw_rect(Rect2(Vector2.ZERO,size),Color(grass,0.90))
+	draw_rect(Rect2(Vector2.ZERO,size),Color(grass,1.0 if solid_background else 0.90))
 	var map_rect=Rect2(origin,WORLD_SIZE*scale)
-	draw_rect(map_rect,Color(grass,0.98))
+	draw_rect(map_rect,Color(grass,1.0 if solid_background else 0.98))
 
 	# River, bank and the fixed bridge side of the city.
 	_draw_world_rect(Rect2(1740,0,180,1080),Color(WATER,0.96),origin,scale)
@@ -106,7 +108,7 @@ func _draw() -> void:
 		_draw_hero(_hero_position(hero),str(hero.get("profile","balanced")),walking,str(hero.get("motion","")),origin,scale,float(hero_index)*.83)
 		hero_index+=1
 
-	_draw_hud(data,night)
+	if show_hud: _draw_hud(data,night)
 
 func _screen(world: Vector2,origin: Vector2,scale: float) -> Vector2:
 	return origin+Vector2(world.x,WORLD_SIZE.y-world.y)*scale

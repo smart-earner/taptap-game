@@ -33,6 +33,7 @@ func run() -> void:
 	if not require(state.level<state.icon_level and state.level<state.normal_level,"desktop below icons and normal apps"): return
 	if not require(not state.can_become_key,"desktop cannot steal keyboard focus"): return
 	if not require(is_instance_valid(desktop.flat_map) and desktop.flat_map.town==scene,"desktop 2D map reads the authoritative committed scene snapshot"): return
+	if not require(desktop.flat_map.get_script()==scene.flat_manager_map.get_script(),"desktop and manager use the exact same 2D renderer"): return
 	var preferred=state.active_display
 	desktop.command(2,4294967294)
 	state=desktop.command(1,0)

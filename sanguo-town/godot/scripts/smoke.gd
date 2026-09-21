@@ -16,6 +16,10 @@ func run() -> void:
 		return
 	scene.speed = 0
 	assert(scene.actors.size() >= 5)
+	assert(is_instance_valid(scene.flat_manager_map))
+	assert(scene.flat_manager_map.town==scene)
+	assert(scene.flat_manager_map.solid_background and not scene.flat_manager_map.show_hud)
+	assert(not scene.camera.current)
 	assert(int(scene.snapshot.get("layoutVersion",0)) == 6)
 	assert(scene.snapshot.get("plots",[]).size() == 18)
 	assert(scene.plot_markers.size() == 18)

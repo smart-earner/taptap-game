@@ -2,6 +2,7 @@ extends Node3D
 
 const Models = preload("res://scripts/models.gd")
 const Desktop = preload("res://scripts/desktop.gd")
+const DesktopMap2D = preload("res://scripts/desktop_map_2d.gd")
 const Production = preload("res://scripts/production.gd")
 const PAPER = Color("f5f1e5")
 const INK = Color("2b453d")
@@ -53,6 +54,7 @@ var production
 var chain_labels: Array = []
 var speed_selector: OptionButton
 var last_running_speed = 6
+var flat_manager_map: Control
 
 func _ready() -> void:
 	Engine.max_fps = 30
@@ -60,6 +62,7 @@ func _ready() -> void:
 	build_lighting()
 	build_terrain()
 	build_camera()
+	build_flat_presentation()
 	build_ui()
 	production=Production.new()
 	add_child(production)
@@ -104,6 +107,22 @@ func build_camera() -> void:
 	add_child(camera)
 	camera.current = true
 	position_camera()
+
+func build_flat_presentation() -> void:
+	# The management window and native desktop must not look like two different
+	# towns. Both instantiate the exact same read-only 2D projection and receive
+	# this node's single committed snapshot.
+	var layer=CanvasLayer.new()
+	layer.layer=0
+	add_child(layer)
+	flat_manager_map=DesktopMap2D.new()
+	flat_manager_map.town=self
+	flat_manager_map.show_hud=false
+	flat_manager_map.solid_background=true
+	layer.add_child(flat_manager_map)
+	# Keep the procedural 3D nodes available for legacy preview tests and future
+	# asset reference, but do not render a competing city behind the 2D view.
+	camera.current=false
 
 func position_camera() -> void:
 	camera.size = camera_size
@@ -447,6 +466,7 @@ func button(text: String, action: Callable, primary: bool = false) -> Button:
 
 func build_ui() -> void:
 	var layer = CanvasLayer.new()
+	layer.layer=10
 	add_child(layer)
 	ui_root = Control.new()
 	ui_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -503,12 +523,12 @@ func build_ui() -> void:
 	speeds.select(2)
 	speeds.item_selected.connect(func(i): set_speed([0,1,6,30][i]))
 	row.add_child(speeds)
-	row.add_child(button("归位",func(): orbit=.63;camera_size=25.0;camera_target=Vector3.ZERO;position_camera()))
+	row.add_child(button("收起到桌面",func(): desktop.hide_manager()))
 	var footer=VBoxContainer.new()
 	footer.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	footer.offset_top=-147;footer.offset_left=35;footer.offset_right=-35;footer.offset_bottom=-107
 	ui_root.add_child(footer)
-	status_label=label("右键拖动旋转 · 滚轮缩放 · 点击武将查看详情",12,INK)
+	status_label=label("桌面与管理窗口使用同一座二维城镇 · 玩家只负责招贤与培养",12,INK)
 	status_label.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	footer.add_child(status_label)
 	footer.add_child(label("玩家招贤与培养，太守安排经营。存档独立，不改旧城。",11,MUTED))
