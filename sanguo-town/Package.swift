@@ -2,6 +2,8 @@
 import PackageDescription
 
 var products: [Product] = [
+    .library(name: "SanguoLife", targets: ["SanguoLife"]),
+    .executable(name: "SanguoLifeCLI", targets: ["SanguoLifeCLI"]),
     .library(name: "SanguoCore", targets: ["SanguoCore"]),
     .executable(name:"SanguoGrowth",targets:["SanguoGrowth"]),
     .executable(name: "SanguoCLI", targets: ["SanguoCLI"]),
@@ -9,6 +11,9 @@ var products: [Product] = [
     .executable(name: "SanguoPreview", targets: ["SanguoPreview"])
 ]
 var targets: [Target] = [
+    .target(name: "SanguoLife", resources: [.process("Resources")]),
+    .executableTarget(name: "SanguoLifeCLI", dependencies: ["SanguoLife"]),
+    .testTarget(name: "SanguoLifeTests", dependencies: ["SanguoLife"]),
     .target(name: "SanguoCore"),
     .executableTarget(name:"SanguoGrowth",dependencies:["SanguoCore","SanguoPresentation"]),
     .target(name: "SanguoPresentation", dependencies: ["SanguoCore"]),

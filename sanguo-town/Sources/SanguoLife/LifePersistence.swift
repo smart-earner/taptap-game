@@ -1,0 +1,65 @@
+import Foundation
+
+public protocol LifePersistence: Sendable {func save(_ world:LifeWorld) throws}
+public struct LifeSaveStore: LifePersistence, Sendable {
+    public let url: URL
+    public init(url:URL){self.url=url}
+    private struct Envelope: Codable {let format:Int;let payload:String;let checksum:String}
+    private static func checksum(_ data:Data)->String {String(data.reduce(UInt64(14695981039346656037)){($0 ^ UInt64($1)) &* 1099511628211},radix:16)}
+    public static func encode(_ world:LifeWorld) throws -> Data {
+        try world.validate();let e=JSONEncoder();e.outputFormatting=[.sortedKeys]
+        let bytes=try e.encode(world)
+        let data=try e.encode(Envelope(format:1,payload:String(decoding:bytes,as:UTF8.self),checksum:checksum(bytes)))
+        guard data.count<=16*1024*1024 else{throw LifeError.invalid("生活版存档超过16MB安全上限")};return data
+    }
+    public static func decode(_ data:Data) throws -> LifeWorld {
+        guard data.count<=16*1024*1024 else{throw LifeError.invalid("存档过大")}
+        let envelope=try JSONDecoder().decode(Envelope.self,from:data),bytes=Data(envelope.payload.utf8)
+        guard envelope.format==1,envelope.checksum==checksum(bytes) else{throw LifeError.invalid("存档完整性失败，未清空或回退")}
+        let world=try JSONDecoder().decode(LifeWorld.self,from:bytes);try world.validate();return world
+    }
+    public func load() throws -> LifeWorld? {
+        let fm=FileManager.default
+        guard fm.fileExists(atPath:url.path) else{return nil}
+        let a=try fm.attributesOfItem(atPath:url.path)
+        guard (a[.size] as? NSNumber)?.intValue ?? Int.max <= 16*1024*1024 else{throw LifeError.invalid("存档过大")}
+        return try Self.decode(Data(contentsOf:url))
+    }
+    public func save(_ world:LifeWorld) throws {
+        let bytes=try Self.encode(world),fm=FileManager.default
+        try fm.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
+        if fm.fileExists(atPath:url.path) {
+            _=try load()
+            for i in stride(from:2,through:1,by:-1) {let source=url.appendingPathExtension("bak\(i)");if fm.fileExists(atPath:source.path){try Data(contentsOf:source).write(to:url.appendingPathExtension("bak\(i+1)"),options:.atomic)}}
+            try Data(contentsOf:url).write(to:url.appendingPathExtension("bak1"),options:.atomic)
+        }
+        try bytes.write(to:url,options:.atomic)
+    }
+}
+public enum LifeCommand: Sendable {case policy(String),seal,recruit(String?),growth(Bool),rations(Int64)}
+/// Serial actor publishes a candidate only after persistence succeeds.
+public actor LifeSession {
+    private var engine:LifeRuntime
+    private let store:(any LifePersistence)?
+    public init(engine:LifeRuntime,store:(any LifePersistence)?=nil){self.engine=engine;self.store=store}
+    public func snapshot()->LifeWorld {engine.world}
+    public func save() throws {try store?.save(engine.world)}
+    public func advance(wallUTC:Int64) throws {
+        guard wallUTC>engine.world.wallUTC else{return}
+        var draft=engine
+        let delta=min(2_592_000,wallUTC-draft.world.wallUTC)
+        try draft.advance(to:draft.world.time+delta);draft.world.wallUTC=wallUTC
+        try store?.save(draft.world);engine=draft
+    }
+    public func send(_ command:LifeCommand) throws {
+        var draft=engine
+        switch command {
+        case .policy(let p):try draft.setPolicy(p)
+        case .seal:try draft.requestSeal()
+        case .recruit(let id):try draft.requestRecruit(id)
+        case .growth(let value):draft.world.growthEnabled=value
+        case .rations(let quantity):guard quantity>=0 && quantity<=160000 else{throw LifeError.invalid("军粮试制目标必须在0—160份")};draft.world.rationTarget=quantity
+        }
+        try draft.world.validate();try store?.save(draft.world);engine=draft
+    }
+}
