@@ -43,6 +43,10 @@ public enum LifeWarContract {
     public static func scoutingSeconds(in war:LifeWarState) -> Int64 {
         facilityActive("long_range_scouting",in:war) ? 300:600
     }
+    public static func recoveryWaitReason(until:Int64,now:Int64) -> String {
+        let hours=max(1,(max(0,until-now)+3_599)/3_600)
+        return "连续失利后的保供修复中，约\(hours)小时后恢复远征；补给与备兵照常"
+    }
     public static func frontRationCapacity(_ cityID:String,in war:LifeWarState) -> Int64 {
         cityID=="02" && facilityActive("frontier_granary",in:war) ? 32_000:8_000
     }
@@ -836,7 +840,7 @@ extension LifeRuntime {
         // repairs and replacement troop training remain eligible above.
         if war.paused {war.waitReason="玩家已暂停新远征；补给、修复与备兵照常进行";world.campaign=war;return}
         if war.acceptedUTC<war.recoveryUntilUTC {
-            war.waitReason="连续失利后的保供修复期；暂停新远征至 \(war.recoveryUntilUTC) UTC"
+            war.waitReason=LifeWarContract.recoveryWaitReason(until:war.recoveryUntilUTC,now:war.acceptedUTC)
             world.campaign=war;return
         }
         let heroes=Array(available.prefix(2)).map(\.id)

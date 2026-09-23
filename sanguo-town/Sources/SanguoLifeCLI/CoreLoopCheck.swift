@@ -29,6 +29,10 @@ enum CoreLoopCheck {
         let limitedCount=allSquads.filter{limitedSortie.contains($0.id)}.reduce(0){$0+$1.survivors}
         try check(limitedCount==85 && limitedSortie.count<=20 && limitedSortie.contains("new-19"),
                   "sortie respects hero command capacity and fills unused seats with surviving fragments")
+        try check(LifeWarContract.recoveryWaitReason(until:3_601,now:0).contains("约2小时") &&
+                  LifeWarContract.recoveryWaitReason(until:1,now:0).contains("约1小时") &&
+                  !LifeWarContract.recoveryWaitReason(until:3_601,now:0).contains("UTC"),
+                  "war recovery explains its remaining time without exposing an internal epoch")
         var runtime=try LifeRuntime(catalog:catalog,wallUTC:0,formalHeroTown:true,rngSeed:1)
         let legacyWorld=runtime.world
         let migrationDirectory=FileManager.default.temporaryDirectory.appendingPathComponent("sanguo-v12-migration-\(UUID().uuidString)")
