@@ -4,12 +4,22 @@ import XCTest
 final class CityBreakthroughTests: XCTestCase {
     private func fixture() throws -> LifeRuntime {
         var runtime=try LifeRuntime(catalog:.bundled(),wallUTC:0,formalHeroTown:true,rngSeed:7)
+        try runtime.enableSharedCourtyards()
         runtime.world.projects["repair"]!.completed=true
+        runtime.world.projects["repair"]!.phase=4
+        runtime.world.projects["repair"]!.completedWork=runtime.world.projects["repair"]!.totalWork
+        runtime.world.projects["repair"]!.allocatedWork=0
         let ids=runtime.definition!.availableHeroes(phase:0).map(\.id).sorted()
-        for id in ids.prefix(28) where runtime.world.agents[id]==nil {
-            runtime.world.agents[id] = .init(id:id,name:id,job:"builder",node:"hall",home:"home",dining:"home-meals",heroID:id,origin:"test")
+        for id in ids where runtime.world.agents.count<28 && runtime.world.agents[id]==nil {
+            runtime.world.agents[id] = .init(id:id,name:id,job:"builder",node:"tavern",home:"tavern",dining:"guest-meals",heroID:id,origin:"recruited")
+            runtime.world.gacha!.stars[id]=1
+            runtime.world.owned.append(id)
+            runtime.world.heroTown!.ownedHeroes[id] = .init(heroID:id,star:1,sourceDrawID:"fixture",
+                                                               arrivalState:"resident",arrivalAt:nil,bedReservation:"tavern-1.guest")
+            runtime.world.heroTown!.courtyard!.households[id] =
+                .init(id:"household:\(id)",memberPersonIDs:["hero:\(id)"],
+                      residencePlotID:"tavern-1",unitID:nil,createdAt:0)
         }
-        runtime.world.gacha!.stars=Dictionary(uniqueKeysWithValues:ids.map{($0,1)})
         runtime.world.happiness=75
         runtime.world.foodCoverage=10000
         for index in 0..<4 {
@@ -23,6 +33,8 @@ final class CityBreakthroughTests: XCTestCase {
         for index in runtime.world.heroTown!.city.plots.indices where runtime.world.heroTown!.city.plots[index].kind=="house" &&
             runtime.world.heroTown!.city.plots[index].developmentPermit {
             runtime.world.heroTown!.city.plots[index].level=3
+            runtime.world.heroTown!.city.plots[index].capacity=8
+            runtime.world.heroTown!.city.plots[index].service=10_000
         }
         runtime.syncFormalCapacities()
         return runtime
