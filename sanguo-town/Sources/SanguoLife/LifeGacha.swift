@@ -35,6 +35,7 @@ public struct LifeGachaDefinition: Decodable, Sendable {
         return d
     }
     public func hero(_ id:String)->Hero? {heroes.first{$0.id==id}}
+    public func availableHeroes(phase:Int)->[Hero] {Array(heroes.prefix(min(heroes.count,30+10*max(0,min(3,phase)))))}
     public func rarity(for roll:UInt64)->String {roll<7000 ? "talent":(roll<9500 ? "renowned":"legend")}
 }
 public struct LifeDuplicateCard:Codable,Equatable,Sendable,Identifiable {
@@ -96,17 +97,26 @@ public struct LifeGachaState:Codable,Equatable,Sendable {
     public var rng:UInt64
     public var pity=0
     public var minted:Int64=0,spent:Int64=0,souls:Int64=0,soulsMade:Int64=0,soulsSpent:Int64=0
+    /// Nil means the original ten-coins-per-ingot ledger. Existing saves are
+    /// anchored at their historical totals before the faster formal economy.
+    public var goldRebalance:LifeGoldRebalance? = nil
     public var stars:[String:Int]=[:]
     public var arrivals:[String:Int64]=[:]
     public var cards:[String:LifeDuplicateCard]=[:]
     public var receipts:[String:LifeGachaReceipt]=[:]
     public var receiptSegments:[[String:LifeGachaReceipt]]? = nil
     public var drawCount:Int64=0
+    /// Nil is a pre-v0.12 save and means the original thirty-hero pool.
+    public var rosterPhase:Int? = nil
     public var lastDraws:[LifeDrawResult]=[]
     public var houseLevels:[Int]=[1]
     public var surveyedProjects:Set<String>=[]
     public init(rng:UInt64){self.rng=rng}
-    public var isComplete:Bool {stars.count==30 && stars.values.allSatisfy{$0==5}}
+    public var rosterTarget:Int {30+10*(rosterPhase ?? 0)}
+    public var isComplete:Bool {stars.count==rosterTarget && stars.values.allSatisfy{$0==5}}
+    public func poolVersion(formal:Bool)->String {
+        formal ? "tavern-standard-v12-p\(rosterPhase ?? 0)":"tavern-standard-1"
+    }
     public func cardCount(_ hero:String,unlockedOnly:Bool=false)->Int64 {
         cards.values.filter{$0.heroID==hero && (!unlockedOnly || !$0.locked)}.reduce(0){$0+$1.count}
     }
@@ -129,6 +139,17 @@ public struct LifeGachaState:Codable,Equatable,Sendable {
             var z=rng;z=(z ^ (z>>30)) &* 0xBF58476D1CE4E5B9;z=(z ^ (z>>27)) &* 0x94D049BB133111EB;z ^= z>>31
             if z>=threshold {return z%n}
         }
+    }
+}
+
+public struct LifeGoldRebalance:Codable,Equatable,Sendable {
+    public var historicalIngots:Int64
+    public var historicalCoins:Int64
+    public var coinsPerNewIngot:Int64
+    public init(historicalIngots:Int64,historicalCoins:Int64,coinsPerNewIngot:Int64) {
+        self.historicalIngots=historicalIngots
+        self.historicalCoins=historicalCoins
+        self.coinsPerNewIngot=coinsPerNewIngot
     }
 }
 
@@ -164,7 +185,7 @@ extension LifeRuntime {
         var price:Int64=0,selectedLots:[LifeCardSelection]?=nil,starBefore:Int?=nil,starAfter:Int?=nil,soulsDelta:Int64=0
         switch request.action {
         case .draw(let count,let pool):
-            guard [1,10].contains(count),pool==d.gacha.pool_version,!g.isComplete else {throw LifeError.invalid("抽数/卡池不合法或全员已满星")}
+            guard [1,10].contains(count),pool==g.poolVersion(formal:world.isFormalHeroTown),!g.isComplete else {throw LifeError.invalid("抽数/卡池不合法或本阶段全员已满星")}
             let cost=Int64(count)*d.gacha.cost["single"]!;price=cost
             guard world.treasury>=cost else {throw LifeError.invalid("金币不足，还差\(cost-world.treasury)")}
             world.treasury-=cost;g.spent+=cost
@@ -172,7 +193,7 @@ extension LifeRuntime {
                 let rarity:String
                 if g.pity==d.gacha.pity_threshold-1 {rarity="legend"}
                 else {rarity=d.rarity(for:g.uniform(10000))}
-                let pool=d.heroes.filter{$0.rarity==rarity}.sorted{$0.id<$1.id}
+                let pool=d.availableHeroes(phase:world.isFormalHeroTown ? (g.rosterPhase ?? 0):0).filter{$0.rarity==rarity}.sorted{$0.id<$1.id}
                 let hero=pool[Int(g.uniform(UInt64(pool.count)))]
                 let isNew=g.stars[hero.id]==nil
                 let result=LifeDrawResult(id:world.next("draw"),heroID:hero.id,rarity:rarity,isNew:isNew)
@@ -248,7 +269,7 @@ extension LifeRuntime {
         var receipt=LifeGachaReceipt(request:request,draws:draws,message:message)
         receipt.revisionBefore=revisionBefore;receipt.revisionAfter=world.sequence
         receipt.rngBefore=rngBefore;receipt.rngAfter=g.rng;receipt.pityBefore=pityBefore;receipt.pityAfter=g.pity
-        receipt.price=price;receipt.poolVersion=d.gacha.pool_version;receipt.selectedLots=selectedLots
+        receipt.price=price;receipt.poolVersion=g.poolVersion(formal:world.isFormalHeroTown);receipt.selectedLots=selectedLots
         receipt.starBefore=starBefore;receipt.starAfter=starAfter;receipt.soulsDelta=soulsDelta
         world.gacha!.receipts[request.id]=receipt
         return receipt
@@ -259,15 +280,21 @@ extension LifeRuntime {
         for (id,star) in g.stars {
             if var owned=formal.ownedHeroes[id] {
                 owned.star=star
-                if let due=g.arrivals[id] {owned.arrivalState="arriving";owned.arrivalAt=due}
+                if let due=g.arrivals[id] {
+                    owned.arrivalState=due<=world.time && world.agents[id]==nil ? "waiting_residency":"arriving"
+                    owned.arrivalAt=due
+                }
                 else {owned.arrivalState="resident";owned.arrivalAt=nil}
                 formal.ownedHeroes[id]=owned
             } else {
                 var reservation="tavern-1.guest"
-                if let index=formal.city.plots.indices.filter({formal.city.plots[$0].kind=="house" && formal.city.plots[$0].level>0 && formal.city.plots[$0].occupancy<formal.city.plots[$0].capacity}).sorted(by:{formal.city.plots[$0].id<formal.city.plots[$1].id}).first {
+                if formal.courtyard == nil,let index=formal.city.plots.indices.filter({formal.city.plots[$0].kind=="house" && formal.city.plots[$0].level>0 && formal.city.plots[$0].occupancy<formal.city.plots[$0].capacity}).sorted(by:{formal.city.plots[$0].id<formal.city.plots[$1].id}).first {
                     formal.city.plots[index].occupancy+=1;reservation=formal.city.plots[index].id
                 }
-                formal.ownedHeroes[id] = .init(heroID:id,star:star,sourceDrawID:g.lastDraws.last(where:{$0.heroID==id && $0.isNew})?.id ?? "recruited",arrivalState:g.arrivals[id] == nil ? "resident":"arriving",arrivalAt:g.arrivals[id],bedReservation:reservation)
+                let due=g.arrivals[id]
+                formal.ownedHeroes[id] = .init(heroID:id,star:star,sourceDrawID:g.lastDraws.last(where:{$0.heroID==id && $0.isNew})?.id ?? "recruited",
+                                                arrivalState:due == nil ? "resident":(due.map{$0<=world.time} == true ? "waiting_residency":"arriving"),
+                                                arrivalAt:due,bedReservation:reservation)
             }
         }
         world.heroTown=formal

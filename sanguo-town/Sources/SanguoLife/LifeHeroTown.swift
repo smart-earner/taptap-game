@@ -10,6 +10,15 @@ public enum LifeHeroTownContract {
     public static let authority = "createCity.auto_manage_v09"
 }
 
+/// Small pacing adjustments that make the desktop town readable without changing
+/// its resource ledger or granting materials outside the normal production chains.
+public enum LifeTownPacingContract {
+    public static let defaultPresentationSpeed = 2
+    public static let formalResourceWorkRateBonusBP = 1500
+    public static let resourceJobs: Set<String> = ["farmer", "logger", "miner"]
+    public static let protectedBuilderFoodCoverageBP = 9500
+}
+
 public struct LifeOwnedHero: Codable, Equatable, Sendable {
     public var heroID: String
     public var star: Int
@@ -17,9 +26,22 @@ public struct LifeOwnedHero: Codable, Equatable, Sendable {
     public var arrivalState: String
     public var arrivalAt: Int64?
     public var bedReservation: String
+    /// Optional for old saves. A newly drawn body has one verifiable path from
+    /// arrival to its first completed city or campaign contribution.
+    public var firstDuty: LifeHeroFirstDuty? = nil
     public init(heroID:String,star:Int,sourceDrawID:String,arrivalState:String,arrivalAt:Int64?,bedReservation:String) {
         self.heroID=heroID;self.star=star;self.sourceDrawID=sourceDrawID;self.arrivalState=arrivalState;self.arrivalAt=arrivalAt;self.bedReservation=bedReservation
     }
+}
+
+public struct LifeHeroFirstDuty: Codable, Equatable, Sendable {
+    public var taskID: String
+    public var job: String
+    public var destination: String
+    public var assignedAt: Int64
+    public var arrivedAt: Int64?
+    public var effectiveAt: Int64?
+    public var effect: String?
 }
 
 public struct LifeAdminLease: Codable, Equatable, Sendable {
@@ -54,6 +76,13 @@ public struct LifePlotState: Codable, Equatable, Sendable, Identifiable {
     public var developmentPermit: Bool
     public var identity: String
     public var built: Bool { level > 0 }
+
+    public init(id: String,index: Int,kind: String,node: String,point: LifePoint,level: Int,capacity: Int,
+                occupancy: Int,service: Int,developmentPermit: Bool,identity: String) {
+        self.id=id;self.index=index;self.kind=kind;self.node=node;self.point=point;self.level=level
+        self.capacity=capacity;self.occupancy=occupancy;self.service=service
+        self.developmentPermit=developmentPermit;self.identity=identity
+    }
 }
 
 public struct LifeMemory: Codable, Equatable, Sendable, Identifiable {
@@ -65,6 +94,69 @@ public struct LifeMemory: Codable, Equatable, Sendable, Identifiable {
     public var pinned: Bool
     public var rules: String
     public var layoutVersion: Int
+}
+
+public enum LifeHealthContract {
+    public static let clinicPoint = LifePoint(1370,930)
+    public static let clinicWork: Int64 = 2400
+    public static let clinicMaterials: [String:Int64] = ["wood":12000,"stone":6000,"tools":1000]
+    public static let clinicBeds = [2,4,6]
+    public static let hazardousJobs: Set<String> = ["logger","miner","smith","builder"]
+    public static let physicianWeights = ["strategy":6000,"administration":4000]
+}
+
+public struct LifeHealthCondition: Codable, Equatable, Sendable, Identifiable {
+    public var id: String { heroID }
+    public var heroID: String
+    public var kind: String
+    public var startedAt: Int64
+    public var triggerCycle: Int64
+    public var evidence: String
+    public var workModifierBP: Int
+    public var blockedJobs: [String]
+    public var homeRecoverySeconds: Int64
+
+    public static func overwork(heroID:String,time:Int64,cycle:Int64,duty:Int64,rest:Int64)->Self {
+        .init(heroID:heroID,kind:"overwork_strain",startedAt:time,triggerCycle:cycle,
+              evidence:"duty=\(duty),rest=\(rest),streak=2",workModifierBP:-1000,
+              blockedJobs:["logger","miner","smith","builder"],homeRecoverySeconds:1800)
+    }
+    public static func injury(heroID:String,time:Int64,cycle:Int64,duty:Int64,happiness:Int,job:String)->Self {
+        .init(heroID:heroID,kind:"minor_work_injury",startedAt:time,triggerCycle:cycle,
+              evidence:"job=\(job),duty=\(duty),happiness=\(happiness)",workModifierBP:-2000,
+              blockedJobs:["logger","miner","smith","builder","porter"],homeRecoverySeconds:2880)
+    }
+}
+
+public struct LifeClinicTreatment: Codable, Equatable, Sendable, Identifiable {
+    public var id: String { patientHeroID }
+    public var patientHeroID: String
+    public var doctorHeroID: String?
+    public var phase: String
+    public var doctorTaskID: String?
+    public var patientTaskID: String?
+    public var doctorDone: Bool = false
+    public var patientDone: Bool = false
+    public init(patientHeroID:String,phase:String,doctorHeroID:String?=nil,
+                doctorTaskID:String?=nil,patientTaskID:String?=nil) {
+        self.patientHeroID=patientHeroID;self.phase=phase;self.doctorHeroID=doctorHeroID
+        self.doctorTaskID=doctorTaskID;self.patientTaskID=patientTaskID
+    }
+}
+
+public struct LifeHealthState: Codable, Equatable, Sendable {
+    public var clinicLevel: Int = 0
+    /// Sticky demand signal: a recovered first patient must still justify the first clinic.
+    public var firstIncidentSeen: Bool = false
+    public var conditions: [String:LifeHealthCondition] = [:]
+    public var treatments: [String:LifeClinicTreatment] = [:]
+    public var overworkStreak: [String:Int] = [:]
+    public var homeRecoveryProgress: [String:Int64] = [:]
+    public var homeRecoveryLastAt: [String:Int64] = [:]
+    public var lastEvaluatedCycle: Int64 = -1
+    public var lastConditionCycle: Int64 = -1
+    public var clinicDemandWindows: Int = 0
+    public static func initial()->Self {.init()}
 }
 
 public struct LifeCityState: Codable, Equatable, Sendable {
@@ -122,6 +214,10 @@ public struct LifeHeroTownState: Codable, Equatable, Sendable {
     public var adminLease: LifeAdminLease?
     public var skillSnapshots: [LifeSkillSnapshot]
     public var city: LifeCityState
+    /// Optional so existing format-4 saves decode without destructive migration.
+    public var health: LifeHealthState? = nil
+    /// Optional layout-7 housing slice; absent in untouched format-4 saves.
+    public var courtyard: LifeCourtyardState? = nil
 
     public static func initial(wallUTC:Int64) -> Self {
         let starters = ["xunyu","liubei","zhangfei","zhaoyun","huangyueying"]
@@ -130,7 +226,7 @@ public struct LifeHeroTownState: Codable, Equatable, Sendable {
         })
         return .init(saveID:UUID().uuidString,contentHash:LifeHeroTownContract.contentHash,
                      authority:LifeHeroTownContract.authority,createdAtUTC:wallUTC,
-                     ownedHeroes:owned,adminLease:nil,skillSnapshots:[],city:.initial())
+                     ownedHeroes:owned,adminLease:nil,skillSnapshots:[],city:.initial(),health:.initial(),courtyard:nil)
     }
 }
 

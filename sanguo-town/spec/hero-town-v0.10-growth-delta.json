@@ -1,0 +1,509 @@
+{
+  "spec_version": "0.10.0-draft",
+  "status": "development_contract_not_implemented",
+  "base_spec": "hero-town-v0.9.json",
+  "base_spec_sha256": "94340e629722bb9cbb6a755e4e27b98bf0049289b0a389f18b07881fb522023c",
+  "target_rules_version": "hero-town-0.10.0",
+  "target_save_format": 5,
+  "target_layout_version": 7,
+  "principles": {
+    "player_actions_unchanged": [
+      "recruit_draw",
+      "star_up",
+      "disassemble_cards",
+      "exchange_souls"
+    ],
+    "prefect_automates": [
+      "resource_production",
+      "food_supply",
+      "construction",
+      "breakthrough_projects",
+      "resident_admission"
+    ],
+    "ordinary_residents": false,
+    "family_residents_runtime_enabled": false,
+    "hero_name_overhead_labels": false
+  },
+  "pacing": {
+    "default_presentation_speed": 2,
+    "presentation_speed_options": [0, 1, 2, 6, 30],
+    "formal_resource_job_bonus_bp": 1500,
+    "resource_jobs": ["farmer", "logger", "miner"],
+    "early_visible_build_order": [
+      "house-2",
+      "farm-2",
+      "granary-2",
+      "workshop-1",
+      "civic.water.L1",
+      "civic.road.L1"
+    ],
+    "protected_builder_when_food_coverage_bp_at_least": 9500,
+    "protected_builder_is_permanent_assignment": false,
+    "resource_bonus_changes_work_seconds_not_output_yield": true,
+    "free_resource_grants": false
+  },
+  "population": {
+    "initial_resident_hard_cap": 30,
+    "maximum_resident_hard_cap": 60,
+    "resident_count_includes": [
+      "FORMAL_RESIDENT",
+      "GUEST_RESIDENT"
+    ],
+    "resident_count_excludes": [
+      "ARRIVING",
+      "WAITING_RESIDENCY"
+    ],
+    "admission_policy": {
+      "mode": "automatic_fifo",
+      "order": [
+        "paidAt",
+        "heroID"
+      ],
+      "all_conditions_required": true,
+      "conditions": {
+        "resident_count_below_hard_cap": true,
+        "legal_residence_reservation_available": true,
+        "projected_food_equivalent_at_least_4Nforecast": true,
+        "next_two_meals_projected_coverage_bp_at_least": 9500,
+        "delivery_route_available": true
+      },
+      "waiting_state": "WAITING_RESIDENCY",
+      "waiting_heroes_consume_city_food": false,
+      "waiting_heroes_can_work": false,
+      "waiting_heroes_can_be_cultivated": true,
+      "coin_refund_when_waiting": false
+    },
+    "breakthroughs": [
+      {
+        "id": "water_agriculture",
+        "from_cap": 30,
+        "to_cap": 40,
+        "automatic": true,
+        "prerequisites": {
+          "resident_count_at_least": 28,
+          "owned_unique_heroes_at_least": 30,
+          "city_happiness_at_least": 65,
+          "last_4_meals_coverage_bp_at_least": 9500,
+          "consecutive_qualified_economy_windows": 2,
+          "water_district_level_at_least": 2,
+          "formal_household_units_at_least": 30,
+          "formal_resident_capacity_at_least": 30
+        },
+        "cost_mU": {
+          "wood": 24000,
+          "stone": 16000,
+          "tools": 4000
+        },
+        "work_s": 7200,
+        "effects": {
+          "resident_hard_cap": 40,
+          "unlock_farm_beds": 8,
+          "unlock_house_plots": 2,
+          "unlocked_grid_columns": 10,
+          "unlocked_grid_rows": 5,
+          "unlocked_parcel_count": 50
+        }
+      },
+      {
+        "id": "public_granary_kitchen",
+        "from_cap": 40,
+        "to_cap": 50,
+        "automatic": true,
+        "prerequisites": {
+          "resident_count_at_least": 38,
+          "owned_unique_heroes_at_least": 40,
+          "city_happiness_at_least": 68,
+          "last_4_meals_coverage_bp_at_least": 9500,
+          "consecutive_qualified_economy_windows": 3,
+          "granary_capacity_at_least": 512,
+          "formal_household_units_at_least": 40,
+          "formal_resident_capacity_at_least": 40
+        },
+        "cost_mU": {
+          "wood": 32000,
+          "stone": 24000,
+          "tools": 8000
+        },
+        "work_s": 10800,
+        "effects": {
+          "resident_hard_cap": 50,
+          "unlock_kitchen_parallel_slots": 1,
+          "unlock_delivery_points": 1,
+          "unlock_house_plots": 3,
+          "unlocked_grid_columns": 10,
+          "unlocked_grid_rows": 6,
+          "unlocked_parcel_count": 60
+        }
+      },
+      {
+        "id": "ward_governance",
+        "from_cap": 50,
+        "to_cap": 60,
+        "automatic": true,
+        "prerequisites": {
+          "resident_count_at_least": 48,
+          "owned_unique_heroes_at_least": 50,
+          "city_happiness_at_least": 72,
+          "last_4_meals_coverage_bp_at_least": 9500,
+          "consecutive_qualified_economy_windows": 4,
+          "housing_district_level_at_least": 3,
+          "road_district_level_at_least": 2,
+          "formal_household_units_at_least": 50,
+          "formal_resident_capacity_at_least": 50
+        },
+        "cost_mU": {
+          "wood": 48000,
+          "stone": 32000,
+          "tools": 12000
+        },
+        "work_s": 14400,
+        "effects": {
+          "resident_hard_cap": 60,
+          "unlock_house_plots": 2,
+          "unlocked_grid_columns": 12,
+          "unlocked_grid_rows": 7,
+          "unlocked_parcel_count": 84,
+          "unlock_admin_parallel_slots": 1
+        }
+      }
+    ]
+  },
+  "housing_and_households": {
+    "model": "shared_courtyard_partitioned_households",
+    "building_id": "house",
+    "romance_and_birth_runtime_enabled": false,
+    "hero_resident_hard_cap": 60,
+    "future_family_resident_capacity": 120,
+    "parcel_id_formula": "row*12+column",
+    "parcel_category_codes": {
+      "H": "residential_courtyard",
+      "P": "production_logistics",
+      "S": "public_service",
+      "L": "leisure_social",
+      "I": "infrastructure_landscape_reserve"
+    },
+    "parcel_category_rows_top_to_bottom": [
+      "PSPLIIIIPSPL",
+      "PHHSHHIPHHLP",
+      "SHHPHHILPSHP",
+      "IIIIIIIIIIII",
+      "LPSPLPISPLPS",
+      "PHLPHSIHPLPH",
+      "SPLPSPILPSPL"
+    ],
+    "initial_unlocked_grid": {"columns": 8, "rows": 5, "parcel_count": 40, "residential_courtyard_permits": 8},
+    "final_grid": {"columns": 12, "rows": 7, "parcel_count": 84},
+    "final_parcel_allocation": {
+      "residential_courtyard": 15,
+      "production_logistics": 24,
+      "public_service": 12,
+      "leisure_social": 12,
+      "infrastructure_landscape_reserve": 21
+    },
+    "residential_courtyard_plot_count": 15,
+    "levels": [
+      {"level": 1, "household_units": 2, "resident_capacity": 4},
+      {"level": 2, "household_units": 3, "resident_capacity": 6},
+      {"level": 3, "household_units": 4, "resident_capacity": 8}
+    ],
+    "formal_admission_requires_free_household_unit_and_person_capacity": true,
+    "guest_admission_requires_real_tavern_guest_bed": true,
+    "single_hero_uses_household_units": 1,
+    "future_marriage_merges_two_households_atomically": true,
+    "future_child_uses_person_capacity_without_new_household_unit": true,
+    "future_family_members_count_for_food_only_after_created": true,
+    "required_resident_fields": ["householdID", "residencePlotID", "unitID"],
+    "household_member_id_namespaces": ["hero:<heroID>", "family:<id>"],
+    "residential_unit_id_formula": "house:<parcelID>:<slotIndex>",
+    "vacant_capacity_creates_residents": false
+  },
+  "gacha_pool_extension": {
+    "pool_version": "permanent-2",
+    "unique_hero_count": 60,
+    "append_only_from_pool_version": "permanent-1",
+    "new_hero_record_count": 30,
+    "new_rarity_counts": {
+      "talent": 10,
+      "renowned": 12,
+      "legend": 8
+    },
+    "total_rarity_counts": {
+      "talent": 20,
+      "renowned": 24,
+      "legend": 16
+    },
+    "rarity_probability_bp_unchanged": {
+      "talent": 7000,
+      "renowned": 2500,
+      "legend": 500
+    },
+    "pity_threshold_unchanged": 20,
+    "existing_owned_heroes_unchanged": true,
+    "duplicate_cards_unchanged": true,
+    "activation_gate": "all_30_new_hero_records_have_attributes_visual_identity_and_three_skill_records",
+    "paid_recruitment_complete_when": "all_60_owned_and_star5"
+  },
+  "happiness": {
+    "scope": "per_resident_hero",
+    "range": [
+      0,
+      100
+    ],
+    "initial_value": 70,
+    "new_resident_initial_value": "clamp(city_average,50,80)",
+    "waiting_hero_updates": false,
+    "city_happiness": "roundHalfUp(sum(resident_happiness)/resident_count)",
+    "dimensions": [
+      {
+        "id": "food_coverage",
+        "symbol": "C",
+        "weight_bp": 3000,
+        "formula": "last_4_closed_meals_served_mU/expected_mU*100"
+      },
+      {
+        "id": "meal_quality",
+        "symbol": "Q",
+        "weight_bp": 500,
+        "formula": "last_4_closed_meals_actual_quality_weighted_average"
+      },
+      {
+        "id": "housing",
+        "symbol": "H",
+        "weight_bp": 1500,
+        "formula": "formal_household_unit_and_person_capacity=100;guest_bed=70;no_legal_residence=0"
+      },
+      {
+        "id": "rest",
+        "symbol": "R",
+        "weight_bp": 1500,
+        "formula": "clamp(previous_cycle_continuous_night_rest_s/600*100,0,100)"
+      },
+      {
+        "id": "environment",
+        "symbol": "D",
+        "weight_bp": 1000,
+        "formula": "city_environment_score_from_S05"
+      },
+      {
+        "id": "security",
+        "symbol": "S",
+        "weight_bp": 1000,
+        "formula": "city_security_score_from_S05"
+      },
+      {
+        "id": "workload_balance",
+        "symbol": "W",
+        "weight_bp": 1500,
+        "formula": "clamp(100-roundHalfUp(max(0,previous_cycle_duty_s-1440)*60/480),0,100)",
+        "duty_includes": [
+          "labor",
+          "travel",
+          "loading",
+          "unloading",
+          "job_switch"
+        ],
+        "idle_without_eligible_demand_is_not_penalized": true
+      }
+    ],
+    "target_formula": "roundHalfUp((3000C+500Q+1500H+1500R+1000D+1000S+1500W)/10000)",
+    "update_at": "each_meal_window_close",
+    "rise_limit_per_update": 3,
+    "fall_limit_by_meal_coverage_tier": {
+      "9500_to_10000": 5,
+      "8000_to_9499": 8,
+      "6000_to_7999": 12,
+      "0_to_5999": 15
+    },
+    "work_rate_modifier_bp": [
+      {
+        "min": 85,
+        "max": 100,
+        "value": 500
+      },
+      {
+        "min": 70,
+        "max": 84,
+        "value": 0
+      },
+      {
+        "min": 50,
+        "max": 69,
+        "value": -500
+      },
+      {
+        "min": 30,
+        "max": 49,
+        "value": -1000
+      },
+      {
+        "min": 0,
+        "max": 29,
+        "value": -1500
+      }
+    ],
+    "modifier_snapshot_at": "task_stage_start",
+    "negative_modifier_floor_bp_for_recovery_jobs": 0,
+    "recovery_jobs": [
+      "farmer",
+      "cook",
+      "server",
+      "porter_carrying_food",
+      "emergency_food_equipment_repair",
+      "already_loaded_cargo_delivery"
+    ],
+    "no_retroactive_recalculation": true
+  },
+  "food_shortage": {
+    "coverage_basis": "single_closed_meal_served_mU/expected_mU",
+    "tiers": [
+      {
+        "id": "stable",
+        "min_bp": 9500,
+        "max_bp": 10000,
+        "scheduler_effect": "normal"
+      },
+      {
+        "id": "strained",
+        "min_bp": 8000,
+        "max_bp": 9499,
+        "scheduler_effect": "pause_new_decor_academy_and_gold_orders_after_two_consecutive_meals"
+      },
+      {
+        "id": "shortage",
+        "min_bp": 6000,
+        "max_bp": 7999,
+        "scheduler_effect": "enter_supply_recovery_immediately_and_pause_all_optional_projects"
+      },
+      {
+        "id": "severe",
+        "min_bp": 0,
+        "max_bp": 5999,
+        "scheduler_effect": "supply_recovery_plus_pause_new_resident_admission"
+      }
+    ],
+    "exit_supply_recovery": "two_consecutive_meals_coverage_bp_at_least_9500",
+    "efficiency_penalty_channel": "happiness_only",
+    "additional_hunger_work_rate_penalty": false,
+    "irreversible_outcomes": {
+      "death": false,
+      "desertion": false,
+      "star_loss": false,
+      "building_destruction": false
+    }
+  },
+  "health_and_clinic": {
+    "building": {
+      "id": "clinic",
+      "max": 1,
+      "cash": 0,
+      "work_s": 2400,
+      "materials_mU": {
+        "wood": 12000,
+        "stone": 6000,
+        "tools": 1000
+      },
+      "treatment_beds_by_level": [
+        2,
+        4,
+        6
+      ],
+      "authorization": "resident_count_at_least_20_and_two_stable_economy_windows_or_first_treatable_condition",
+      "construction_never_breaks_food_or_fuel_reserve": true
+    },
+    "physician_job": {
+      "attribute_weights_bp": {
+        "strategy": 6000,
+        "administration": 4000
+      },
+      "requires_unique_named_profession": false,
+      "requires_healthy_resident": true,
+      "permanent_assignment": false
+    },
+    "conditions": [
+      {
+        "id": "overwork_strain",
+        "trigger": "two_consecutive_cycles_with_duty_s_at_least_1800_and_continuous_rest_s_below_360",
+        "work_rate_modifier_bp": -1000,
+        "blocked_jobs": [
+          "logger",
+          "miner",
+          "smith",
+          "builder"
+        ],
+        "clinic_treatment": {
+          "physician_work_s": 120,
+          "patient_bed_rest_s": 600
+        },
+        "home_recovery_continuous_rest_s": 1800
+      },
+      {
+        "id": "minor_work_injury",
+        "trigger": "hazardous_stage_completed_after_current_cycle_duty_s_at_least_1800_while_happiness_below_50",
+        "hazardous_jobs": [
+          "logger",
+          "miner",
+          "smith",
+          "builder"
+        ],
+        "work_rate_modifier_bp": -2000,
+        "blocked_jobs": [
+          "logger",
+          "miner",
+          "smith",
+          "builder",
+          "porter"
+        ],
+        "clinic_treatment": {
+          "physician_prepare_s": 180,
+          "patient_bed_rest_s": 900,
+          "physician_finish_s": 60
+        },
+        "home_recovery_continuous_rest_s": 2880
+      }
+    ],
+    "condition_limit_per_hero": 1,
+    "new_condition_limit_per_city_cycle": 1,
+    "treatment_queue_order": [
+      "minor_work_injury_before_overwork_strain",
+      "condition_started_at",
+      "heroID"
+    ],
+    "treatment_priority": "after_immediate_food_and_safe_delivery_before_gold_and_optional_construction",
+    "treatment_consumes_new_resource": false,
+    "treatment_completion_is_atomic": true,
+    "irreversible_outcomes": {
+      "death": false,
+      "permanent_attribute_loss": false,
+      "star_loss": false,
+      "desertion": false
+    }
+  },
+  "migration": {
+    "from_save_format": 4,
+    "to_save_format": 5,
+    "legacy_city_satisfaction_to_each_existing_resident_happiness": true,
+    "legacy_city_satisfaction_default_if_missing": 70,
+    "existing_30_hero_pool_version": "permanent-1",
+    "existing_formal_residents_get_stable_single_person_households": true,
+    "existing_guest_residents_keep_real_guest_bed_until_atomic_courtyard_move": true,
+    "excess_legacy_house_occupants_get_nontransferable_occupied_leases": true,
+    "legacy_occupied_leases_can_admit_new_heroes": false,
+    "legacy_occupied_lease_retires_on_atomic_courtyard_move": true,
+    "legacy_occupied_lease_id_formula": "legacy:<heroID>",
+    "legacy_plot_remap_order": "ascending_legacy_plotID_to_lowest_free_unlocked_parcelID_of_matching_category",
+    "legacy_plot_remap_must_preserve_buildings_wip_reservations_and_references": true,
+    "migration_creates_spouses_or_children": false,
+    "new_layout_expansion_required_for_cap_above_30": true,
+    "rollback_preserves_original_save": true
+  },
+  "acceptance_cases": [
+    "GC29_population_cap_and_safe_admission",
+    "GC30_three_breakthrough_projects_and_idempotence",
+    "GC31_pool_v2_60_unique_and_waiting_residency",
+    "GC32_per_hero_happiness_dimensions_and_work_rate",
+    "GC33_food_shortage_tiers_and_recovery_protection",
+    "GC34_30_40_50_60_population_long_run",
+    "GC35_clinic_conditions_treatment_and_recovery",
+    "GC36_shared_courtyards_households_and_84_parcels"
+  ]
+}

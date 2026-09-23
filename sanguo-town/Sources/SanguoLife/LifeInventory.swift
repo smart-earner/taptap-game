@@ -1,6 +1,12 @@
 import Foundation
 
 extension LifeWorld {
+    /// Quantity of one resource in committed transport tasks. Warehouse
+    /// `incoming` is aggregate volume and must not stand in for this ledger.
+    public func inFlight(_ resource:LifeResource,to location:String) -> Int64 {
+        tasks.values.filter{$0.kind=="haul" && $0.target==location && $0.resource==resource}
+            .reduce(Int64(0)){$0+$1.quantity}
+    }
     func freeSpace(_ location:String) -> Int64 {
         guard let s=storages[location] else {return 0}
         return max(0,s.capacity-s.incoming-volume(at:location))
@@ -44,18 +50,91 @@ extension LifeWorld {
     mutating func pruneLots() {for id in Array(lots.keys) where lots[id]!.amount==0 {lots[id]=nil}}
     public func validate() throws {
         func check(_ b:Bool,_ text:String) throws {if !b{throw LifeError.invalid(text)}}
+        try validateWar()
         try check((format==1 && rules=="life-0.7.2-v1" && husbandry==nil && gacha==nil) || (format==2 && rules=="life-0.7.2-v2" && husbandry != nil && gacha==nil) || (format==3 && rules=="hero-town-0.8-preview1" && husbandry==nil && gacha==nil) || (format==4 && isGacha && gacha != nil && husbandry==nil),"存档版本不受支持，未重建存档")
         if isGacha {try validateGacha()}
         if isFormalHeroTown {
             guard let formal=heroTown else{throw LifeError.invalid("正式v0.9存档缺少规则身份")}
             try check(formal.contentHash==LifeHeroTownContract.contentHash && formal.authority==LifeHeroTownContract.authority,"正式v0.9内容哈希或自动治理授权不匹配")
-            try check(!formal.saveID.isEmpty && formal.city.layoutVersion==LifeHeroTownContract.layout,"正式v0.9存档或布局版本无效")
-            try check(formal.city.plots.count==18 && Set(formal.city.plots.map(\.id)).count==18 && formal.city.plots.map(\.index).sorted()==Array(0..<18),"layout6必须包含18个唯一功能地块")
+            let courtyard=formal.courtyard
+            try check(!formal.saveID.isEmpty && formal.city.layoutVersion==(courtyard == nil ? LifeHeroTownContract.layout : 7),"正式存档或布局版本无效")
+            let plotCount=courtyard == nil ? 18:29
+            try check(formal.city.plots.count==plotCount && Set(formal.city.plots.map(\.id)).count==plotCount && formal.city.plots.map(\.index).sorted()==Array(0..<plotCount),"功能地块编号或数量无效")
             try check(formal.city.plots.allSatisfy{(0...3).contains($0.level) && $0.capacity>=0 && $0.occupancy>=0 && $0.occupancy<=$0.capacity},"地块容量、占用或等级无效")
+            if let courtyard {
+                let phase=gacha?.rosterPhase ?? 0
+                try check((0...3).contains(phase) &&
+                          courtyard.unlockedColumns==[8,10,10,12][phase] &&
+                          courtyard.unlockedRows==[5,5,6,7][phase] &&
+                          courtyard.parcelByPlotID.count==30 &&
+                          agents.count<=30+10*phase &&
+                          (phase==0 || (1...phase).allSatisfy{projects["breakthrough.\($0)"]?.completed==true}) &&
+                          formal.city.plots.filter{$0.kind=="house"}.allSatisfy{plot in
+                              guard let number=Int(plot.id.dropFirst(6)) else{return false}
+                              return plot.developmentPermit == (number<=[8,10,13,15][phase])
+                          },
+                          "共享院落阶段或地块映射无效")
+                try check(Set(courtyard.parcelByPlotID.values).count==courtyard.parcelByPlotID.count &&
+                          courtyard.parcelByPlotID.allSatisfy{plotID,parcel in
+                              guard (0..<84).contains(parcel) else {return false}
+                              let category=LifeLayout7.categoryRows[parcel/12][LifeLayout7.categoryRows[parcel/12].index(LifeLayout7.categoryRows[parcel/12].startIndex,offsetBy:parcel%12)]
+                              let kind=plotID=="clinic-1" ? "clinic":(formal.city.plot(plotID)?.kind ?? "")
+                              return category==LifeLayout7.category(for:kind)
+                          },"共享院落类别或地块重复")
+                try check(Set(courtyard.households.keys)==Set(agents.keys) && courtyard.households.allSatisfy{heroID,household in
+                    household.id=="household:\(heroID)" && household.memberPersonIDs==["hero:\(heroID)"] &&
+                    (household.unitID == nil && household.residencePlotID=="tavern-1" ||
+                     household.unitID.map{unitID in
+                         courtyard.units[unitID].map{$0.plotID==household.residencePlotID && $0.occupantHouseholdID==household.id} == true ||
+                         unitID=="legacy:\(heroID)" && courtyard.legacyOccupiedLeases[heroID]==household.residencePlotID
+                     } == true)
+                },"共享院落家庭归属无效")
+                try check(courtyard.units.count==formal.city.plots.filter{$0.kind=="house"}.reduce(0){$0+LifeLayout7.units(for:$1.level)} &&
+                          courtyard.units.allSatisfy{id,unit in
+                              id==unit.id && courtyard.parcelByPlotID[unit.plotID]==unit.parcelID &&
+                              unit.occupantHouseholdID.map{householdID in courtyard.households.values.contains{$0.id==householdID && $0.unitID==id}} != false
+                          },"共享院落户位容量或占用无效")
+                try check(courtyard.legacyOccupiedLeases.allSatisfy{heroID,plotID in
+                    courtyard.households[heroID]?.unitID=="legacy:\(heroID)" && courtyard.households[heroID]?.residencePlotID==plotID
+                },"旧住户过渡租约无效")
+            }
             try check(Set(formal.city.civics.keys)==Set(["road","water","housing","trade","industry","academy","garden","defense"]) && formal.city.civics.values.allSatisfy{(0...3).contains($0)},"八街区状态无效")
+            try check((0...1).contains(formal.city.attachments["kitchen",default:0]) &&
+                      (formal.city.attachments["kitchen",default:0]==1) == (stations["kitchen-2"] != nil) &&
+                      (stations["kitchen-2"] == nil || (gacha?.rosterPhase ?? 0)>=1),
+                      "第二厨房工程或工位状态无效")
             try check(formal.city.civics["trade"]==0,"v0.9首批商街必须关闭")
             try check(Set(formal.ownedHeroes.keys)==Set(gacha!.stars.keys) && formal.ownedHeroes.allSatisfy{$0.key==$0.value.heroID && $0.value.star==gacha!.stars[$0.key]},"OwnedHero权益与星级状态不一致")
+            try check(formal.ownedHeroes.values.allSatisfy { owned in
+                guard let duty=owned.firstDuty else{return true}
+                return owned.sourceDrawID != "founding" && !duty.taskID.isEmpty &&
+                    duty.assignedAt>=0 && duty.assignedAt<=time &&
+                    duty.arrivedAt.map{$0>=duty.assignedAt && $0<=time} != false &&
+                    duty.effectiveAt.map{$0>=(duty.arrivedAt ?? duty.assignedAt) && $0<=time && duty.effect?.isEmpty==false} != false
+            },"新武将首项贡献的阶段或时间无效")
             try check(formal.skillSnapshots.count<=10000 && formal.city.memories.filter(\.pinned).count<=20 && formal.city.memories.filter{!$0.pinned}.count<=60,"快照或成长册超过安全上限")
+            if let health=formal.health {
+                try check((0...3).contains(health.clinicLevel) && worldClinicLevelMatches(health.clinicLevel),"医舍等级与建筑状态不一致")
+                try check(Set(health.conditions.keys).isSubset(of:Set(agents.keys)) && health.conditions.allSatisfy{$0.key==$0.value.heroID && ["overwork_strain","minor_work_injury"].contains($0.value.kind)},"健康状态身份或类型无效")
+                try check(Set(health.treatments.keys).isSubset(of:Set(health.conditions.keys)) && health.treatments.allSatisfy{$0.key==$0.value.patientHeroID},"治疗记录与患者状态不一致")
+                let phases:Set<String>=["arriving","waiting_doctor","preparing","treating","rest_ready","resting","finish_ready","finishing"]
+                let treatmentEntitiesValid=health.treatments.values.allSatisfy{ treatment in
+                    phases.contains(treatment.phase) && agents[treatment.patientHeroID] != nil
+                    && treatment.doctorHeroID.map{$0 != treatment.patientHeroID && agents[$0] != nil && health.conditions[$0]==nil} != false
+                    && (treatment.phase=="arriving" || agents[treatment.patientHeroID]?.node=="clinic")
+                }
+                if !treatmentEntitiesValid {
+                    let details=health.treatments.values.sorted{$0.patientHeroID<$1.patientHeroID}.map { treatment in
+                        let doctor=treatment.doctorHeroID ?? "none"
+                        return "\(treatment.patientHeroID):\(treatment.phase):patientNode=\(agents[treatment.patientHeroID]?.node ?? "missing"):doctor=\(doctor):doctorCondition=\(health.conditions[doctor]?.kind ?? "none")"
+                    }.joined(separator:",")
+                    throw LifeError.invalid("治疗阶段、医生或患者实体无效：\(details)")
+                }
+                let capacity=health.clinicLevel>0 ? LifeHealthContract.clinicBeds[health.clinicLevel-1]:0
+                try check(health.treatments.count<=capacity && (health.clinicLevel>0 || health.treatments.isEmpty) && health.overworkStreak.values.allSatisfy{(0...2).contains($0)},"诊床或劳损计数越界")
+                try check(Set(health.homeRecoveryProgress.keys).isSubset(of:Set(health.conditions.keys)) && health.homeRecoveryProgress.values.allSatisfy{$0>=0},"居家恢复进度无效")
+                try check(Set(health.homeRecoveryLastAt.keys).isSubset(of:Set(health.conditions.keys)) && health.homeRecoveryLastAt.values.allSatisfy{$0>=0 && $0<=time},"居家恢复时点无效")
+            }
         } else {
             try check(heroTown==nil,"预览或旧版本不得携带正式v0.9状态")
         }
@@ -97,5 +176,10 @@ extension LifeWorld {
         for lot in lots.values {try check(lot.reserved==reserved[lot.id,default:0],"资源预留不是唯一任务占用")}
         for meal in meals {try check(Set(meal.expected).count==meal.expected.count && Set(meal.served.keys).isSubset(of:Set(meal.expected)),"餐次消费者错误")}
         try check(Set(owned).count==owned.count && Set(discovered).count==discovered.count,"收藏身份重复")
+    }
+
+    private func worldClinicLevelMatches(_ level:Int)->Bool {
+        if level==0 {return buildings["clinic",default:0]==0}
+        return buildings["clinic"]==level
     }
 }

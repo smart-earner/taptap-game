@@ -1,24 +1,41 @@
 import Foundation
 
+public enum LifeHappinessContract {
+    /// A shared city mood is intentionally used instead of sixty mutable
+    /// person-level mood ledgers. The task snapshots still retain each
+    /// worker's own health and skill modifiers independently.
+    public static func workModifierBP(happiness: Int, job: String) -> Int {
+        let modifier = happiness >= 85 ? 500 : happiness >= 70 ? 0 :
+            happiness >= 50 ? -500 : happiness >= 30 ? -1_000 : -1_500
+        // The minimum civilian food-and-care chain cannot spiral into a
+        // slower recovery solely because the city is already unhappy.
+        if modifier < 0 && ["farmer", "cook", "porter", "physician"].contains(job) { return 0 }
+        return modifier
+    }
+}
+
 extension LifeRuntime {
     mutating func updateMeals() {
         let phase=world.phase
         if phase==420 || phase==1800 {
             let at=world.cycle*2880+(phase==420 ? 600:1980), id="meal-\(at)"
             let extra=(try? LifeAbilities.resolve(catalog,sources:leaders(),metric:"happiness_rise_extra",coverage:world.foodCoverage)) ?? 0
-            world.meals.append(.init(id:id,at:at,deadline:at+180,expected:world.agents.keys.sorted(),recoveryExtra:extra))
+            world.meals.append(.init(id:id,at:at,deadline:at+180,expected:world.agents.keys.filter{!world.warAwayHeroIDs.contains($0)}.sorted(),recoveryExtra:extra))
         }
         for index in world.meals.indices where !world.meals[index].closed {
-            if world.time==world.meals[index].at {world.meals[index].expected=world.agents.keys.sorted()}
+            if world.time==world.meals[index].at {world.meals[index].expected=world.agents.keys.filter{!world.warAwayHeroIDs.contains($0)}.sorted()}
             guard world.time>=world.meals[index].at else{continue}
             for id in world.meals[index].expected where world.meals[index].served[id]==nil {
-                guard let a=world.agents[id],a.taskID==nil,let storage=world.storages[a.dining],a.node==storage.node,
-                      let parts=world.selection(.meal,quantity:1000,at:a.dining) else{continue}
+                guard let a=world.agents[id] else{continue}
+                let admitted=world.heroTown?.health?.treatments[id] != nil && a.node=="clinic"
+                let dining=admitted ? "clinic-meals":a.dining
+                guard (a.taskID==nil || admitted),let storage=world.storages[dining],a.node==storage.node,
+                      let parts=world.selection(.meal,quantity:1000,at:dining) else{continue}
                 let quality=parts.reduce(Int64(0)){$0+$1.amount*(world.lots[$1.lotID]!.quality=="hearty" ? 100:40)}/1000
-                guard world.consume(.meal,quantity:1000,at:a.dining) else{continue}
+                guard world.consume(.meal,quantity:1000,at:dining) else{continue}
                 world.meals[index].served[id]=Int(quality);world.counters["resident_meals_consumed",default:0]+=1
                 if quality==100 { world.counters["hearty_meals_consumed",default:0]+=1 }
-                _=assign(kind:"eat",job:"server",subject:world.meals[index].id,at:a.node,work:45,only:id)
+                if !admitted {_=assign(kind:"eat",job:"server",subject:world.meals[index].id,at:a.node,work:45,only:id)}
             }
             if world.time>=world.meals[index].deadline {
                 world.meals[index].closed=true
@@ -26,8 +43,8 @@ extension LifeRuntime {
                 world.foodCoverage=expected>0 ? served*10000/expected:10000
                 let quality=served>0 ? past.reduce(0){$0+$1.served.values.reduce(0,+)}/served:0
                 // V1 only reads completed service evidence; no decorative walking creates a service.
-                let clean=min(100,40+world.cleanedSites.count*10+(world.counters["star_environment_until",default:0]>world.time ? 5:0))
-                let security=world.counters["patrols",default:0]>0 ? 80:60
+                let clean=min(100,40+world.civicDutyCount("clean")*10+(world.counters["star_environment_until",default:0]>world.time ? 5:0))
+                let security=min(100,60+(world.counters["patrols",default:0]>0 ? 20:0)+world.civicDutyCount("watch")*2)
                 let legalGuestBeds=world.isGacha ? world.agents.values.filter{$0.home=="tavern"}.count:0
                 let housing=min(100,(world.housing+legalGuestBeds)*100/max(1,world.agents.count))
                 let rested=world.agents.values.filter{a in a.restedCycle>=world.cycle-1 || a.restStart.map{world.time-$0>=600} == true}.count
@@ -55,6 +72,10 @@ extension LifeRuntime {
         for id in world.agents.keys.sorted() {
             let a=world.agents[id]!
             guard a.taskID==nil else{continue}
+            // A patient with an active admission owns a clinic bed even between
+            // the arrival, diagnosis and rest tasks. Do not send them home for
+            // an ordinary meal or sleep while the treatment record is active.
+            if world.heroTown?.health?.treatments[id] != nil {continue}
             if let meal=world.meals.last(where:{!$0.closed && $0.expected.contains(id) && $0.served[id]==nil}),world.time>=meal.at-180,
                let node=world.storages[a.dining]?.node,world.amount(.meal,at:a.dining)>=1000,a.node != node {
                 _=assign(kind:"meal_trip",job:"server",subject:meal.id,at:node,work:0,tail:[.init(kind:"arrive",seconds:1)],only:id)
@@ -134,12 +155,23 @@ extension LifeRuntime {
                 guard world.has(stage.materials,at:target) else{continue}
             }
             let necessaryHousing=world.isFormalHeroTown && p.kind=="house" && world.agents.values.contains{$0.home=="tavern"}
-            if (world.foodCoverage<9000 || world.heroTown?.city.supplyRecovery==true) && p.kind != "repair" && !necessaryHousing {continue}
+            let necessaryWarWorkshop=world.campaign != nil && p.kind=="workshop" && world.buildings["workshop",default:0]==0
+                && world.foodCoverage>=8000 && world.foodEquivalent()>=Int64(world.agents.count)*4_000
+            let necessaryFoodCapacity=world.isFormalHeroTown &&
+                ["attachment_kitchen","attachment_delivery","farm","granary","civic_water"].contains(p.kind) &&
+                world.foodEquivalent()>=Int64(world.agents.count)*2_000
+            if (world.foodCoverage<9000 || world.heroTown?.city.supplyRecovery==true) &&
+                p.kind != "repair" && p.kind != "damage_repair" && !necessaryHousing && !necessaryWarWorkshop && !necessaryFoodCapacity {continue}
             let threshold=p.totalWork*[20,45,80,100][p.phase]/100
             let outstanding=threshold-p.completedWork-p.allocatedWork
             guard outstanding>0 else{continue}
             let assigned=world.tasks.values.filter{$0.kind=="build" && $0.subject==id}.count
-            guard assigned<2 else{continue}
+            let allBuilders=world.tasks.values.filter{$0.kind=="build"}.count
+            let concurrentCivic=world.isFormalHeroTown && (world.gacha?.rosterPhase ?? 0)>=3 &&
+                world.projects.values.filter{!$0.completed}.count>1
+            let preserveFoodLabor=world.isFormalHeroTown &&
+                (world.foodCoverage<9000 || world.heroTown?.city.supplyRecovery==true)
+            guard assigned<2 && allBuilders<(concurrentCivic || preserveFoodLabor ? 1:2) else{continue}
             let contribution=min(outstanding,120)
             if let task=assign(kind:"build",job:p.kind=="seal" ? "carpenter":"builder",subject:id,at:p.node,work:contribution) {
                 if !p.stageStarted {
@@ -154,6 +186,6 @@ extension LifeRuntime {
         }
     }
     public func buildingName(_ kind:String)->String {
-        ["pasture":"牧栏","butcher":"肉食台","hall":"府署","repair":"府署修缮","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"饭馆","stable":"马厩","station":"驿站","barracks":"营地","seal":"开城木印"][kind] ?? kind
+        ["pasture":"牧栏","butcher":"肉食台","hall":"府署","repair":"府署修缮","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"饭馆","stable":"马厩","station":"驿站","barracks":"营地","clinic":"医舍","seal":"开城木印"][kind] ?? kind
     }
 }

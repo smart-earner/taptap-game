@@ -167,6 +167,10 @@ static func building(kind: String, level: int = 1, phase: int = -1) -> Node3D:
 	if kind == "house":
 		cylinder(root,Vector3(-width*.63,.18,depth*.54),.14,.19,.33,"b5835e")
 		ball(root,Vector3(-width*.63,.49,depth*.54),Vector3(.47,.45,.45),"698354")
+	if kind == "clinic":
+		box(root,Vector3(0,1.18,depth*.57),Vector3(.52,.42,.08),"f1ead0")
+		box(root,Vector3(0,1.18,depth*.63),Vector3(.10,.30,.025),"a85b4c")
+		box(root,Vector3(0,1.18,depth*.63),Vector3(.30,.10,.025),"a85b4c")
 	for x in [-width*.40,width*.40]: lantern(root,Vector3(x,height-.30,depth*.66))
 	return root
 

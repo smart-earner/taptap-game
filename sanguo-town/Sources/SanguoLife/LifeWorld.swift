@@ -6,6 +6,10 @@ public struct LifeLot: Codable, Equatable, Identifiable, Sendable {
     public var resource: LifeResource
     public var amount: Int64, reserved: Int64 = 0
     public var quality: String = "basic"
+    public init(id:String,origin:String,location:String,resource:LifeResource,amount:Int64,reserved:Int64=0,quality:String="basic") {
+        self.id=id;self.origin=origin;self.location=location;self.resource=resource
+        self.amount=amount;self.reserved=reserved;self.quality=quality
+    }
 }
 public struct LifeStorage: Codable, Equatable, Sendable {
     public var node: String
@@ -81,6 +85,11 @@ public struct LifeMeal: Codable, Equatable, Identifiable, Sendable {
     public var served: [String:Int] = [:]
     public var closed = false
     public var recoveryExtra: Int = 0
+    public init(id:String,at:Int64,deadline:Int64,expected:[String],served:[String:Int]=[:],
+                closed:Bool=false,recoveryExtra:Int=0) {
+        self.id=id;self.at=at;self.deadline=deadline;self.expected=expected
+        self.served=served;self.closed=closed;self.recoveryExtra=recoveryExtra
+    }
 }
 public struct LifeRecruit: Codable, Equatable, Sendable {
     public var stage = 0
@@ -94,6 +103,7 @@ public struct LifeRecord: Codable, Equatable, Identifiable, Sendable {
 }
 public struct LifeWorld: Codable, Equatable, Sendable {
     public var heroTown: LifeHeroTownState? = nil
+    public var campaign: LifeWarState? = nil
     public var gacha:LifeGachaState? = nil
     public var husbandry: LifeHusbandry? = nil // Absent in v1 saves; enabled only by an explicit decision.
     public var format = 1
@@ -133,6 +143,7 @@ public struct LifeWorld: Codable, Equatable, Sendable {
     public var isGacha:Bool {rules == "hero-town-0.9-preview1" || isFormalHeroTown}
     public var isHeroPreview: Bool { rules == "hero-town-0.8-preview1" || isGacha }
     public var housing: Int {
+        if let courtyard=heroTown?.courtyard { return courtyard.formalCapacity }
         if let city=heroTown?.city {
             return city.plots.filter{$0.kind=="house" && $0.level>0}.reduce(0){$0+$1.capacity}
         }
@@ -156,6 +167,7 @@ public enum LifeMap {
     public static let places: [String:LifePoint] = {
         var result: [String:LifePoint] = [
         "hall":.init(1060,760),"home":.init(910,760),"home-2":.init(770,750),"home-3":.init(920,930),"home-4":.init(1080,930),
+        "delivery-1":.init(790,780),"delivery-2":.init(1430,935),"delivery-3":.init(2100,550),
         "warehouse":.init(560,550),"warehouse-2":.init(580,930),
         "kitchen":.init(1060,550),"market":.init(910,550),"workshop":.init(1370,540),"workshop-2":.init(1370,790),
         "tavern":.init(1060,550),"stable":.init(1540,470),"station":.init(1460,290),
@@ -163,6 +175,10 @@ public enum LifeMap {
         "trees":.init(200,900),"quarry":.init(390,160),"mine":.init(180,160),"gate":.init(1570,210),
         "seal":.init(1190,745),"ration":.init(1500,610),
         "pasture":.init(540,790),"butcher":.init(570,900),"goldmine":.init(120,290),"smelter":.init(1370,400)]
+        result["clinic"] = LifeHealthContract.clinicPoint
+        for (offset, parcel) in LifeLayout7.residentialParcels.enumerated() where offset >= 4 {
+            result["home-\(offset + 1)"] = LifeLayout7.point(parcel)
+        }
         for (index,point) in LifeLayout6.fieldPoints.enumerated() {result["field-\(index)"]=point}
         return result
     }()

@@ -2,6 +2,7 @@
 set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GODOT_BIN="${GODOT_BIN:-$PROJECT_ROOT/../.tools/godot/Godot.app/Contents/MacOS/Godot}"
+export SANGUO_DEBUG_LOG="${SANGUO_DEBUG_LOG:-1}"
 if [[ ! -x "$GODOT_BIN" ]]; then
   echo "Godot 尚未安装到项目 .tools/godot；也可以通过 GODOT_BIN 指定官方 Godot 可执行文件。" >&2
   exit 1

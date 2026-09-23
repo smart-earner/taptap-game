@@ -135,6 +135,8 @@ public enum LifeVisual {
         switch r {
         case .gold_ore:return .init("gold-ore",children:[.rect("ore-basket",-15,0,30,16,"#816345"),.polygon("gold-rock",[(-12,14),(-6,27),(0,20),(8,26),(14,13)],"#CBAC54")])
         case .gold_ingot:return .init("gold-ingot",children:[.polygon("bar",[(-15,2),(-10,16),(10,16),(15,2)],"#EFC44E"),.line("shine",[(-8,12),(8,12)],"#FFF2B4",width:3)])
+        case .rare_ore:return .init("rare-ore",children:[.rect("ore-basket",-15,0,30,16,"#695B51"),.polygon("rare-rock",[(-12,14),(-6,27),(0,20),(8,26),(14,13)],"#566D78")])
+        case .refined_iron:return .init("refined-iron",children:[.polygon("iron-bar",[(-15,2),(-10,16),(10,16),(15,2)],"#667C87"),.line("metal-shine",[(-8,12),(8,12)],"#C1D6D8",width:2)])
         case .wood:return .init("logs",children:[.rect("log-a",-20,5,40,8,"#AC8654",radius:4),.rect("log-b",-19,12,37,8,"#BE9B66",radius:4),.line("tie",[(0,4),(0,21)],"#675E40",width:3)])
         case .meal:
             var parts: [VNode] = [.rect("tray-bottom",-17,1,34,4,"#956B46"),.ellipse("bowl",-12,5,24,10,"#E8D5AD"),.ellipse("rice",-10,9,20,6,"#F7ECCD")]
@@ -160,7 +162,11 @@ public enum LifeVisual {
             else {
                 switch t.kind {
                 case "survey":motion = .read;action="勘测节材"
+                case "study":motion = .read;action="书院研习"
                 case "star_patrol":motion = .walk;action="晚间巡线"
+                case "civic_clean":motion = .cultivate;action="清洁街巷"
+                case "civic_watch":motion = .idle;action="巡护里坊"
+                case "civic_drill":motion = .hammer;action="守备操练"
                 case "administration":motion = .read;action="处理城务"
                 case "pig_care": motion = .cultivate; action="喂养与照料"
                 case "pig_process": motion = .hammer; action="院内加工肉料"

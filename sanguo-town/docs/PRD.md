@@ -1,6 +1,8 @@
-# 桌面三国·小城志 · PRD v0.9.0
+# 桌面三国·小城志 · 系统 PRD 索引
 
-系统化整理：2026-09-21。本次只拆分职责与阅读路径，不改变玩法、数值、存档格式或规则版本。
+当前开发目标和胜利条件以 [v0.12 核心玩法主合同](PRD-v0.12-core-gameplay.md)为准；按系统拆分的可执行条款见下表，实施和验收证据见[交付目标](GOAL-v0.12-delivery.md)。**合同已确定不等于功能已验收**：最新单种子长测、实机与未过项以交付目标为准，不能拿旧竖切说明替代。发生冲突时按 v0.12 主合同的解释顺序和各系统明确的 v0.12 覆盖条款裁决。
+
+历史基线为 v0.9.0 format4 存档；[v0.10 人口、供给与幸福感增量](PRD-v0.10-growth.md)保留作为迁移与旧规格对照。S09 战役已可玩，但 WC01—WC20 和所有城市技术的完整验收仍须按当前交付闸门核对。
 
 ## 产品底线
 
@@ -18,10 +20,12 @@
 |[S02 武将培养与技能](systems/02_HERO_CULTIVATION.md)|重复卡、锁卡、手动升星、分解兑换、属性与技能快照；不调度城务、不自动消费。|
 |[S03 资源生产与金币经济](systems/03_PRODUCTION_ECONOMY.md)|十种实物、种植采集、配方与设备、金矿到金币、币材分离；不决定抽卡结果。|
 |[S04 太守调度与物流](systems/04_GOVERNOR_LOGISTICS.md)|城务权限、任务优先级、居民实体、班次、行政租约、搬运、同时刻顺序；无抽卡和培养消费权。|
-|[S05 供餐与居民生活](systems/05_FOOD_LIFE.md)|餐窗、预测人数、保护线、恢复模式、满意度、生活故事；不生成新人、不发奖励金币。|
-|[S06 城建与成长](systems/06_CITY_PROGRESSION.md)|地块、报价、工程状态、床位迁居、街区特色工程、体验节奏、满星终局与成长册。|
+|[S05 供餐与居民生活](systems/05_FOOD_LIFE.md)|餐窗、预测人数、保护线、缺粮分级、幸福感、健康与治疗；不生成新人、不发奖励金币。|
+|[S06 城建与成长](systems/06_CITY_PROGRESSION.md)|地块、报价、工程状态、医舍、床位迁居、30→40→50→60自动突破、长期终局与成长册。|
 |[S07 界面、场景与桌面表现](systems/07_PRESENTATION.md)|地图坐标、镜头、人物美术、酒馆/培养交互、桌面多屏和无障碍；只投影已提交状态。|
-|[S08 引擎、存档与验收](systems/08_ENGINEERING_ACCEPTANCE.md)|命令信封、权限校验、原子保存、回执幂等、离线、数据不变量及GC01—GC28验收。|
+|[S08 引擎、存档与验收](systems/08_ENGINEERING_ACCEPTANCE.md)|命令信封、权限校验、原子保存、回执幂等、离线、数据不变量及GC01—GC35验收。|
+|[S09 天下战役与都督自动征服](systems/WAR_CAMPAIGN.md)|当前 v0.12 战役合同：有限兵源、自动募兵与装备、士兵日耗与战损、逐城逐点战斗、逐点奖励、至少30天现实周期、袭扰保护与统一终局；旧版语句以标明的 v0.12 裁决覆盖。|
+|[S10 核心循环与资源节奏](systems/10_CORE_LOOP_ECONOMY_V12.md)|当前 v0.12 经济合同：玩家反馈闭环、可见/内部资源分层、铸币与木耗、30/60 人日预算及 EC 验收；只覆盖明确列出的经济参数。|
 
 ## 最小阅读组合
 
@@ -35,19 +39,22 @@
 |建房与迁居|S06 + S04|S05供给保护、S02勘测节材|
 |纯界面/美术|S07|所展示业务系统；不重写经济结算|
 |保存与离线|S08|被修改状态的所属系统|
+|逐城征服与战争|S09 + S08事务/迁移|S04调度、S05保供、S06建设、S07表现；只查相关接口|
 
 系统间只查[共享接口与状态归属](systems/CONTRACTS.md)的相关行。旧章节引用可查[迁移索引](systems/MIGRATION.md)。
 
 ## 权威来源与维护规则
 
 - 新系统正文是当前需求合同；旧life-v0.7章节路径仅为跳转，不维护第二套正文。
-- [hero-town-v0.9.json](../spec/hero-town-v0.9.json)是唯一机器参数源，不拆成八份互相漂移的数值文件。参数与正文冲突应报错修订，不可任选其一静默执行。
+- [hero-town-v0.9.json](../spec/hero-town-v0.9.json)是当前运行基线的唯一机器参数源；[hero-town-v0.10-growth-delta.json](../spec/hero-town-v0.10-growth-delta.json)是下一版唯一增量参数源。v0.10有效合同=基线+增量，冲突时只允许增量覆盖其明确列出的字段。
 - 新增功能只改所属系统、实际受影响接口与测试；系统接口不另外定义一套业务规则。
-- 正式目标仍为rules hero-town-0.9.0、format4、layout6。拆文档不触发版本迁移，不改用户存档。
+- 当前正式运行目标仍为rules hero-town-0.9.0、format4、layout6；v0.10目标为rules hero-town-0.10.0、format5、layout7。PRD更新本身不触发迁移，不改当前用户存档。
+- v0.11 战争合同不覆盖 v0.9/v0.10 的现行验收与参数；实现时须校验独立战争内容数据、完成format5→6迁移，并以[S09](systems/WAR_CAMPAIGN.md)的WC01—WC20验收，不得把战争计划写成已上线功能。旧版“没有普通居民”在v0.11只对明确显示的军事兵源做例外，士兵不得充当城内劳工。
+- v0.11 的战争初始数值及城市内容已单列为[战争参数草案](../spec/hero-town-v0.11-war-delta.json)；它仍是 `NOT_IMPLEMENTED`，不能被当前运行规则自动加载。
 - v0.8正文见[版本归档](reference/baseline-0259545/PRD.md)。全文导出是生成产物，不手工维护。
 
 ## 实现状态与验证
 
-本地已有独立hero-town-0.9-preview1原生试玩，不能把“合同完整”当作“完整版本已验收”。已实现、检查和差距见[实现报告](GOLD_TOWN_IMPLEMENTATION.md)与[构建状态](BUILD_STATUS.md)。本次未重新执行Swift运行测试；原合同待裁决处已列入[接口合同](systems/CONTRACTS.md#open-questions)。
+本地已有独立hero-town-0.9-preview1原生试玩，不能把“合同完整”当作“完整版本已验收”。已实现、检查和差距见[实现报告](GOLD_TOWN_IMPLEMENTATION.md)与[构建状态](BUILD_STATUS.md)。本次已重新执行医舍专项、v0.9核心、Godot桥接与静态合同检查；全量`swift test`仍受本机`Testing`模块缺失限制。原合同待裁决处已列入[接口合同](systems/CONTRACTS.md#open-questions)。
 
-运行 `python3 scripts/validate_hero_town_v09.py` 校验参数、系统清单、小节唯一归属及链接，并生成dist/prd-v09/PRD-v0.9-complete.md。静态检查不执行GC01—GC28，不代表百万抽统计、50日供给、性能或人工体验通过。
+运行 `python3 scripts/validate_hero_town_v09.py` 校验v0.9基线、系统清单、小节唯一归属及链接，并生成dist/prd-v09/PRD-v0.9-complete.md。v0.10增量另运行 `python3 scripts/validate_hero_town_v10_delta.py`。静态检查不执行GC01—GC35，不代表概率、长时供给、医疗、性能或人工体验通过。

@@ -90,19 +90,31 @@ func hide_manager() -> void:
 	town.close_modal()
 	command(7,0)
 	manager_visible = false
+	# Desktop animation is slow and always behind ordinary app windows. The
+	# lower refresh rate cuts the cost of redrawing a full Retina desktop while
+	# keeping the management window at 30 FPS when the player interacts.
 	Engine.max_fps = 15
+	if is_instance_valid(flat_map): flat_map.drives_visual_walks = true
+	if is_instance_valid(town.flat_manager_map):
+		town.flat_manager_map.visible = false
+		town.flat_manager_map.set_process(false)
 	# Do not deactivate the root viewport here. On macOS Godot's secondary
 	# native Window depends on the root render submission even though it owns a
 	# separate viewport; deactivating it freezes the desktop canvas on its last
-	# frame. The hidden manager window itself is not presented, and the global
-	# 15 FPS cap provides the intended idle-power reduction.
+	# frame. Only its duplicate 2D map is paused; the desktop canvas keeps its
+	# lower-rate walk cycle, and the simulation still has only one clock.
 
 func show_manager(page: String = "") -> void:
 	command(7,1)
 	manager_visible = true
 	Engine.max_fps = 30
+	if is_instance_valid(flat_map): flat_map.drives_visual_walks = false
+	if is_instance_valid(town.flat_manager_map):
+		town.flat_manager_map.visible = true
+		town.flat_manager_map.set_process(true)
 	if page=="tavern": town.show_tavern()
 	elif page=="heroes": town.show_heroes()
+	elif page=="war": town.show_war()
 
 func _process(delta: float) -> void:
 	if not native or DisplayServer.get_name()=="headless": return
@@ -115,9 +127,10 @@ func _process(delta: float) -> void:
 		1: show_manager()
 		2: show_manager("tavern")
 		3: show_manager("heroes")
-		4: set_enabled(not enabled)
-		5: town.set_speed(town.last_running_speed if town.speed==0 else 0)
-		6: get_tree().quit()
+		4: show_manager("war")
+		5: set_enabled(not enabled)
+		6: town.set_speed(town.last_running_speed if town.speed==0 else 0)
+		7: get_tree().quit()
 
 func show_settings() -> void:
 	town.open_modal("把小城放在桌面", "desktop")

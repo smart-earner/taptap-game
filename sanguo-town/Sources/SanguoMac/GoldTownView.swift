@@ -406,7 +406,7 @@ struct GoldTownView:View {
                 Button {resourcesPresented=false} label:{Image(systemName:"xmark")}
                     .buttonStyle(.plain).accessibilityLabel("关闭物资说明")
             }
-            Text("太守安排采集、冶炼与供餐。金锭运抵府署后，每份换得10金币。")
+            Text("太守安排采集、冶炼与供餐。金锭运抵府署后，每份换得\(g.goldRebalance?.coinsPerNewIngot ?? 10)金币。")
                 .font(.caption).foregroundStyle(TownPalette.muted).fixedSize(horizontal:false,vertical:true)
             Divider()
             ForEach(LifeResource.allCases,id:\.self){resource in

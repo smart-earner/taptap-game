@@ -40,6 +40,14 @@ if ! swift -e 'import Testing' >/dev/null 2>&1; then
   echo "Using Command Line Tools compatibility flags for Testing.framework."
 fi
 
+# Seven existing test files still use XCTest. Standalone Command Line Tools on
+# this host include Testing.framework but not XCTest, so fail before compiling
+# the entire graph and heating the machine for a predictable toolchain error.
+if ! swift -e 'import XCTest' >/dev/null 2>&1; then
+  echo "XCTest is unavailable in the selected developer toolchain. Install/select full Xcode to run the complete Swift test suite." >&2
+  exit 1
+fi
+
 run_tests() {
   local configuration="$1"
   if [[ "$configuration" == "release" ]]; then

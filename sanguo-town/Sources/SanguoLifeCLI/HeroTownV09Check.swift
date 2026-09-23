@@ -15,7 +15,8 @@ enum HeroTownV09Check {
             try engine.performGacha(.player(id:id,revision:engine.world.sequence,action:action))
         }
         func fund(_ engine:inout LifeRuntime,_ coins:Int64) throws {
-            let ingots=coins/10*1000
+            let rate=engine.world.gacha!.goldRebalance?.coinsPerNewIngot ?? 10
+            let ingots=coins/rate*1000
             var world=engine.world
             world.initial["gold_ingot",default:0]+=ingots
             world.consumed["gold_ingot",default:0]+=ingots
@@ -27,7 +28,9 @@ enum HeroTownV09Check {
         var base=try make()
         let stocks:[LifeResource:Int64]=[.grain:24000,.meat:0,.meal:10000,.rations:0,.wood:20000,.stone:8000,.iron:4000,.tools:2000,.gold_ore:0,.gold_ingot:0]
         try check(base.world.rules==LifeHeroTownContract.rules && base.world.format==4 && base.world.agents.count==5 && base.world.treasury==200,"GC01","formal rules, five founders and one-time 200 coins")
-        try check(stocks.allSatisfy{base.world.amount($0.key)==$0.value} && LifeResource.allCases.count==10,"GC02","ten physical resources and exact bootstrap stock")
+        try check(stocks.allSatisfy{base.world.amount($0.key)==$0.value} &&
+                  base.world.amount(.rare_ore)==0 && base.world.amount(.refined_iron)==0 &&
+                  LifeResource.allCases.count==12,"GC02","original bootstrap stock stays exact; two v0.12 resources start empty")
         try check(base.world.heroTown?.city.plots.count==18 && LifeMap.places.keys.filter{$0.hasPrefix("field-")}.count==24,"GC03","layout6 has 18 plots and 24 planned field beds")
         try check(base.world.agents.values.allSatisfy{$0.heroID==$0.id && $0.origin=="founding"},"GC04","no anonymous or hidden residents")
 
@@ -78,7 +81,8 @@ enum HeroTownV09Check {
 
         var economy=try make(123);try economy.advance(to:7200)
         try check(economy.world.produced["gold_ore",default:0]>0 && economy.world.produced["gold_ingot",default:0]>0,"GC16","gold is mined, hauled and smelted by real tasks")
-        try check(economy.world.gacha!.minted==economy.world.consumed["gold_ingot",default:0]/1000*10 && economy.world.treasury==200+economy.world.gacha!.minted,"GC17","every minted coin has consumed-ingot provenance")
+        let mintedRate=economy.world.gacha!.goldRebalance?.coinsPerNewIngot ?? 10
+        try check(economy.world.gacha!.minted==economy.world.consumed["gold_ingot",default:0]/1000*mintedRate && economy.world.treasury==200+economy.world.gacha!.minted,"GC17","every minted coin has consumed-ingot provenance")
         try check(economy.world.foodCoverage>=9500 && economy.world.amount(.wood)>=0,"GC18","gold production preserves food and cannot overdraw protected fuel")
 
         let activeSnapshot=economy.world.tasks.values.compactMap(\.skillSnapshot).first
@@ -98,7 +102,7 @@ enum HeroTownV09Check {
         try check(cadenceA.world==cadenceB.world,"GC22","simulation is invariant to advance cadence")
 
         var complete=try make();var completeWorld=complete.world
-        for hero in complete.definition!.heroes {
+        for hero in complete.definition!.heroes.prefix(completeWorld.gacha!.rosterTarget) {
             completeWorld.gacha!.stars[hero.id]=5
             completeWorld.heroTown!.ownedHeroes[hero.id] = LifeOwnedHero(heroID:hero.id,star:5,sourceDrawID:"fixture",arrivalState:"resident",arrivalAt:nil,bedReservation:"tavern-1.guest")
             if completeWorld.agents[hero.id]==nil {
@@ -119,7 +123,7 @@ enum HeroTownV09Check {
         try check(abs(counts[0]-700000)<5000 && abs(counts[1]-250000)<5000 && abs(counts[2]-50000)<2500,"GC24","one-million SplitMix64 samples match 70/25/5 boundaries")
 
         var crowd=try make(55);var crowdWorld=crowd.world
-        for hero in crowd.definition!.heroes where crowd.world.gacha!.stars[hero.id]==nil {
+        for hero in crowd.definition!.heroes.prefix(crowdWorld.gacha!.rosterTarget) where crowd.world.gacha!.stars[hero.id]==nil {
             var resident=crowdWorld.agents["liubei"]!;resident.id=hero.id;resident.name=hero.name;resident.heroID=hero.id;resident.origin="recruited";resident.node="tavern";resident.home="tavern";resident.dining="guest-meals";resident.taskID=nil
             crowdWorld.agents[hero.id]=resident;crowdWorld.gacha!.stars[hero.id]=1;crowdWorld.owned.append(hero.id)
             crowdWorld.heroTown!.ownedHeroes[hero.id] = LifeOwnedHero(heroID:hero.id,star:1,sourceDrawID:"fixture",arrivalState:"resident",arrivalAt:nil,bedReservation:"tavern-1.guest")

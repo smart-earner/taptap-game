@@ -5,8 +5,8 @@ public enum LifeError: Error, Equatable, LocalizedError {
     public var errorDescription: String? { if case .invalid(let text) = self { return text }; return nil }
 }
 public enum LifeResource: String, Codable, CaseIterable, Sendable {
-    case grain, meat, meal, rations, wood, stone, iron, tools, gold_ore, gold_ingot
-    public var title: String { ["grain":"食粮","meat":"肉料","meal":"饭菜","rations":"军粮","wood":"木材","stone":"石材","iron":"铁料","tools":"器材","gold_ore":"金矿石","gold_ingot":"金锭"][rawValue]! }
+    case grain, meat, meal, rations, wood, stone, iron, tools, gold_ore, gold_ingot, rare_ore, refined_iron
+    public var title: String { ["grain":"食粮","meat":"肉料","meal":"饭菜","rations":"军粮","wood":"木材","stone":"石材","iron":"铁料","tools":"器材","gold_ore":"金矿石","gold_ingot":"金锭","rare_ore":"稀有矿石","refined_iron":"精铁"][rawValue]! }
     public var volume: Int64 { self == .meal || self == .rations ? 250 : (self == .wood || self == .stone ? 2000 : 1000) }
 }
 public struct LifeHero: Codable, Equatable, Sendable, Identifiable {

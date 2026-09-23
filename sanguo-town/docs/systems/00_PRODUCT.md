@@ -1,14 +1,14 @@
 # 总则与开局
 
-PRD v0.9.0 · 系统化整理：2026-09-21。规则不因拆分而改变。
+本文保留 v0.9.0 开局与存档基线，供旧档迁移和未覆盖条款使用。当前玩法目标、权限和胜利条件以 [v0.12 主合同](../PRD-v0.12-core-gameplay.md)为先；各系统标注的 v0.12 增量覆盖下文历史叙述，不得将旧 `format4/layout6` 标记误当当前交付目标。
 
 ## 开发入口
 
 - 职责：全局约束、初始状态、版本范围；开发任一系统时先读一次。
-- 数值定位：[唯一参数源](../../spec/hero-town-v0.9.json)中的 bootstrap、scope、governance.player_actions。不复制一套独立参数。
+- 数值定位：历史基线在 [v0.9 参数源](../../spec/hero-town-v0.9.json)，当前覆盖增量分别在 v0.10/v0.11/v0.12 对应 spec；不复制一套独立参数。
 - 现有代码定位：LifeWorld.swift、LifeHeroPreview.swift、LifeRuntime.swift（未注明目录时为 Sources/SanguoLife；仅定位，不代表全部实现）。
 - 验收范围：GC01，完整断言见[S08](08_ENGINEERING_ACCEPTANCE.md#sec-9-6)。
-- 对外依赖：无；全局边界冲突先回到本文件。
+- 对外依赖：全局边界冲突先回到 [v0.12 主合同](../PRD-v0.12-core-gameplay.md)的解释顺序。
 - 最小阅读：[总索引](../PRD.md) → 本文件 → 仅涉及的[接口合同](CONTRACTS.md)；修改存档或命令再读S08。
 - 实现证据见[预览实现报告](../GOLD_TOWN_IMPLEMENTATION.md)，不要把下列合同当作已实现清单。
 

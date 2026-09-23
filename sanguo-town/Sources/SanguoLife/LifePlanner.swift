@@ -1,11 +1,29 @@
 import Foundation
 
+extension LifeWorld {
+    /// Gathering buffers represent material physically available to the
+    /// capital, not stock in a conquered city or a cross-city courier's pack.
+    public func capitalGatheringStock(_ resource:LifeResource) -> Int64 {
+        lots.values.reduce(Int64(0)) { total,lot in
+            guard lot.resource==resource,!lot.location.hasPrefix("war-") else{return total}
+            if let task=tasks[lot.location],task.kind=="haul",
+               task.subject.hasPrefix("war-") || task.target.hasPrefix("war-") {return total}
+            return total+lot.amount
+        }
+    }
+}
+
 extension LifeRuntime {
     mutating func plan() {
         planMealsAndRest()
+        planHealth()
         planStations(finishingOnly:true)
         planFields(harvestOnly:true)
         planFoodSupply()
+        planWarFrontRations()
+        planWarFacilityMaterials()
+        planWar()
+        planWarLootTransport()
         planHeroAdministration()
         planStations(finishingOnly:false)
         planFields(harvestOnly:false)
@@ -16,10 +34,26 @@ extension LifeRuntime {
         planGoldTown()
         if !world.isGacha {planTrade();discoverHeroes()}
         planPatrol()
+        planStudy()
+        planCivicDuties()
         if world.phase>=2160 {planMealsAndRest()}
     }
     mutating func planFields(harvestOnly:Bool) {
+        // Count crops already committed in the fields. Checking only stored
+        // grain let every empty bed sow in one planning pass, then flood the
+        // shared granary when all those harvests matured together.
+        var growingGrain:Int64=0
+        if !harvestOnly {
+            growingGrain=world.fields.values.filter{$0.state != "empty"}.reduce(0) { sum,field in
+                sum+(catalog.crops.first{$0.id==field.crop}?.output_mU["grain"] ?? 0)
+            }
+        }
+        let storedGrain=harvestOnly ? 0:world.amount(.grain)
         for id in world.fields.keys.sorted() {
+            if world.isFormalHeroTown,let index=Int(id.dropFirst(6)),
+               let city=world.heroTown?.city,
+               index>=(city.plot("farm-1")?.capacity ?? 4) &&
+               city.plot("farm-2")?.service==0 {continue}
             let f=world.fields[id]!
             var crop=f.crop
             if f.state=="empty",world.isFormalHeroTown,world.heroTown?.city.civics["water",default:0] ?? 0 > 0,
@@ -46,34 +80,60 @@ extension LifeRuntime {
                     world.tasks[task]!.steps[last].seconds=max(1,(c.water_work_s*10000+r-1)/r)
                     world.fields[id]!.taskID=task;world.fields[id]!.state=f.state=="water1" ? "watering1":"watering2"
                 }
-            } else if !harvestOnly && f.state=="empty" && world.amount(.grain)<Int64(world.agents.count*(world.isFormalHeroTown ? 8000:2000)) {
+            } else if !harvestOnly && f.state=="empty" &&
+                        storedGrain+growingGrain<Int64(world.agents.count*(world.isFormalHeroTown ? 8000:2000)) {
                 guard world.freeSpace(id)>=c.output_mU.reduce(Int64(0),{$0+$1.value*LifeResource(rawValue:$1.key)!.volume}) else{continue}
-                if let task=assign(kind:"sow",job:"farmer",subject:id,at:id,work:c.sow_s) {world.fields[id]!.crop=crop;world.fields[id]!.taskID=task;world.fields[id]!.state="sowing"}
+                if let task=assign(kind:"sow",job:"farmer",subject:id,at:id,work:c.sow_s) {
+                    world.fields[id]!.crop=crop;world.fields[id]!.taskID=task;world.fields[id]!.state="sowing"
+                    growingGrain+=c.output_mU["grain",default:0]
+                }
             }
         }
     }
     /// Parent demand never locks an idle worker. Only a feasible single trip reserves stock and destination volume.
+    func mealDining(for agent:LifeAgent) -> String {
+        world.heroTown?.health?.treatments[agent.id] != nil ? "clinic-meals":agent.dining
+    }
     @discardableResult mutating func haul(_ resource:LifeResource,quantity:Int64,to target:String) -> Bool {
         guard quantity>0,let destination=world.storages[target] else{return false}
         let inFlight=world.tasks.values.filter{$0.kind=="haul" && $0.target==target && $0.resource==resource}.reduce(Int64(0)){$0+$1.quantity}
         let needed=max(0,quantity-inFlight)
         guard needed>0 else{return false}
         var valid=Set(["warehouse","trees","mine","quarry","kitchen-out","forge-out","ration-out","butcher-out","pasture-feed","goldmine","smelter-out"]+Array(world.fields.keys))
-        if resource == .meal {valid.formUnion(world.storages.keys.filter{$0=="home-meals" || $0=="hall-meals" || $0=="guest-meals" || $0.hasSuffix(".meal")})}
-        let sources=world.storages.keys.filter{$0 != target && valid.contains($0) && world.amount(resource,at:$0,free:true)>0}.sorted { a,b in
+        if resource == .meal {
+            if target.hasPrefix("delivery-") {
+                // Depot replenishment must come from cooked output; do not
+                // strip a family's two-meal reserve to fill another shelf.
+                valid=Set(["kitchen-out"])
+            } else {
+                valid.formUnion(world.storages.keys.filter{$0=="home-meals" || $0=="hall-meals" || $0=="guest-meals" || $0=="clinic-meals" || $0.hasSuffix(".meal") || $0.hasPrefix("delivery-")})
+            }
+        }
+        func exportable(_ source:String)->Int64 {
+            let free=world.amount(resource,at:source,free:true)
+            guard resource == .meal,world.agents.values.contains(where:{mealDining(for:$0)==source}) else{return free}
+            // A home may share genuine surplus, but must keep two meals for
+            // each resident. Without this floor, porters shuttle the same
+            // portions back and forth between houses before supper.
+            let reserve=Int64(world.agents.values.filter{mealDining(for:$0)==source}.count)*2_000
+            return max(0,free-reserve)
+        }
+        let sources=world.storages.keys.filter{$0 != target && valid.contains($0) && exportable($0)>0}.sorted { a,b in
             let da=LifeMap.length(LifeMap.path(world.storages[a]!.node,destination.node)),db=LifeMap.length(LifeMap.path(world.storages[b]!.node,destination.node))
             return da==db ? a<b:da<db
         }
         for source in sources {
             let node=world.storages[source]!.node
-            var q=min(needed,world.amount(resource,at:source,free:true),4_000_000/resource.volume,world.freeSpace(target)/resource.volume)
+            var q=min(needed,exportable(source),4_000_000/resource.volume,world.freeSpace(target)/resource.volume)
             guard q>0,var parts=world.selection(resource,quantity:q,at:source) else{continue}
             var tail=[LifeStep(kind:"load",seconds:10)]
             if let m=move(node,destination.node,loaded:true){tail.append(m)}
             tail.append(.init(kind:"unload",seconds:10))
-            guard let id=assign(kind:"haul",job:"porter",subject:source,at:node,work:0,tail:tail) else{continue}
+            let mealService=resource == .meal && !target.hasPrefix("delivery-")
+            guard let id=assign(kind:"haul",job:"porter",subject:source,at:node,work:0,tail:tail,
+                                necessaryService:mealService) else{continue}
             if world.isGacha,hasSignature(world.tasks[id]!.worker,"logistics") {
-                q=min(needed,world.amount(resource,at:source,free:true),5_000_000/resource.volume,world.freeSpace(target)/resource.volume)
+                q=min(needed,exportable(source),5_000_000/resource.volume,world.freeSpace(target)/resource.volume)
                 parts=world.selection(resource,quantity:q,at:source)!
             }
             world.tasks[id]!.reservations=parts;world.tasks[id]!.target=target;world.tasks[id]!.resource=resource;world.tasks[id]!.quantity=q;world.tasks[id]!.space=q*resource.volume
@@ -91,18 +151,43 @@ extension LifeRuntime {
     }
     mutating func planFoodSupply() {
         var targets:[String:Int64]=[:]
-        for agent in world.agents.values {targets[agent.dining,default:0]+=2000}
+        for agent in world.agents.values {targets[mealDining(for:agent),default:0]+=2000}
         for key in targets.keys.sorted() {
             let need=max(0,targets[key]!-world.amount(.meal,at:key))
             if need>0 {for _ in 0..<3{if !haul(.meal,quantity:need,to:key){break}}}
         }
-        if (world.isGacha || world.stations["kitchen"]!.phase=="idle") && world.amount(.meal)<Int64(world.agents.count*2000) {
+        // A delivery attachment is a real 16-volume forward meal container.
+        // Stock it only after household orders have first claim on cooked food.
+        let depots=world.storages.keys.filter{$0.hasPrefix("delivery-")}.sorted()
+        if !depots.isEmpty {
+            var staging:[String:Int64]=[:]
+            for agent in world.agents.values where (agent.dining=="home-meals" || agent.dining.hasSuffix(".meal")) && mealDining(for:agent) != "clinic-meals" {
+                guard let dining=world.storages[agent.dining] else{continue}
+                let nearest=depots.min { left,right in
+                    let a=LifeMap.length(LifeMap.path(world.storages[left]!.node,dining.node))
+                    let b=LifeMap.length(LifeMap.path(world.storages[right]!.node,dining.node))
+                    return a==b ? left<right:a<b
+                }!
+                staging[nearest,default:0]+=1_000
+            }
+            for depot in depots {
+                let target=min(staging[depot,default:0],world.storages[depot]!.capacity/LifeResource.meal.volume)
+                let missing=max(0,target-world.amount(.meal,at:depot))
+                if missing>0 {for _ in 0..<3{if !haul(.meal,quantity:missing,to:depot){break}}}
+            }
+        }
+        if (world.isGacha || world.stations["kitchen"]!.phase=="idle") && world.amount(.meal)<desiredMealStock() {
             let useMeat=world.policy != "military" && world.amount(.meat)>=2000
             let r=catalog.recipe(useMeat ? "cook_meat":"cook_basic")!
             let batches:Int64=world.isGacha ? max(1,(Int64(world.gacha!.stars.count)*2+3)/4):1
             supply(r.input_mU.mapValues{$0*batches},to:"kitchen-in")
         }
         for id in world.fields.keys.sorted() where world.amount(.grain,at:id)>0 {_=haul(.grain,quantity:world.amount(.grain,at:id),to:"warehouse")}
+    }
+    func desiredMealStock() -> Int64 {
+        let residential=world.storages.keys.contains(where:{$0.hasPrefix("delivery-")}) ?
+            world.agents.values.filter{$0.dining=="home-meals" || $0.dining.hasSuffix(".meal")}.count:0
+        return Int64(world.agents.count)*2_000+Int64(residential)*1_000
     }
     mutating func planStations(finishingOnly:Bool) {
         for id in world.stations.keys.sorted() {
@@ -114,12 +199,15 @@ extension LifeRuntime {
             }
             guard !finishingOnly,s.phase=="idle" else{continue}
             var recipeID:String?
-            if id=="kitchen",world.amount(.meal)<Int64(world.agents.count*2000) {
+            if s.kind=="kitchen",world.amount(.meal)<desiredMealStock() {
                 recipeID=world.policy != "military" && world.amount(.meat,at:s.input)>=2000 ? "cook_meat":"cook_basic"
                 if world.isGacha,world.agents.keys.contains(where:{hasSignature($0,"food") && world.agents[$0]!.taskID==nil}),world.foodEquivalent()>Int64(world.agents.count*4000),world.amount(.meal)>Int64(world.agents.count*1000) {recipeID="cook_feast"}
             }
-            if id=="forge",world.buildings["workshop",default:0]>0,world.amount(.tools)<6000 {recipeID="forge"}
-            if id=="ration",world.rationTarget>world.amount(.rations),world.foodEquivalent()>=Int64(world.agents.count*4000+16000) {recipeID="ration_plain"}
+            let workingForge=world.isFormalHeroTown ?
+                (world.heroTown?.city.plots.contains{$0.kind=="workshop" && $0.level>0 && $0.service>0} == true):
+                world.buildings["workshop",default:0]>0
+            if id=="forge",workingForge,world.capitalGatheringStock(.tools)<6000 {recipeID="forge"}
+            if id=="ration",world.rationTarget>world.capitalGatheringStock(.rations),world.foodEquivalent()>=Int64(world.agents.count*4000+16000) {recipeID="ration_plain"}
             if world.isGacha,id=="smelter",canSmeltGold {recipeID="smelt_gold"}
             guard let recipeID,var r=catalog.recipe(recipeID) else{continue}
             var eligible:Set<String>?=recipeID=="cook_feast" ? Set(world.agents.keys.filter{hasSignature($0,"food")}):nil
@@ -149,7 +237,7 @@ extension LifeRuntime {
         let pending=world.projects.values.filter{!$0.completed}.reduce(into:[String:Int64]()){sum,p in for(k,q)in p.materials{sum[k,default:0]+=q}}
         for (source,job,resource,qty,seconds,bufferTarget) in [("trees","logger",LifeResource.wood,Int64(4000),Int64(105),Int64(world.isGacha ? max(16000,world.agents.count*2000):16000)),("quarry","miner",.stone,4000,135,6000),("mine","miner",.iron,2000,300,4000)] {
             if world.amount(resource,at:source)>0 {_=haul(resource,quantity:world.amount(resource,at:source),to:"warehouse")}
-            guard world.amount(resource)<bufferTarget+pending[resource.rawValue,default:0],world.freeSpace(source)>=(world.isGacha ? qty*11/10:qty)*resource.volume,
+            guard world.capitalGatheringStock(resource)<bufferTarget+pending[resource.rawValue,default:0],world.freeSpace(source)>=(world.isGacha ? qty*11/10:qty)*resource.volume,
                   !world.tasks.values.contains(where:{$0.kind=="gather" && $0.target==source}) else{continue}
             if source=="trees" {
                 guard let index=world.treeReady.firstIndex(where:{$0>=0 && $0<=world.time}) else{continue}

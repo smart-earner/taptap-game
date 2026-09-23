@@ -53,19 +53,21 @@ func run() -> void:
 	await RenderingServer.frame_post_draw
 	var animated=desktop.surface.get_texture().get_image()
 	var changed_pixels=0
-	for y in range(0,rendered.get_height(),16):
-		for x in range(0,rendered.get_width(),16):
+	for y in range(0,rendered.get_height(),8):
+		for x in range(0,rendered.get_width(),8):
 			var before_color=rendered.get_pixel(x,y)
 			var after_color=animated.get_pixel(x,y)
 			var difference=absf(before_color.r-after_color.r)+absf(before_color.g-after_color.g)+absf(before_color.b-after_color.b)+absf(before_color.a-after_color.a)
 			if difference>.02: changed_pixels+=1
-	if not require(changed_pixels>20,"desktop 2D layer visibly animates between frames"): return
+	if not require(changed_pixels>20,"desktop 2D layer visibly animates between frames ("+str(changed_pixels)+" changed sample pixels)"): return
 	var output=ProjectSettings.globalize_path("res://../dist/godot-desktop-tests")
 	DirAccess.make_dir_recursive_absolute(output)
 	rendered.save_png(output+"/desktop-layer.png")
 	var before=int(scene.snapshot.time)
 	scene.elapsed=0;scene.speed=1
 	desktop.hide_manager()
+	if not require(desktop.flat_map.drives_visual_walks and not scene.flat_manager_map.is_processing(),
+		"desktop, not the hidden manager, advances resident walking poses"): return
 	await create_timer(.35).timeout
 	await RenderingServer.frame_post_draw
 	var hidden_frame_a=desktop.surface.get_texture().get_image()
@@ -73,20 +75,24 @@ func run() -> void:
 	await RenderingServer.frame_post_draw
 	var hidden_frame_b=desktop.surface.get_texture().get_image()
 	var hidden_changed_pixels=0
-	for y in range(0,hidden_frame_a.get_height(),16):
-		for x in range(0,hidden_frame_a.get_width(),16):
+	for y in range(0,hidden_frame_a.get_height(),8):
+		for x in range(0,hidden_frame_a.get_width(),8):
 			var hidden_before=hidden_frame_a.get_pixel(x,y)
 			var hidden_after=hidden_frame_b.get_pixel(x,y)
 			var hidden_difference=absf(hidden_before.r-hidden_after.r)+absf(hidden_before.g-hidden_after.g)+absf(hidden_before.b-hidden_after.b)+absf(hidden_before.a-hidden_after.a)
 			if hidden_difference>.02: hidden_changed_pixels+=1
-	if not require(hidden_changed_pixels>20,"desktop keeps animating after manager window is hidden"): return
-	await create_timer(2.5).timeout
+	if not require(hidden_changed_pixels>20,"desktop keeps animating after manager window is hidden ("+str(hidden_changed_pixels)+" changed sample pixels)"): return
+	await create_timer(6.5).timeout
 	scene.speed=0
 	while scene.busy: await process_frame
 	var advanced=int(scene.snapshot.time)-before
-	if not require(advanced>=1 and advanced<=3,"one clock continues with manager hidden ("+str(advanced)+" seconds)"): return
+	if not require(advanced>=5 and advanced<=7,"one clock continues in a single batched bridge update with manager hidden ("+str(advanced)+" seconds)"): return
 	desktop.show_manager("tavern")
 	if not require(scene.current_page=="tavern","manager returns to tavern"): return
+	desktop.show_manager("war")
+	if not require(scene.current_page=="war","native menu route can open the campaign without a map click"): return
+	if not require(not desktop.flat_map.drives_visual_walks and scene.flat_manager_map.is_processing(),
+		"restored manager resumes the single walking-pose driver"): return
 	desktop.set_enabled(false)
 	if not require(not desktop.command(1,0).visible,"hide removes desktop layer"): return
 	desktop.set_enabled(true)

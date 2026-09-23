@@ -5,19 +5,30 @@ import Foundation
 public struct LifeRuntime: Sendable {
     public let catalog: LifeCatalog
     public let definition:LifeGachaDefinition?
+    public let economy:LifeEconomyPacing?
     public internal(set) var world: LifeWorld
     public init(catalog:LifeCatalog,wallUTC:Int64,heroPreview:Bool=false,gachaMode:Bool=false,formalHeroTown:Bool=false,rngSeed:UInt64?=nil) throws {
         let gachaMode=gachaMode || formalHeroTown
         let heroPreview=heroPreview || gachaMode
-        definition=gachaMode ? try .bundled():nil
+        definition=gachaMode ? (formalHeroTown ? try .formalV12():try .bundled()):nil
+        economy=formalHeroTown ? try .bundled():nil
         var selected=heroPreview ? catalog.heroPreviewCatalog() : catalog
-        if let definition {selected.recipes=definition.recipes;selected.buildings=definition.buildings}
+        if let definition {
+            selected.recipes=definition.recipes;selected.buildings=definition.buildings
+            if formalHeroTown {selected=try selected.withV12Roster(using:definition)}
+        }
+        economy?.apply(to:&selected)
         self.catalog=selected;world=LifeWorld(wallUTC:wallUTC)
         if heroPreview { world.format=3;world.rules="hero-town-0.8-preview1";world.treasury=400;world.growthEnabled=false }
         if gachaMode {
             world.format=4;world.rules=formalHeroTown ? LifeHeroTownContract.rules:"hero-town-0.9-preview1"
             world.treasury=200;world.gacha = .init(rng:rngSeed ?? UInt64.random(in:UInt64.min...UInt64.max));world.growthEnabled=true
-            if formalHeroTown {world.heroTown = .initial(wallUTC:wallUTC)}
+            if formalHeroTown {
+                world.heroTown = .initial(wallUTC:wallUTC)
+                world.gacha!.rosterPhase=0
+                world.gacha!.goldRebalance = .init(historicalIngots:0,historicalCoins:0,
+                                                  coinsPerNewIngot:economy!.coin_per_ingot)
+            }
         }
         let assets:[(String,String,Int64,[LifeResource:Int64])] = [
             ("warehouse","warehouse",512,[.grain:56000,.wood:36000,.stone:12000,.iron:6000,.tools:4000]),
@@ -31,6 +42,7 @@ public struct LifeRuntime: Sendable {
             let previewStock:[LifeResource:Int64] = id=="warehouse" ? [.grain:24000,.wood:20000,.stone:8000,.iron:4000,.tools:2000] : (id=="home-meals" ? [.meal:10000] : [:])
             for r in LifeResource.allCases {if let q=(heroPreview ? previewStock : stock)[r] {world.add(r,quantity:q,at:id,origin:"founding");world.initial[r.rawValue,default:0]+=q}}
         }
+        if formalHeroTown {world.storages["clinic-meals"] = .init(node:"clinic",capacity:12_000_000)}
         let names=["阿禾","谷生","林生","石安","禾娘","阿担","阿车","阿运","木成","筑安","仓平","井清","卫平","夜安","阿勤"]
         let jobs=["farmer","farmer","logger","miner","cook","porter","porter","porter","builder","builder","clerk","handyman","guard_day","guard_night","flex"]
         for i in 0..<15 {let id=String(format:"r%02d",i+1);world.agents[id] = .init(id:id,name:names[i],job:jobs[i],node:"home",home:"home",dining:"home-meals")}
@@ -60,10 +72,24 @@ public struct LifeRuntime: Sendable {
         try world.validate()
     }
     public init(catalog:LifeCatalog,world:LifeWorld) throws {
-        try world.validate();definition=world.isGacha ? try .bundled():nil
-        var selected=world.isHeroPreview ? catalog.heroPreviewCatalog():catalog
-        if let definition {selected.recipes=definition.recipes;selected.buildings=definition.buildings}
-        self.catalog=selected;self.world=world
+        var loaded=world
+        if loaded.isFormalHeroTown,loaded.heroTown?.health == nil {loaded.heroTown!.health = .initial()}
+        if loaded.isFormalHeroTown,loaded.gacha?.rosterPhase == nil {loaded.gacha!.rosterPhase=0}
+        economy=loaded.isFormalHeroTown ? try .bundled():nil
+        if let economy,loaded.gacha?.goldRebalance == nil {
+            let ingots=loaded.consumed["gold_ingot",default:0]/1000
+            loaded.gacha!.goldRebalance = .init(historicalIngots:ingots,historicalCoins:loaded.gacha!.minted,
+                                               coinsPerNewIngot:economy.coin_per_ingot)
+        }
+        Self.synchronizeMealDepots(in:&loaded)
+        try loaded.validate();definition=loaded.isGacha ? (loaded.isFormalHeroTown ? try .formalV12():try .bundled()):nil
+        var selected=loaded.isHeroPreview ? catalog.heroPreviewCatalog():catalog
+        if let definition {
+            selected.recipes=definition.recipes;selected.buildings=definition.buildings
+            if loaded.isFormalHeroTown {selected=try selected.withV12Roster(using:definition)}
+        }
+        economy?.apply(to:&selected)
+        self.catalog=selected;self.world=loaded
     }
     public mutating func advance(to target:Int64) throws {
         guard target>=world.time, target-world.time<=2_592_000, target<=315_360_000 else {throw LifeError.invalid("模拟时间倒退或超出单次30天补算上限")}
@@ -77,11 +103,15 @@ public struct LifeRuntime: Sendable {
     }
     func nextEvent() -> Int64 {
         var n=world.nextPlan
+        if let due=world.campaign?.training?.dueSim {n=min(n,due)}
+        if let due=world.campaign?.mission?.dueSim {n=min(n,due)}
+        if let due=world.campaign?.transfer?.dueSim {n=min(n,due)}
+        if let returns=world.campaign?.returningGarrisonHeroes {for due in returns.values {n=min(n,due)}}
         for t in world.tasks.values {n=min(n,t.due)}
         for f in world.fields.values {if let d=f.due {n=min(n,d)}}
         for s in world.stations.values {if let d=s.due {n=min(n,d)}}
         for r in world.recruits.values {if let d=r.due {n=min(n,d)}}
-        for due in world.gacha?.arrivals.values ?? [:].values {n=min(n,due)}
+        for due in world.gacha?.arrivals.values ?? [:].values where due>world.time {n=min(n,due)}
         for pig in world.husbandry?.pigs.values ?? [:].values { if let due=pig.due { n=min(n,due) } }
         let base=world.time/2880*2880
         for o:Int64 in [240,420,600,780,1800,1920,1980,2160,2880] where base+o>world.time {n=min(n,base+o)}
@@ -97,9 +127,11 @@ public struct LifeRuntime: Sendable {
         for id in world.stations.keys.sorted() {if world.stations[id]?.due==world.time {world.stations[id]!.due=nil;world.stations[id]!.phase="finish"}}
         for id in world.recruits.keys.sorted() {if world.recruits[id]?.due==world.time {world.recruits[id]!.due=nil;world.recruits[id]!.state="finish"}}
         settleHusbandry()
+        settleWar()
         if world.isFormalHeroTown,world.isNight {world.heroTown!.adminLease=nil;world.counters["admin_lease"]=0}
         updateMeals()
         settleHeroArrivals()
+        if world.isFormalHeroTown {evaluateHealthCycle();recoverHealthAtHome()}
         if world.time==world.nextPlan {plan();world.nextPlan+=30}
     }
     public mutating func setPolicy(_ value:String) throws {
@@ -127,23 +159,59 @@ public struct LifeRuntime: Sendable {
         return world.agents[world.prefect].map{[profile($0,role:"prefect")]} ?? []
     }
     func rate(_ agent:LifeAgent,job:String) -> Int {
-        if world.isGacha {return starWorkRate(agent,job:job)}
+        if world.isGacha {
+            let base=job=="physician" ? physicianWorkRate(agent):starWorkRate(agent,job:job)
+            let pacingBonus=world.isFormalHeroTown && LifeTownPacingContract.resourceJobs.contains(job)
+                ? LifeTownPacingContract.formalResourceWorkRateBonusBP:0
+            let happinessBonus=world.isFormalHeroTown ?
+                LifeHappinessContract.workModifierBP(happiness:world.happiness,job:job):0
+            return min(14000,max(8000,base+healthWorkModifier(agent.id)+pacingBonus+happinessBonus))
+        }
         let seconds=agent.workSeconds[job,default:0], xp=seconds/300
         let level=1+[60,180,360,600].filter{xp>=Int64($0)}.count
         return (try? LifeAbilities.workRate(catalog,worker:profile(agent),job:job,leaders:leaders().filter{$0.id != agent.id},level:level)) ?? 10000
+    }
+    func protectedConstructionHeroID() -> String? {
+        guard world.isFormalHeroTown,
+              world.foodCoverage>=LifeTownPacingContract.protectedBuilderFoodCoverageBP,
+              world.heroTown?.city.supplyRecovery != true,
+              world.projects.values.contains(where:{!$0.completed}) else{return nil}
+        var bestID:String?
+        var bestRate=Int.min
+        for agent in world.agents.values {
+            guard agent.job != "prefect",agent.job != "guard_night",agent.job != "guard_day",
+                  healthAllows(heroID:agent.id,job:"builder") else{continue}
+            let workRate=rate(agent,job:"builder")
+            if workRate>bestRate || (workRate==bestRate && (bestID.map{agent.id<$0} ?? true)) {
+                bestID=agent.id
+                bestRate=workRate
+            }
+        }
+        return bestID
     }
     func move(_ from:String,_ to:String,loaded:Bool=false) -> LifeStep? {
         guard from != to else{return nil}
         let path=LifeMap.path(from,to)
         return .init(kind:loaded ? "carry":"walk",seconds:max(1,Int64(ceil(LifeMap.length(path)/(loaded ? 32:48)))),route:path,destination:to)
     }
-    mutating func assign(kind:String,job:String,subject:String,at node:String,work:Int64,tail:[LifeStep]=[],only:String?=nil,eligible:Set<String>?=nil) -> String? {
+    mutating func assign(kind:String,job:String,subject:String,at node:String,work:Int64,tail:[LifeStep]=[],only:String?=nil,eligible:Set<String>?=nil,longDuty:Bool=false,necessaryService:Bool=false) -> String? {
         let phase=world.phase
+        let protectedBuilder=only==nil && job != "builder" ? protectedConstructionHeroID():nil
         let available=world.agents.values.filter {a in
             guard a.taskID==nil else{return false}
+            // A clinic admission reserves the person, not just each small
+            // treatment task. Otherwise another planner can dispatch the
+            // patient during the gap between clinical phases.
+            guard world.heroTown?.health?.treatments[a.id]==nil || job=="patient" else{return false}
+            // A capital-based officer may still eat and sleep while reserved for
+            // military duty. Expedition heroes are physically away and cannot.
+            guard !world.warAwayHeroIDs.contains(a.id) else{return false}
+            if world.warLockedHeroIDs.contains(a.id) && !["meal_trip","eat","home"].contains(kind) {return false}
+            guard healthAllows(heroID:a.id,job:job),job != "physician" || healthCondition(a.id)==nil else{return false}
             if let eligible,!eligible.contains(a.id) {return false}
             if let only {return a.id==only}
-            guard a.job != "prefect",a.job != "guard_night",a.job != "guard_day",phase >= (world.isHeroPreview ? 0 : 240),phase<1920 else{return false}
+            if a.id==protectedBuilder {return false}
+            guard a.job != "prefect",a.job != "guard_night",a.job != "guard_day",phase >= (world.isHeroPreview ? 0 : 240),phase < (necessaryService ? 2160:1920) else{return false}
             if let meal=world.meals.last(where:{!$0.closed && $0.expected.contains(a.id) && $0.served[a.id]==nil}),world.time>=meal.at-120 {
                 if world.amount(.meal,at:a.dining)>=1000 || !["cook","porter"].contains(job) {return false}
             }
@@ -166,7 +234,21 @@ public struct LifeRuntime: Sendable {
             let duration=steps.reduce(Int64(0)){$0+$1.seconds}
             let endNode=steps.last(where:{!$0.destination.isEmpty})?.destination ?? node
             let returnHome=world.isGacha ? (move(endNode,a.home)?.seconds ?? 0):0
-            if only==nil && (phase+duration+returnHome>2160 || (a.serviceSeconds+duration+returnHome>1920 && a.busyCycle==world.cycle)){continue}
+            if only==nil,let meal=world.meals.last(where:{!$0.closed && !world.warAwayHeroIDs.contains(a.id) && $0.served[a.id]==nil}),
+               let dining=world.storages[a.dining],
+               world.time+duration+(move(endNode,dining.node)?.seconds ?? 0)+31>meal.deadline,
+               !necessaryService {
+                // A dispatch may start before the old fixed 120-second meal
+                // cutoff yet finish after the real deadline. Keep this worker
+                // available to walk home and eat. Reserve one 30-second
+                // planning cadence plus the arrival step after work finishes;
+                // otherwise a miner can finish just before the deadline but
+                // miss it while waiting for the next meal-trip assignment.
+                // Real last-mile meal delivery
+                // may still take precedence when others depend on it.
+                continue
+            }
+            if only==nil && !longDuty && (phase+duration+returnHome>2160 || (a.serviceSeconds+duration+returnHome>1920 && a.busyCycle==world.cycle)){continue}
             let id=world.next("task")
             world.tasks[id] = .init(id:id,worker:a.id,kind:kind,job:job,subject:subject,steps:steps,started:world.time,due:world.time+steps[0].seconds,rate:r)
             if world.isFormalHeroTown,let star=world.gacha?.stars[a.id],let skills=definition?.hero(a.id)?.skills {
@@ -182,6 +264,10 @@ public struct LifeRuntime: Sendable {
             world.agents[a.id]!.restStart=nil
             if world.agents[a.id]!.busyCycle != world.cycle {world.agents[a.id]!.busyCycle=world.cycle;world.agents[a.id]!.serviceSeconds=0}
             world.agents[a.id]!.serviceSeconds+=duration
+            if !["home","meal_trip","eat"].contains(kind) {
+                noteFirstDutyAssigned(heroID:a.id,taskID:id,job:job,destination:label(node),
+                                      atWork:!["walk","carry"].contains(steps[0].kind))
+            }
             return id
         }
         return nil
@@ -198,6 +284,29 @@ public struct LifeRuntime: Sendable {
             }
             task.reservations=[];world.pruneLots()
         }
+        if task.kind=="haul",task.current.kind=="unload",task.target.hasPrefix("war-"),
+           let cityID=task.target.split(separator:"-").last.map(String.init),
+           let city=world.campaign?.cities[cityID],(city.owner != "player" || !city.supplied) {
+            // The destination was lost while this physical cargo was on the
+            // road. Do not credit an enemy/isolated warehouse: turn the same
+            // porter and lot around, preserving them across save/load.
+            if world.freeSpace("warehouse")>=task.space {
+                let abandoned=task.target
+                world.storages[abandoned]!.incoming-=task.space
+                world.storages["warehouse"]!.incoming+=task.space
+                let returnSeconds=task.steps.filter{$0.kind=="carry"}.last?.seconds ?? 600
+                task.target="warehouse"
+                task.steps.insert(.init(kind:"carry",seconds:returnSeconds,destination:"hall"),at:task.step)
+                task.started=world.time
+                task.due=world.time+returnSeconds
+                world.tasks[id]=task
+                world.record("war","\(city.name)补给线中断；\(world.agents[task.worker]!.name)携在途\(task.resource!.title)原路返回首都，未计入失联城库存。")
+                return
+            }
+            task.due=world.time+300
+            world.tasks[id]=task
+            return
+        }
         if task.kind=="haul" && task.current.kind=="unload" {
             for key in world.lots.keys.sorted() where world.lots[key]!.location==id {world.lots[key]!.location=task.target}
             world.storages[task.target]!.incoming-=task.space
@@ -211,6 +320,7 @@ public struct LifeRuntime: Sendable {
         task.step+=1
         if task.step<task.steps.count {
             task.started=world.time;task.due=world.time+task.current.seconds;world.tasks[id]=task
+            if !["walk","carry"].contains(task.current.kind) {noteFirstDutyArrived(heroID:task.worker,taskID:id)}
             if task.kind=="prepare",task.current.kind=="work" {
                 world.beginReservedInputs(id)
                 if let s=world.stations[task.subject],let recipe=s.recipe {
@@ -285,9 +395,16 @@ public struct LifeRuntime: Sendable {
                 world.record("recruit","\(h.name)正式入城，开始新生活；不需要点击领取。")
             }
         case "patrol":world.counters["patrols",default:0]+=1
+        case "study":
+            world.counters["study_completed",default:0]+=1
+            world.record("study","\(world.agents[t.worker]!.name)在书院完成300秒\(t.subject)研习；熟练工时已入档，没有产出物资。")
+        case "civic_clean", "civic_watch", "civic_drill":finishCivicDuty(t)
         case "home":world.agents[t.worker]!.restStart=world.time
+        case "clinic_arrive", "clinic_consult", "clinic_prepare", "clinic_rest", "clinic_finish", "clinic_patient_wait":finishHealthTask(t)
         default:break
         }
+        finishFirstDutyIfNeeded(t)
+        maybeTriggerHealthCondition(after:t)
     }
     public func label(_ location:String) -> String {
         if world.isGacha,let label=["goldmine":"金矿","smelter-in":"冶金坊","smelter-out":"金锭出货台","mint":"府署金库","guest-meals":"酒馆客房餐点"][location] {return label}

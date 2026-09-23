@@ -6,14 +6,37 @@ import SanguoLifeVisual
         let args=Array(CommandLine.arguments.dropFirst())
         func value(_ name:String)->String? {guard let i=args.firstIndex(of:name),i+1<args.count else{return nil};return args[i+1]}
         if let encoded=value("--godot-request-b64") {
-            guard let data=Data(base64Encoded:encoded),let request=String(data:data,encoding:.utf8) else {print("{\"ok\":false,\"error\":\"Invalid bridge encoding\"}");return}
-            GodotBridge.run(request,saveDirectory:value("--godot-save"));return
+            let encodedResponse=args.contains("--godot-response-b64")
+            guard let data=Data(base64Encoded:encoded),let request=String(data:data,encoding:.utf8) else {
+                let failure="{\"ok\":false,\"error\":\"Invalid bridge encoding\"}"
+                print(encodedResponse ? Data(failure.utf8).base64EncodedString() : failure)
+                return
+            }
+            GodotBridge.run(request,saveDirectory:value("--godot-save"),base64Response:encodedResponse)
+            return
         }
         if let request=value("--godot-bridge") {GodotBridge.run(request,saveDirectory:value("--godot-save"));return}
         let seconds=Int64(value("--seconds") ?? "7200") ?? 7200
         let cadence=Int64(value("--cadence") ?? "30") ?? 30
         guard seconds>=0,seconds<=2_592_000,cadence>0 else{throw LifeError.invalid("--seconds必须0..2592000，--cadence必须正数")}
         if args.contains("--hero-town-v09-check") {try await HeroTownV09Check.run();return}
+        if args.contains("--health-clinic-check") {try HealthClinicCheck.run();return}
+        if args.contains("--town-pacing-check") {try TownPacingCheck.run();return}
+        if args.contains("--economy-pacing-check") {try EconomyPacingCheck.run();return}
+        if args.contains("--core-loop-check") {try CoreLoopCheck.run();return}
+        if args.contains("--natural-growth-audit") {
+            let dailyText=value("--audit-daily-draws")
+            if args.contains("--audit-daily-draws") && dailyText.flatMap(Int.init)==nil {
+                throw LifeError.invalid("--audit-daily-draws requires an integer")
+            }
+            try NaturalGrowthAudit.run(seed:UInt64(value("--seed") ?? "1") ?? 1,
+                                       days:Int(value("--days") ?? "30") ?? 30,
+                                       checkpointDirectory:value("--audit-checkpoint-dir"),
+                                       linkedWarClock:args.contains("--audit-linked-war-clock"),
+                                       dailyDrawLimit:dailyText.flatMap(Int.init))
+            return
+        }
+        if args.contains("--courtyard-check") {try CourtyardCheck.run();return}
         if args.contains("--gacha-check") {try await GachaCheck.run();return}
         if args.contains("--visual-check") {try VisualCheck.run(output:value("--output"));return}
         let c=try LifeCatalog.bundled();var engine=try LifeRuntime(catalog:c,wallUTC:0,heroPreview:args.contains("--hero-town-preview"),gachaMode:args.contains("--gacha"))

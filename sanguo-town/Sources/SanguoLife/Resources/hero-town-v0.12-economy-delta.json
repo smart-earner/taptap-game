@@ -1,0 +1,15 @@
+{
+  "spec_version": "0.12.0-economy-preview1",
+  "coin_per_ingot": 100,
+  "recipe_wood_mU": {
+    "cook_basic": 100,
+    "cook_meat": 100,
+    "ration_plain": 100
+  },
+  "first_post_seed_draw_target_real_seconds": 1200,
+  "default_speed": 2,
+  "simulated_day_seconds": 2880,
+  "meals_per_hero_per_cycle": 2,
+  "soldier_rations_per_real_day_numerator": 1,
+  "soldier_rations_per_real_day_denominator": 2
+}

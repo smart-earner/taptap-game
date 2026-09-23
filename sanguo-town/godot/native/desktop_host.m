@@ -67,9 +67,9 @@ static uint32_t displayID(NSScreen *screen) {
     self.statusItem.button.title=@"小城";
     self.statusItem.button.toolTip=@"小城志 · 桌面与管理窗口共用一座城";
     NSMenu *menu=[NSMenu new];
-    NSArray *titles=@[@"打开城务窗口",@"酒馆招募",@"武将培养",@"显示 / 隐藏桌面小城",@"暂停 / 继续经营",@"退出小城志"];
+    NSArray *titles=@[@"打开城务窗口",@"酒馆招募",@"武将培养",@"天下战役",@"显示 / 隐藏桌面小城",@"暂停 / 继续经营",@"退出小城志"];
     for (NSUInteger i=0;i<titles.count;i++) {
-        if (i==3 || i==5) [menu addItem:NSMenuItem.separatorItem];
+        if (i==4 || i==6) [menu addItem:NSMenuItem.separatorItem];
         NSMenuItem *item=[[NSMenuItem alloc] initWithTitle:titles[i] action:@selector(menuAction:) keyEquivalent:@""];
         item.tag=i+1; item.target=self; [menu addItem:item];
     }
@@ -82,7 +82,7 @@ static uint32_t displayID(NSScreen *screen) {
         for (NSMenuItem *item in top.submenu.itemArray) {
             if ([item.keyEquivalent isEqualToString:@"q"] && (item.keyEquivalentModifierMask & NSEventModifierFlagCommand)) {
                 self.quitItem=item; self.originalQuitAction=item.action; self.originalQuitTarget=item.target; self.originalQuitTag=item.tag;
-                item.target=self; item.action=@selector(menuAction:); item.tag=6;
+                item.target=self; item.action=@selector(menuAction:); item.tag=7;
             }
         }
     }

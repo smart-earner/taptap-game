@@ -24,9 +24,11 @@ var snapshot: Dictionary = {}
 var structure_signature = ""
 var bridge_thread: Thread
 var busy = false
+# Both counters are simulation seconds. The pending amount survives a busy
+# bridge call and a speed change instead of being discarded every wall second.
 var elapsed = 0.0
 var since_snapshot = 0.0
-var speed = 6
+var speed = 2
 var orbit = 0.63
 var camera_size = 25.0
 var camera_target = Vector3(0, 0, 0)
@@ -35,6 +37,8 @@ var clock_label: Label
 var wallet_label: Label
 var status_label: Label
 var roster_label: Label
+var war_status_label: Label
+var resource_strip_label: Label
 var modal: PanelContainer
 var modal_body: VBoxContainer
 var ui_root: Control
@@ -53,20 +57,23 @@ var clock_owned = false
 var production
 var chain_labels: Array = []
 var speed_selector: OptionButton
-var last_running_speed = 6
+var last_running_speed = 2
 var flat_manager_map: Control
+var visual_walks: Dictionary = {}
+var debug_log_enabled = false
+var debug_log_path = ""
+var active_debug_request: Dictionary = {}
 
 func _ready() -> void:
 	Engine.max_fps = 30
 	DisplayServer.window_set_title("小城志 · 桌面大地图")
-	build_lighting()
-	build_terrain()
-	build_camera()
+	debug_log_enabled=OS.is_debug_build() or OS.get_environment("SANGUO_DEBUG_LOG") in ["1","true","yes"]
+	debug_log_path=OS.get_user_data_dir()+"/debug/godot-debug.jsonl"
+	debug_log("session_start",{"engine":"Godot " + Engine.get_version_info().get("string","unknown"),"debugBuild":OS.is_debug_build()})
+	# The shipped city is a 2D desktop canvas. Constructing an invisible 3D
+	# diorama here used memory and rebuilt meshes for every project snapshot.
 	build_flat_presentation()
 	build_ui()
-	production=Production.new()
-	add_child(production)
-	production.initialize(self)
 	desktop = Desktop.new()
 	add_child(desktop)
 	clock_owned = desktop.initialize(self)
@@ -117,12 +124,14 @@ func build_flat_presentation() -> void:
 	add_child(layer)
 	flat_manager_map=DesktopMap2D.new()
 	flat_manager_map.town=self
+	flat_manager_map.drives_visual_walks=true
 	flat_manager_map.show_hud=false
 	flat_manager_map.solid_background=true
 	layer.add_child(flat_manager_map)
 	# Keep the procedural 3D nodes available for legacy preview tests and future
 	# asset reference, but do not render a competing city behind the 2D view.
-	camera.current=false
+	if is_instance_valid(camera): camera.current=false
+	get_viewport().disable_3d=true
 
 func position_camera() -> void:
 	camera.size = camera_size
@@ -190,6 +199,10 @@ func road(parent: Node3D, a: Vector3, b: Vector3, width: float) -> void:
 		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func sync_scene(data: Dictionary) -> void:
+	if get_viewport().disable_3d:
+		if is_instance_valid(flat_manager_map): flat_manager_map.queue_redraw()
+		if is_instance_valid(desktop) and is_instance_valid(desktop.flat_map): desktop.flat_map.queue_redraw()
+		return
 	var signature = JSON.stringify([data.get("buildings"),data.get("houseLevels"),data.get("plots",[]).map(func(p): return [p.id,p.level,p.service]),data.get("projects",[]).map(func(p): return [p.id,p.phase,p.completed])])
 	if signature != structure_signature:
 		structure_signature = signature
@@ -316,21 +329,82 @@ func place_building(key: String, model: Node3D, p: Vector3) -> void:
 func request(payload: Dictionary) -> void:
 	if busy or not clock_owned: return
 	busy = true
+	active_debug_request=payload.duplicate(true)
+	debug_log("request_start",{"request":active_debug_request,"speed":speed,"snapshotTime":int(snapshot.get("time",-1))})
 	bridge_thread = Thread.new()
 	bridge_thread.start(Callable(self,"execute_bridge").bind(payload))
 
 func execute_bridge(payload: Dictionary) -> Dictionary:
 	var binary = ProjectSettings.globalize_path("res://bin/SanguoLifeCLI")
 	var output: Array = []
-	var args = ["--godot-request-b64",Marshalls.utf8_to_base64(JSON.stringify(payload))]
+	# OS.execute may split a large UTF-8 JSON response in the middle of a CJK
+	# codepoint. ASCII transport avoids replacement glyphs and corrupted records.
+	var args = ["--godot-request-b64",Marshalls.utf8_to_base64(JSON.stringify(payload)),"--godot-response-b64"]
 	var fixture = OS.get_environment("SANGUO_GODOT_SAVE")
 	if fixture != "": args.append_array(["--godot-save",fixture])
 	var code = OS.execute(binary,args,output,false)
 	if code != 0 or output.is_empty(): return {"ok":false,"error":"经营引擎未连接，请运行 scripts/run-godot.sh。"}
-	var parsed = JSON.parse_string(str(output[0]))
+	var parsed = JSON.parse_string(Marshalls.base64_to_utf8(str(output[0]).strip_edges()))
 	if not parsed is Dictionary: return {"ok":false,"error":"经营引擎返回格式不正确，未应用状态。"}
 	if not parsed.get("ok",false): push_warning(str(parsed.get("detail",parsed.get("error","bridge failure"))))
 	return parsed
+
+func _debug_snapshot_fields(data: Dictionary) -> Dictionary:
+	var resident_rows: Array=[]
+	for hero in data.get("heroes",[]):
+		if int(hero.get("star",0))<=0 or not hero.has("x"): continue
+		resident_rows.append({
+			"id":str(hero.get("id","")),"job":str(hero.get("job","")),
+			"action":str(hero.get("action","")),"taskKind":str(hero.get("taskKind","")),
+			"sleeping":bool(hero.get("sleeping",false)),"x":float(hero.get("x",0)),"y":float(hero.get("y",0)),
+			"routePoints":hero.get("route",[]).size(),"health":str(hero.get("healthCondition",""))
+		})
+	var project_rows: Array=[]
+	for project in data.get("projects",[]):
+		if bool(project.get("completed",false)): continue
+		project_rows.append({
+			"id":str(project.get("id","")),"kind":str(project.get("kind","")),
+			"phase":int(project.get("phase",0)),"stageStarted":bool(project.get("stageStarted",false)),
+			"completedWork":int(project.get("completedWork",0)),"totalWork":int(project.get("totalWork",0))
+		})
+	return {
+		"request":active_debug_request,"time":int(data.get("time",0)),"revision":int(data.get("revision",0)),
+		"night":bool(data.get("night",false)),"speed":speed,"coins":int(data.get("coins",0)),
+		"foodCoverage":int(data.get("food",0)),"residentCount":resident_rows.size(),
+		"residents":resident_rows,"resources":data.get("resources",{}),"activeProjects":project_rows,
+		"stationStates":data.get("stations",{})
+	}
+
+func debug_log(event: String,fields: Dictionary={},level: String="debug") -> void:
+	if not debug_log_enabled or debug_log_path=="": return
+	DirAccess.make_dir_recursive_absolute(debug_log_path.get_base_dir())
+	_rotate_debug_log()
+	var row=fields.duplicate(true)
+	row["timestampUnixMs"]=int(Time.get_unix_time_from_system()*1000.0)
+	row["source"]="godot"
+	row["event"]=event
+	row["level"]=level
+	row["pid"]=OS.get_process_id()
+	var file=FileAccess.open(debug_log_path,FileAccess.READ_WRITE)
+	if file==null: file=FileAccess.open(debug_log_path,FileAccess.WRITE)
+	if file==null: return
+	file.seek_end()
+	file.store_line(JSON.stringify(row))
+	file.close()
+
+func _rotate_debug_log() -> void:
+	if not FileAccess.file_exists(debug_log_path): return
+	var file=FileAccess.open(debug_log_path,FileAccess.READ)
+	if file==null: return
+	var length=file.get_length()
+	file.close()
+	if length<8*1024*1024: return
+	var oldest=debug_log_path+".5"
+	if FileAccess.file_exists(oldest): DirAccess.remove_absolute(oldest)
+	for index in range(4,0,-1):
+		var source=debug_log_path+"."+str(index)
+		if FileAccess.file_exists(source): DirAccess.rename_absolute(source,debug_log_path+"."+str(index+1))
+	DirAccess.rename_absolute(debug_log_path,debug_log_path+".1")
 
 func _process(delta: float) -> void:
 	if busy and bridge_thread and not bridge_thread.is_alive():
@@ -338,26 +412,45 @@ func _process(delta: float) -> void:
 		bridge_thread = null
 		busy = false
 		if result.get("ok",false):
+			if str(result.get("debugLogPath",""))!="":
+				debug_log_path=str(result.debugLogPath).get_base_dir()+"/godot-debug.jsonl"
 			snapshot = result
-			since_snapshot = 0
+			since_snapshot = maxf(0.0,elapsed)
 			request_error = ""
 			sync_scene(snapshot)
 			update_hud()
+			debug_log("snapshot_applied",_debug_snapshot_fields(snapshot))
 			if result.has("receipt") and result.receipt.get("draws",[]).size()>0: show_results(result.receipt.draws)
 			elif current_page == "heroes" and (result.has("receipt") or heroes_refresh_pending): show_heroes()
 		else:
 			request_error = result.get("error","保存失败，未扣费")
+			debug_log("request_error",{"request":active_debug_request,"error":request_error,"detail":str(result.get("detail",""))},"error")
 			status_label.text = request_error
 			if current_page == "tavern": show_tavern()
 			elif current_page == "heroes":
 				show_heroes()
 				paragraph(request_error,13,Color("a6553e"))
 		sync_buttons()
-	since_snapshot += delta
-	elapsed += delta
-	if elapsed >= 1.0 and not busy and not snapshot.is_empty():
-		elapsed = 0
-		if speed > 0: request({"operation":"advance","seconds":speed})
+		active_debug_request={}
+	if speed > 0:
+		var simulated_delta=delta*float(speed)
+		since_snapshot += simulated_delta
+		elapsed += simulated_delta
+	if not busy and speed>0 and not snapshot.is_empty():
+		# A hidden management window still runs the same authoritative clock,
+		# but five wall seconds are committed together at ordinary speeds. At
+		# high display speed, cap the visual snapshot gap to 30 simulated seconds.
+		var wall_interval=1.0
+		if desktop and not desktop.manager_visible:
+			wall_interval=minf(5.0,30.0/float(speed))
+		if elapsed >= wall_interval*float(speed):
+			var seconds=mini(60,int(floorf(elapsed)))
+			elapsed -= float(seconds)
+			request({"operation":"advance","seconds":seconds})
+	# The authority clock and bridge above always run. The old 3D diorama is
+	# deliberately disabled for the flat town, so animating its hidden actors
+	# every frame only burns CPU; the 2D map owns visible walking.
+	if get_viewport().disable_3d: return
 	var t = Time.get_ticks_msec()/1000.0
 	for id in actors:
 		if not actor_data.has(id): continue
@@ -366,7 +459,7 @@ func _process(delta: float) -> void:
 		var target = world_point(info)
 		var route: Array = info.route
 		if route.size()>=2:
-			var clock = minf(float(snapshot.time)+since_snapshot*speed,float(info.due))
+			var clock = minf(float(snapshot.time)+since_snapshot,float(info.due))
 			var fraction = clampf((clock-float(info.started))/maxf(1,float(info.due)-float(info.started)),0,1)
 			var total = 0.0
 			for i in range(route.size()-1): total += world_point(route[i]).distance_to(world_point(route[i+1]))
@@ -395,6 +488,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode==KEY_ESCAPE:
 		close_modal()
 	if modal.visible: return
+	if get_viewport().disable_3d: return
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_RIGHT: dragging=event.pressed
 		if event.pressed and event.button_index==MOUSE_BUTTON_WHEEL_UP:
@@ -426,7 +520,7 @@ func finish_pending_save() -> void:
 func set_speed(value: int) -> void:
 	speed=value
 	if speed>0: last_running_speed=speed
-	if speed_selector: speed_selector.select([0,1,6,30].find(speed))
+	if speed_selector: speed_selector.select([0,1,2,6,30].find(speed))
 
 func panel_style(color: Color, radius: int = 18) -> StyleBoxFlat:
 	var style = StyleBoxFlat.new()
@@ -488,10 +582,11 @@ func build_ui() -> void:
 	title.add_theme_font_override("font",serif)
 	heading.add_child(title)
 	heading.add_child(label("山 水 之 间   ·   各 有 所 忙",13,MUTED))
-	heading.add_child(label("LAYOUT 6  /  桌面大地图",10,MUTED))
+	heading.add_child(label("二维平铺  /  桌面大地图",10,MUTED))
 	var top = PanelContainer.new()
 	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	top.offset_left=-330;top.offset_right=-26;top.offset_top=26;top.offset_bottom=148
+	top.offset_bottom=185
 	top.add_theme_stylebox_override("panel",panel_style(Color(0.97,0.96,.9,.94)))
 	ui_root.add_child(top)
 	var top_box = VBoxContainer.new()
@@ -503,6 +598,9 @@ func build_ui() -> void:
 	top_box.add_child(wallet_label)
 	roster_label=label("五位武将，与城同生长",11,MUTED)
 	top_box.add_child(roster_label)
+	war_status_label=label("都督正在筹备战役",11,JADE)
+	war_status_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	top_box.add_child(war_status_label)
 	var dock = PanelContainer.new()
 	dock.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	dock.offset_left=26;dock.offset_right=-26;dock.offset_top=-100;dock.offset_bottom=-25
@@ -515,13 +613,14 @@ func build_ui() -> void:
 	row.add_child(button("武将名册",show_heroes))
 	row.add_child(button("建筑形态",func(): show_building_preview(1)))
 	row.add_child(button("物资小笺",show_resources))
+	row.add_child(button("天下战役",show_war))
 	row.add_child(button("桌面模式",func(): desktop.show_settings()))
 	var spacer=Control.new();spacer.size_flags_horizontal=Control.SIZE_EXPAND_FILL;row.add_child(spacer)
 	var speeds = OptionButton.new()
 	speed_selector=speeds
-	for text in ["暂停观景","原速 1×","演示 6×","快看 30×"]: speeds.add_item(text)
+	for text in ["暂停观景","原速 1×","默认 2×","演示 6×","快看 30×"]: speeds.add_item(text)
 	speeds.select(2)
-	speeds.item_selected.connect(func(i): set_speed([0,1,6,30][i]))
+	speeds.item_selected.connect(func(i): set_speed([0,1,2,6,30][i]))
 	row.add_child(speeds)
 	row.add_child(button("收起到桌面",func(): desktop.hide_manager()))
 	var footer=VBoxContainer.new()
@@ -532,6 +631,11 @@ func build_ui() -> void:
 	status_label.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	footer.add_child(status_label)
 	footer.add_child(label("玩家招贤与培养，太守安排经营。存档独立，不改旧城。",11,MUTED))
+	resource_strip_label=label("金币 --  ·  粮 --  ·  木 --  ·  石 --  ·  铁 --  ·  工具 --  ·  空闲 -- 人",11,Color(MUTED,.82))
+	resource_strip_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+	resource_strip_label.offset_left=35;resource_strip_label.offset_right=850
+	resource_strip_label.offset_top=-177;resource_strip_label.offset_bottom=-153
+	ui_root.add_child(resource_strip_label)
 	overlay=ColorRect.new()
 	overlay.color=Color(.10,.18,.14,.27)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -551,9 +655,45 @@ func update_hud() -> void:
 	clock_label.text="第 %d 日  ·  %s" % [int(snapshot.time)/2880+1,"灯火可亲" if snapshot.night else "风和日暖"]
 	wallet_label.text="%d 金币   ·   %d 将魂" % [snapshot.coins,snapshot.souls]
 	var owned=snapshot.heroes.filter(func(h): return h.star>0).size()
-	roster_label.text="%d 位武将  ·  饭食 %d%%  ·  %d 正式床位" % [owned,int(snapshot.food)/100,snapshot.housing]
-	if not snapshot.records.is_empty(): status_label.text=snapshot.records[-1].text
+	var unwell=snapshot.heroes.filter(func(h): return str(h.get("healthCondition",""))!="").size()
+	var housing_text="%d 正式床位" % int(snapshot.housing)
+	if int(snapshot.get("layoutVersion",6))>=7:
+		var units=int(snapshot.get("courtyardUnits",{}).size())
+		var legacy=maxi(0,int(snapshot.housing)-units)
+		housing_text="%d 院落户位" % units
+		if legacy>0: housing_text+=" · %d 旧居" % legacy
+	roster_label.text="%d/%d 位常住  ·  饭食 %d%%  ·  幸福 %d  ·  %s%s%s" % [int(snapshot.get("residentCount",owned)),int(snapshot.get("residentCap",30)),int(snapshot.food)/100,int(snapshot.get("happiness",70)),housing_text,"  ·  %d 人候任" % int(snapshot.get("waitingResidents",0)) if int(snapshot.get("waitingResidents",0))>0 else "","  ·  %d 人医治中" % unwell if unwell>0 else ""]
+	var war: Dictionary=snapshot.get("campaign",{})
+	if not war.is_empty():
+		var mission: Variant=war.get("mission")
+		var stages={"scouting":"侦察","preparing":"备战","marching":"行军","battling":"交战","returning":"返程"}
+		war_status_label.text="战役 %d/11 城 · %d 士兵 · %s" % [war.get("unlocked",[]).size(),war.get("squads",{}).values().reduce(func(total,squad): return total+int(squad.get("survivors",0)),0),str(stages.get(str(mission.get("stage","")),"远征中")) if mission is Dictionary else str(war.get("waitReason","太守正在备战"))]
+		var raid_warning: Variant=war.get("raidWarning")
+		if raid_warning is Dictionary:
+			var target: Dictionary=war.get("cities",{}).get(str(raid_warning.get("targetCityID","")),{})
+			war_status_label.text="敌军预警 · %s · %s 到达" % [str(target.get("name","前线")),Time.get_datetime_string_from_unix_time(int(raid_warning.get("arrivalUTC",0)),true)]
+		elif war.get("transfer") is Dictionary:
+			var transfer: Dictionary=war.get("transfer",{})
+			var garrison_city: Dictionary=war.get("cities",{}).get(str(transfer.get("targetCityID","")),{})
+			war_status_label.text=("武将接防" if bool(transfer.get("officerOnly",false)) else "驻军调动") + " · 前往 %s · 未到达前不算驻防" % str(garrison_city.get("name","边境"))
+	else: war_status_label.text="天下战役尚未开启"
+	resource_strip_label.text=resource_summary(snapshot)
+	var active_projects=Array(snapshot.get("projects",[])).filter(func(project): return not bool(project.get("completed",false)))
+	if not active_projects.is_empty():
+		var project=active_projects[0]
+		var project_names={"repair":"府署修缮","damage_repair":"战后修复","house":"民居","farm":"农庄","granary":"粮仓","workshop":"工造院","clinic":"医舍","civic_water":"水利","civic_housing":"里坊扩建","civic_road":"道路","civic_industry":"工艺改造","civic_garden":"园圃营造","civic_academy":"书院","civic_defense":"城防","landmark_welfare":"共膳地标","landmark_industry":"百工地标","landmark_military":"军备地标","attachment_kitchen":"第二厨房","attachment_cart":"运货车","attachment_delivery":"饭食配送点","attachment_ration":"军粮作坊","breakthrough_1":"水利农法突破","breakthrough_2":"公仓共膳突破","breakthrough_3":"里坊共治突破"}
+		var total=maxi(1,int(project.get("totalWork",1)))
+		var progress=clampi(int(round(float(project.get("completedWork",0))*100.0/float(total))),0,100)
+		var kind=str(project.get("kind",""))
+		if not project_names.has(kind): debug_log("unknown_project_kind",{"kind":kind},"warning")
+		status_label.text="正在营造：%s  %d%%  ·  第 %d/4 阶段" % [project_names.get(kind,"城务工程"),progress,mini(4,int(project.get("phase",0))+1)]
+	elif not snapshot.records.is_empty(): status_label.text=snapshot.records[-1].text
 	if current_page=="chain": update_gold_chain()
+	if current_page=="war": show_war()
+
+func resource_summary(data: Dictionary) -> String:
+	var resources: Dictionary=data.get("resources",{})
+	return "金币 %d  ·  粮 %.1f  ·  木 %.1f  ·  石 %.1f  ·  铁 %.1f  ·  工具 %.1f  ·  空闲 %d 人" % [int(data.get("coins",0)),float(resources.get("grain",0))/1000.0,float(resources.get("wood",0))/1000.0,float(resources.get("stone",0))/1000.0,float(resources.get("iron",0))/1000.0,float(resources.get("tools",0))/1000.0,int(data.get("idlePersonnel",0))]
 
 func sync_buttons() -> void:
 	for b in get_tree().get_nodes_in_group("paid_action"):
@@ -602,9 +742,13 @@ func show_tavern() -> void:
 		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		b.add_to_group("paid_action");b.set_meta("cost",count*100);row.add_child(b)
 	sync_buttons()
-	paragraph("基础概率：良才70% / 名士25% / 传奇5%。单个角色分别为7% / 约2.0833% / 0.625%；连续19次非传奇，第20次必为传奇。传奇可能重复。",12)
+	var open_heroes=Array(snapshot.get("heroes",[])).filter(func(h): return bool(h.get("poolOpen",false)))
+	var rarity_counts={"talent":0,"renowned":0,"legend":0}
+	for hero in open_heroes:
+		rarity_counts[str(hero.get("rarity","talent"))]+=1
+	paragraph("基础概率：良才70%% / 名士25%% / 传奇5%%。当前每位良才 %.2f%%、名士 %.2f%%、传奇 %.2f%%；连续19次非传奇，第20次必为传奇。" % [70.0/float(maxi(1,rarity_counts.talent)),25.0/float(maxi(1,rarity_counts.renowned)),5.0/float(maxi(1,rarity_counts.legend))],12)
 	if request_error!="": paragraph(request_error,13,Color("a6553e"))
-	paragraph("常驻30人池，含开局五将；无每日重置、无自动抽卡。",12)
+	paragraph("同一常驻池 · 当前开放 %d/60 位（%s）。每次城市突破增加 10 位；无每日重置、无自动抽卡。" % [int(snapshot.get("poolSize",30)),str(snapshot.get("poolVersion",""))],12)
 	modal_body.add_child(button("金币从哪里来？看看采金进度",show_gold_chain))
 
 func show_results(draws: Array) -> void:
@@ -641,6 +785,24 @@ func show_heroes() -> void:
 	selected_hero=h.id
 	add_model_view(Models.hero(h.id,h.profile),155,true)
 	paragraph("%s  ·  %s  ·  %s" % [h.name,rarity(h.rarity),h.get("action","正在赴城")],17,INK)
+	var first_duty: Dictionary=h.get("firstDuty",{})
+	if str(h.get("arrivalStage",""))=="waiting_residency":
+		paragraph("权益已入档 · 正在候任。太守会在住处、饭食与人口上限满足后按到达顺序接入。",13,JADE)
+	elif str(h.get("arrivalStage",""))=="arriving":
+		paragraph("招募已入档 · 正在从城门抵达（约 30 模拟秒）",13,JADE)
+	elif str(h.get("arrivalStage",""))=="awaiting_duty":
+		paragraph("已抵达 · 太守尚未派出首份差事；可查看当前饭食、工地和岗位缺口。",13,JADE)
+	elif str(h.get("arrivalStage",""))=="legacy_untracked":
+		paragraph("旧存档中已参加城务；启用贡献追踪之前的首项工作没有回填。",13,MUTED)
+	elif not first_duty.is_empty():
+		var duty_state="首项贡献：%s" % str(first_duty.get("effect","")) if first_duty.get("effectiveAt") != null else ("已到岗，等待首项实际成果" if first_duty.get("arrivedAt") != null else "正在前往岗位")
+		paragraph("首份差事 · %s · %s\n%s" % [str(first_duty.get("job","")),str(first_duty.get("destination","")),duty_state],13,JADE)
+	if str(h.get("healthCondition",""))!="":
+		var health_name="轻微工伤" if h.healthCondition=="minor_work_injury" else "过劳劳损"
+		var treatment={"arriving":"前往医舍","waiting_doctor":"等待医生","preparing":"正在诊治","rest_ready":"准备休养","resting":"医舍休养","finish_ready":"等待复诊","finishing":"复诊收尾","waiting":"等待安排"}.get(str(h.get("treatmentPhase","waiting")),"等待安排")
+		paragraph("健康：%s · %s · 工作效率 %.0f%%\n%s" % [health_name,treatment,100.0+float(h.get("healthModifierBP",0))/100.0,str(h.get("healthEvidence",""))],13,Color("a6553e"))
+	if str(h.get("idleReason",""))!="":
+		paragraph("当前未派任务：%s" % str(h.idleReason),13,MUTED)
 	paragraph("%d 星 · 同名卡 %d 张（未锁定 %d）\n1/3/5星解锁技能，2/4星强化。城中工作由太守安排。" % [h.star,h.cards,h.unlockedCards],13)
 	var row=HBoxContainer.new();row.add_theme_constant_override("separation",10);modal_body.add_child(row)
 	var cost=int(h.star)
@@ -699,18 +861,162 @@ func confirm_action(text: String, action: Callable) -> void:
 func show_resources() -> void:
 	if snapshot.is_empty(): return
 	open_modal("物资小笺", "resources")
-	paragraph("太守安排采集、运输与冶炼。每1份金锭真实运抵府署，兑换10金币。",16,INK)
-	var names={"grain":"食粮","wood":"木材","stone":"石材","iron":"铁料","tools":"器材","meal":"饭菜","gold_ore":"金矿石","gold_ingot":"金锭"}
+	paragraph("太守安排采集、运输与冶炼。每份金锭运抵府署，兑换%d金币。" % int(snapshot.get("goldChain",{}).get("coinsPerIngot",10)),16,INK)
+	var names={"grain":"食粮","wood":"木材","stone":"石材","iron":"铁料","tools":"器材","meal":"饭菜","gold_ore":"金矿石","gold_ingot":"金锭","rare_ore":"稀有矿石","refined_iron":"精铁"}
 	for key in names: paragraph("%s    %.1f" % [names[key],float(snapshot.resources.get(key,0))/1000.0],16,INK)
 	paragraph("累计铸币：%d。金币不支付建筑与日常生活。" % snapshot.minted,13)
+	var civic: Dictionary=snapshot.get("civicDuty",{})
+	paragraph("城务实绩：清洁 %d 处 · 里坊巡护 %d 处 · 守备操练 %d 班；首都防袭扰 +%d。未完成的班次不计入。" % [int(civic.get("clean",0)),int(civic.get("watch",0)),int(civic.get("drill",0)),int(civic.get("capitalDefense",0))],13)
 	paragraph("独立存档，不改旧城。收起管理窗口后桌面继续经营；菜单栏退出后才停止模拟。",12)
 	modal_body.add_child(button("查看采金与冶炼进度",show_gold_chain))
+
+func show_war() -> void:
+	if snapshot.is_empty(): return
+	open_modal("天下战役 · 都督自动征服", "war")
+	var war: Dictionary=snapshot.get("campaign",{})
+	if war.is_empty():
+		paragraph("战役尚未开始；正在等待原生城镇完成初始化。",16,INK)
+		return
+	var cities: Dictionary=war.get("cities",{})
+	var owned=0
+	var soldiers=0
+	for city in cities.values():
+		if city.get("owner","")=="player" and str(city.get("id",""))!="00": owned+=1
+	for squad in war.get("squads",{}).values(): soldiers+=int(squad.get("survivors",0))
+	paragraph("已占 %d/11 城  ·  现役 %d 人  ·  战役起点 %s" % [owned,soldiers,Time.get_datetime_string_from_unix_time(int(war.get("startedUTC",0)),true)],15,INK)
+	var raid_warning: Variant=war.get("raidWarning")
+	if raid_warning is Dictionary:
+		var attacker: Dictionary=cities.get(str(raid_warning.get("attackerCityID","")),{})
+		var target: Dictionary=cities.get(str(raid_warning.get("targetCityID","")),{})
+		paragraph("敌军预警：%s 将袭扰 %s · %s 到达%s" % [str(attacker.get("name","敌军")),str(target.get("name","我方城池")),Time.get_datetime_string_from_unix_time(int(raid_warning.get("arrivalUTC",0)),true)," · 可能反攻外哨" if bool(raid_warning.get("counterattack",false)) else ""],14,JADE)
+	var mission: Variant=war.get("mission")
+	if mission is Dictionary:
+		var target=cities.get(str(mission.get("cityID","")),{})
+		var kinds=["外哨","粮寨","关门","主城"]
+		var stages={"scouting":"侦察","preparing":"备战","marching":"行军","battling":"交战","returning":"返程"}
+		paragraph("都督目标：%s · %s · %s" % [str(target.get("name","前线")),kinds[clampi(int(mission.get("pointIndex",0)),0,3)],str(stages.get(str(mission.get("stage","")),"备战"))],15,JADE)
+	else: paragraph(str(war.get("waitReason","太守正在安排下一步")),15,JADE)
+	var reports: Array=snapshot.get("warReports",[])
+	for i in range(maxi(0,reports.size()-2),reports.size()):
+		paragraph("战报 · %s" % str(reports[i].get("text","")),12,MUTED)
+	var row=HBoxContainer.new();modal_body.add_child(row)
+	row.add_child(button("恢复自动远征" if bool(war.get("paused",false)) else "暂停新远征",func(): issue("resume_war" if bool(war.get("paused",false)) else "pause_war")))
+	row.add_child(button("刷新战报",func(): issue("snapshot")))
+	row.add_child(button("回看全部战报",show_war_reports))
+	var scroll=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;modal_body.add_child(scroll)
+	var grid=GridContainer.new();grid.columns=3;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL;scroll.add_child(grid)
+	var city_ids: Array=cities.keys()
+	city_ids.sort()
+	for id in city_ids:
+		var city: Dictionary=cities[id]
+		var city_id=str(id)
+		var points: Dictionary=city.get("points",{})
+		var captured=0
+		for owner in points.values():
+			if owner=="player": captured+=1
+		var state="首都" if city_id=="00" else (("已归附" if bool(city.get("supplied",false)) else "断供待复夺") if city.get("owner","")=="player" else "%d/4 据点" % captured)
+		var card=button("%s\n%s" % [str(city.get("name","城池")),state],func(): show_war_city(city_id))
+		card.custom_minimum_size=Vector2(205,65)
+		grid.add_child(card)
+	paragraph("玩家继续招募与培养；太守募兵补给，都督选路和作战。每个据点的首胜奖励只发一次。",12)
+
+func show_war_city(city_id: String) -> void:
+	var war: Dictionary=snapshot.get("campaign",{})
+	var city: Dictionary=war.get("cities",{}).get(city_id,{})
+	if city.is_empty(): return
+	open_modal(str(city.get("name","城池")),"war_city")
+	paragraph("归属：%s  ·  原守军模板 %d  ·  城防 %d" % ["我方" if city.get("owner","")=="player" else "敌方",int(city.get("enemyPower",0)),int(city.get("wall",0))],16,INK)
+	if city_id!="00" and city.get("owner","")=="player":
+		paragraph("前线补给：%s。断路时本城设施暂停，许可与已建记录仍保留。" % ("连通首都" if bool(city.get("supplied",false)) else "道路未通"),13,JADE if bool(city.get("supplied",false)) else MUTED)
+	if city.get("owner","")=="player":
+		var actual_garrison=0
+		for squad in war.get("squads",{}).values():
+			if str(squad.get("cityID",""))==city_id and squad.get("missionID")==null and squad.get("transferID")==null:
+				actual_garrison+=int(squad.get("survivors",0))
+		paragraph("实驻士兵 %d 人；按所在地前线实仓持续吃军粮。" % actual_garrison,13,JADE)
+		var posted: Variant=war.get("garrisonHeroByCity",{})
+		if posted is Dictionary and posted.has(city_id):
+			paragraph("实驻武将 1 位；已抵达才增加守力，每现实日另耗本城军粮 1 份。",13,JADE)
+		var transfer: Variant=war.get("transfer")
+		if transfer is Dictionary and str(transfer.get("targetCityID",""))==city_id:
+			paragraph(("武将正在单独赶往本城，" if bool(transfer.get("officerOnly",false)) else "一队驻军正在行军，") + "预计模拟时刻 %d 到达；途中不计入本城防守。" % int(transfer.get("dueSim",0)),13,MUTED)
+	paragraph("地形/守军：%s" % ", ".join(city.get("tags",[])),13)
+	var names={"outer":"外哨","supply":"粮寨","gate":"关门","core":"主城决战"}
+	var rewards={"outer":"首胜木 2、石 2，留在前线仓","supply":"首胜军粮 4、工具 1，留在前线仓","gate":"首胜铁 2；持有时主城城防 -30","core":"本城独有许可与地区兵源"}
+	for kind in ["outer","supply","gate","core"]:
+		var owner=str(city.get("points",{}).get(kind,"enemy"))
+		var claimed=city.get("firstCleared",[]).has(kind)
+		paragraph("%s · %s · %s%s" % [names[kind],"已占" if owner=="player" else "未占",rewards[kind],"（首胜已领取）" if claimed else ""],15,JADE if owner=="player" else INK)
+	var stock: Dictionary=snapshot.get("warStock",{}).get(city_id,{})
+	if not stock.is_empty():
+		paragraph("前线实物：木 %.1f / 石 %.1f / 铁 %.1f / 工具 %.1f / 军粮 %.1f / 稀有矿 %.1f；尚未等同首都入库。" % [float(stock.get("wood",0))/1000.0,float(stock.get("stone",0))/1000.0,float(stock.get("iron",0))/1000.0,float(stock.get("tools",0))/1000.0,float(stock.get("rations",0))/1000.0,float(stock.get("rare_ore",0))/1000.0],13)
+	paragraph("主城许可：%s。攻取顺序由都督自动执行，点击城池只查看状态。" % str(city.get("unlock","")),13)
+	if city_id=="01" and city.get("owner","")=="player":
+		var built: Variant=war.get("builtFacilities",[])
+		var finished=built is Array and built.has("stone_transport")
+		var training: Variant=war.get("training")
+		var building=training is Dictionary and training.get("kind","")=="stone_transport"
+		paragraph("青石石运：%s。需木 4、石 2 和 600 模拟秒；完工后本城石材单趟运量 4→6 份，仍由武将实际承运。" % ("已生效" if finished else ("正在施工" if building else "许可已获，待太守安排施工")),13,JADE)
+		if finished:
+			var quarrying=training is Dictionary and training.get("kind","")=="quarry_stone"
+			paragraph("当地采石：%s。首都石材不足 12 份时，太守可派武将赴城；每趟实耗军粮 1 份、采得石材 6 份，随后另派真人运回。" % ("武将在青石城采石" if quarrying else "按需待命"),13,MUTED)
+	elif city_id=="05" and city.get("owner","")=="player":
+		var ship_training: Variant=war.get("training")
+		var ship_building=ship_training is Dictionary and ship_training.get("kind","")=="ship"
+		paragraph("船坞与首船：%s。完成后才开放江口—江北水路。" % ("已生效" if bool(war.get("shipBuilt",false)) else ("正在施工" if ship_building else "许可已获，待太守安排施工")),13,JADE)
+	elif city_id=="06" and city.get("owner","")=="player":
+		var fire_training: Variant=war.get("training")
+		var fire_building=fire_training is Dictionary and fire_training.get("kind","")=="fire"
+		paragraph("火攻演练：%s。只对合法易燃目标生效，逐战仍耗木与工具。" % ("已生效" if bool(war.get("fireDrilled",false)) else ("正在演练" if fire_building else "许可已获，待太守安排演练")),13,JADE)
+	if city_id=="03" and city.get("owner","")=="player":
+		var ore_training: Variant=war.get("training")
+		var mining=ore_training is Dictionary and ore_training.get("kind","")=="mine_rare_ore"
+		paragraph("铁岭稀有矿：%s。每趟实耗军粮 1 份，武将采出 1 份矿石；需真人另行运回，不能直接变成金币。" % ("武将采掘中" if mining else ("道路断开，暂停采掘" if not bool(city.get("supplied",false)) else "太守按需安排")),13,JADE if bool(city.get("supplied",false)) else MUTED)
+	var facility_notes={
+		"02":["frontier_granary","丰谷前线粮仓","木 6、石 2、900 模拟秒；军粮实仓上限 8→32 份，太守须真人从首都运入，后续远征可消耗前线现货。"],
+		"04":["pass_watchtower","北关哨所","木 6、石 4、900 模拟秒；相邻北关战线遭袭时防守力 +40。"],
+		"07":["river_supply","江北水路补给","木 4、工具 1、600 模拟秒；本城军粮单趟水运上限 4→8 份，仍须武将承运。"],
+		"08":["refined_iron_forge","赤镇精铁炉","木 8、石 4、工具 2、1800 模拟秒；建成后首都工造院才可用两份实仓稀有矿与木 1 冶炼精铁 1。"],
+		"09":["long_range_scouting","北原侦察站","木 4、工具 1、600 模拟秒；侦察 600→300 模拟秒，抵消骑兵守军额外战力 20。"],
+		"10":["frontier_transfer","东都转运站","木 8、石 4、1200 模拟秒；本城军粮返都运输时间 -20%。"]
+	}
+	if facility_notes.has(city_id) and city.get("owner","")=="player":
+		var note: Array=facility_notes[city_id]
+		var built_facilities: Variant=war.get("builtFacilities",[])
+		var built_here=built_facilities is Array and built_facilities.has(note[0])
+		var active_here=built_here and bool(city.get("supplied",false))
+		var current_training: Variant=war.get("training")
+		var building_here=current_training is Dictionary and current_training.get("kind","")==note[0]
+		var facility_state="已生效" if active_here else ("断路暂停" if built_here else ("正在施工" if building_here else "许可已获，待太守安排施工"))
+		paragraph("%s：%s。%s" % [note[1],facility_state,note[2]],13,JADE if active_here else MUTED)
+		if city_id=="08":
+			paragraph("精铁器械：%s。需先有基础器械，再实耗精铁 1、工具 1、900 模拟秒；精铁不能兑金币或抽卡。" % ("已升级" if bool(war.get("refinedSiegeEquipment",false)) else "待材料与施工"),13,MUTED)
+	modal_body.add_child(button("返回天下地图",show_war))
+
+func show_war_reports() -> void:
+	open_modal("战报回看", "war_reports")
+	var reports: Array=snapshot.get("warReports",[])
+	paragraph("逐点胜负、伤亡、首胜物资地点与袭扰损失均来自权威存档；回看不会重新结算。",13,MUTED)
+	var scroll=ScrollContainer.new()
+	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	modal_body.add_child(scroll)
+	var list=VBoxContainer.new()
+	list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	for index in range(reports.size()-1,-1,-1):
+		var report: Dictionary=reports[index]
+		var item=label(str(report.get("text","")),13,INK)
+		item.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+		list.add_child(item)
+		list.add_child(HSeparator.new())
+	modal_body.add_child(button("返回天下地图",show_war))
 
 func show_gold_chain() -> void:
 	if snapshot.is_empty(): return
 	open_modal("金币的来路", "chain")
 	paragraph("采矿、搬运、冶炼、入库——每一步都由真实武将完成。",16,INK)
 	chain_labels.clear()
+	chain_labels.append(paragraph("",15,JADE))
 	for title in ["一 · 矿山开采","二 · 矿石运输","三 · 冶炼收锭","四 · 送抵府署"]:
 		paragraph(title,18,JADE)
 		chain_labels.append(paragraph("",14))
@@ -723,14 +1029,17 @@ func show_gold_chain() -> void:
 	modal_body.add_child(button("去酒馆招募",show_tavern,true))
 
 func update_gold_chain() -> void:
-	if chain_labels.size()!=4: return
+	if chain_labels.size()!=5: return
 	var gold=snapshot.get("goldChain",{})
-	chain_labels[0].text="%s · 矿区待运 %.1f 份" % ["正在开采" if int(gold.get("mining",0))>0 else "等待太守安排 / 保供优先",float(gold.get("atMine",0))/1000]
-	chain_labels[1].text="仓内矿石 %.1f 份 · 在途金矿物资 %.1f 份" % [float(gold.get("atWarehouse",0))/1000,float(gold.get("inTransit",0))/1000]
+	chain_labels[0].text="距下一次单抽还差 %d 金币 · %s" % [int(gold.get("nextDrawMissing",0)),str(gold.get("nextDrawReason","等待城务更新"))]
+	chain_labels[1].text="%s · 矿区待运 %.1f 份" % ["正在开采" if int(gold.get("mining",0))>0 else "等待太守安排 / 保供优先",float(gold.get("atMine",0))/1000]
+	chain_labels[2].text="仓内矿石 %.1f 份 · 在途金矿物资 %.1f 份" % [float(gold.get("atWarehouse",0))/1000,float(gold.get("inTransit",0))/1000]
 	var phase=snapshot.stations.smelter.phase
 	var phase_text={"idle":"等待物资或调度","prepare":"准备冶炼","passive":"炉火冶炼中","finish":"收取成品","ready":"等待收取成品"}.get(phase,phase)
-	chain_labels[2].text="%s · 炉边待运金锭 %.1f 份" % [phase_text,float(gold.get("readyIngots",0))/1000]
-	chain_labels[3].text="累计入库金锭 %.1f 份 → %d 金币 · 现在可招募 %d 次" % [float(gold.get("deliveredIngots",0))/1000,int(snapshot.minted),int(snapshot.coins)/100]
+	chain_labels[3].text="%s · 炉边待运金锭 %.1f 份" % [phase_text,float(gold.get("readyIngots",0))/1000]
+	chain_labels[4].text="累计入库金锭 %.1f 份 → %d 金币 · 现在可招募 %d 次" % [float(gold.get("deliveredIngots",0))/1000,int(snapshot.minted),int(snapshot.coins)/100]
+	if int(gold.get("legacyIngots",0))>0:
+		chain_labels[4].text+="\n旧版 %d 锭按旧价结算，不追溯改价。" % int(gold.get("legacyIngots",0))
 
 func show_skills(hero_id: String) -> void:
 	var matches=snapshot.heroes.filter(func(h): return h.id==hero_id)
