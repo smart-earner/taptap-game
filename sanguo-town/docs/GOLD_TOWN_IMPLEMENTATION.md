@@ -1,6 +1,6 @@
-# 酒馆招贤 · PRD v0.9 正式规则与 preview1 兼容层
+# 酒馆招贤 · PRD v0.9 历史实现记录与 preview1 兼容层
 
-正式新档规则标识是 `hero-town-0.9.0`，旧试玩档继续识别 `hero-town-0.9-preview1`。两者都基于既有Swift生活引擎；Godot只读取投影并提交玩家命令，不维护第二套经济。
+本文记录 v0.9 当时的实现基线，不再是新建游戏的规则说明。当时正式档标识为 `hero-town-0.9.0`，现在的 v0.12 新档为 `hero-town-0.12.0`／format 7，原正式档经验证后同路径原子升级；`hero-town-0.9-preview1` 继续只作旧试玩兼容。当前玩法与验收以[主合同](PRD-v0.12-core-gameplay.md)及[交付目标](GOAL-v0.12-delivery.md)为准。
 
 ## 启动与存档
 

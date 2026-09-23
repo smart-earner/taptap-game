@@ -52,6 +52,22 @@ enum CoreLoopCheck {
         try check(try migrationStore.load()==promotedWorld &&
                   Data(contentsOf:migrationStore.url.appendingPathExtension("bak1"))==oldBytes,
                   "an atomic v0.12 save retains the exact legacy bytes as the first backup")
+        var futureWorld=promotedWorld
+        futureWorld.format=8
+        try check((try? LifeSaveStore.encode(futureWorld))==nil,
+                  "unknown future save formats are rejected instead of silently rebuilt")
+        var wrongLegacy=legacyWorld
+        wrongLegacy.heroTown!.contentHash="tampered"
+        try check((try? LifeRuntime(catalog:catalog,world:wrongLegacy))==nil,
+                  "a legacy content-hash mismatch cannot enter the v0.12 migration")
+        var warLegacy=runtime
+        try warLegacy.enableSharedCourtyards()
+        try warLegacy.enableWar(realUTC:777)
+        let existingCampaign=warLegacy.world.campaign
+        try warLegacy.enableFormalV12(realUTC:99_999)
+        try check(warLegacy.world.isCurrentHeroTown && warLegacy.world.campaign==existingCampaign &&
+                  warLegacy.world.wallUTC==777,
+                  "a format-four town with an existing campaign keeps every war clock and point on promotion")
         try check(LifeHappinessContract.workModifierBP(happiness:95,job:"miner") == 500 &&
                   LifeHappinessContract.workModifierBP(happiness:70,job:"miner") == 0 &&
                   LifeHappinessContract.workModifierBP(happiness:50,job:"miner") == -500 &&

@@ -56,7 +56,10 @@ extension LifeWorld {
                   (format==3 && rules=="hero-town-0.8-preview1" && husbandry==nil && gacha==nil) ||
                   (format==4 && isGacha && !isCurrentHeroTown && gacha != nil && husbandry==nil) ||
                   (format==LifeV12Contract.format && isCurrentHeroTown && gacha != nil && husbandry==nil &&
-                   heroTown?.courtyard != nil && campaign != nil),"存档版本不受支持，未重建存档")
+                   gacha?.rosterPhase != nil && gacha?.goldRebalance != nil &&
+                   heroTown?.health != nil && heroTown?.courtyard != nil &&
+                   heroTown?.city.layoutVersion==LifeV12Contract.layout && campaign != nil),
+                  "存档版本不受支持，未重建存档")
         if isGacha {try validateGacha()}
         if isFormalHeroTown {
             guard let formal=heroTown else{throw LifeError.invalid("正式v0.9存档缺少规则身份")}
