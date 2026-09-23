@@ -10,6 +10,19 @@ public enum LifeHeroTownContract {
     public static let authority = "createCity.auto_manage_v09"
 }
 
+/// Published identity for the complete v0.12 city and campaign rules. The
+/// content hash covers the bundled v0.9 base data, v0.10 growth and v0.11 war
+/// contracts, plus the v0.12 economy and roster data, in that order. Format 7
+/// deliberately skips unshipped format 5/6 plans: existing format-4 saves
+/// upgrade directly and keep their original file as a rolling backup.
+public enum LifeV12Contract {
+    public static let rules = "hero-town-0.12.0"
+    public static let format = 7
+    public static let layout = 7
+    public static let contentHash = "df40845afb91ba200fa7a9746837e27ced982f79182a398b5db022ef8d5791bc"
+    public static let authority = "createCity.auto_manage_v12"
+}
+
 /// Small pacing adjustments that make the desktop town readable without changing
 /// its resource ledger or granting materials outside the normal production chains.
 public enum LifeTownPacingContract {

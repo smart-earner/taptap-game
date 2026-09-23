@@ -29,16 +29,24 @@ jobs:
           { sw_vers; uname -m; xcodebuild -version; swift --version; } | tee dist/logs/environment.txt
           test "$(uname -m)" = arm64
           python3 scripts/export_life_catalog.py --check | tee dist/logs/catalog.txt
+          python3 scripts/validate_v12_content_hash.py | tee dist/logs/v12-content-hash.txt
           python3 scripts/test_slim_v072.py --output dist/slim-spec 2>&1 | tee dist/logs/slim-spec.txt
       - name: Debug runtime tests and native client
         run: |
           set -euo pipefail
           swift test 2>&1 | tee dist/logs/debug-test.txt
+          swift build --product SanguoLifeCLI
+          .build/debug/SanguoLifeCLI --core-loop-check 2>&1 | tee dist/logs/core-loop.txt
+          python3 scripts/test-economy-v12.py 2>&1 | tee dist/logs/economy-v12.txt
+          python3 scripts/test-war-campaign.py 2>&1 | tee dist/logs/war-campaign.txt
           swift build --product SanguoMac 2>&1 | tee dist/logs/macos-build.txt
       - name: Release runtime tests
         run: |
           set -euo pipefail
           swift test -c release 2>&1 | tee dist/logs/release-test.txt
+          swift build -c release --product SanguoLifeCLI
+          python3 scripts/test-godot-bridge.py 2>&1 | tee dist/logs/godot-bridge.txt
+          python3 scripts/test-natural-growth-v12.py 2>&1 | tee dist/logs/natural-growth-short.txt
       - name: Actual life runtime and visit-cadence comparison
         run: |
           set -euo pipefail

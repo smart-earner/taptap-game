@@ -539,7 +539,8 @@ extension LifeRuntime {
         }
     }
 
-    /// Enables a separately labeled war preview without rewriting the existing rules identity.
+    /// Enables a war preview on a legacy formal save. The caller may then
+    /// atomically promote the complete city and campaign to the v0.12 identity.
     public mutating func enableWar(realUTC:Int64) throws {
         guard world.isFormalHeroTown else{throw LifeError.invalid("只有正式城镇可开启战役")}
         guard world.campaign==nil else{return}
@@ -551,6 +552,24 @@ extension LifeRuntime {
         world.wallUTC=started
         world.record("war","都督开始侦察天下。玩家继续在首都招贤，太守自动筹备军粮和士兵。")
         try world.validate()
+    }
+
+    /// The format-4 world is never rewritten until every optional city and war
+    /// field has passed validation. SaveStore then backs up the old bytes and
+    /// commits the promoted world atomically in the ordinary command path.
+    public mutating func enableFormalV12(realUTC:Int64) throws {
+        guard world.isFormalHeroTown else{throw LifeError.invalid("只有正式城镇可升级至 v0.12")}
+        if world.isCurrentHeroTown {return}
+        var candidate=self
+        try candidate.enableSharedCourtyards()
+        try candidate.enableWar(realUTC:max(candidate.world.wallUTC,realUTC))
+        candidate.world.format=LifeV12Contract.format
+        candidate.world.rules=LifeV12Contract.rules
+        candidate.world.heroTown!.contentHash=LifeV12Contract.contentHash
+        candidate.world.heroTown!.authority=LifeV12Contract.authority
+        candidate.world.record("migration","旧版城镇与战役已无损升级至 v0.12；金币、武将、卡片、库存和战果保持原值。")
+        try candidate.world.validate()
+        self=candidate
     }
 
     public mutating func setWarPaused(_ value:Bool) throws {

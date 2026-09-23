@@ -27,6 +27,11 @@ with tempfile.TemporaryDirectory(prefix='godot-fixture-') as directory:
             [str(BIN), '--godot-bridge', json.dumps(payload), '--godot-save', directory], text=True))
     first = call()
     check(first['ok'] and first['coins'] == 200, 'initial 200 coins')
+    saved_world = json.loads(json.loads(save.read_text())['payload'])
+    check(first['rules'] == 'hero-town-0.12.0' and saved_world['format'] == 7
+          and saved_world['heroTown']['city']['layoutVersion'] == 7
+          and len(saved_world['campaign']['cities']) == 12,
+          'new Godot town commits one version-seven city and twelve-city campaign')
     check(first['happiness'] == 70 and first['civicDuty'] ==
           {'clean': 0, 'watch': 0, 'drill': 0, 'capitalDefense': 0},
           'desktop snapshot exposes only completed, current civic effects')

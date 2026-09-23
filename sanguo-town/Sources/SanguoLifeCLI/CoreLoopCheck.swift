@@ -30,6 +30,28 @@ enum CoreLoopCheck {
         try check(limitedCount==85 && limitedSortie.count<=20 && limitedSortie.contains("new-19"),
                   "sortie respects hero command capacity and fills unused seats with surviving fragments")
         var runtime=try LifeRuntime(catalog:catalog,wallUTC:0,formalHeroTown:true,rngSeed:1)
+        let legacyWorld=runtime.world
+        let migrationDirectory=FileManager.default.temporaryDirectory.appendingPathComponent("sanguo-v12-migration-\(UUID().uuidString)")
+        defer {try? FileManager.default.removeItem(at:migrationDirectory)}
+        let migrationStore=LifeSaveStore(url:migrationDirectory.appendingPathComponent("world.json"))
+        try migrationStore.save(legacyWorld)
+        let oldBytes=try Data(contentsOf:migrationStore.url)
+        var promoted=try LifeRuntime(catalog:catalog,world:LifeSaveStore.decode(oldBytes))
+        try promoted.enableFormalV12(realUTC:12_345)
+        try check(promoted.world.format==LifeV12Contract.format && promoted.world.isCurrentHeroTown &&
+                  promoted.world.heroTown?.contentHash==LifeV12Contract.contentHash &&
+                  promoted.world.heroTown?.courtyard != nil && promoted.world.campaign?.startedUTC==12_345 &&
+                  promoted.world.gacha==legacyWorld.gacha && promoted.world.treasury==legacyWorld.treasury &&
+                  promoted.world.lots==legacyWorld.lots,
+                  "format-four town promotes to v0.12 with a real campaign but without changing cards, coins or stock")
+        let promotedWorld=promoted.world
+        try promoted.enableFormalV12(realUTC:99_999)
+        try check(promoted.world==promotedWorld,
+                  "repeating the v0.12 migration cannot restart war or duplicate the upgrade")
+        try migrationStore.save(promoted.world)
+        try check(try migrationStore.load()==promotedWorld &&
+                  Data(contentsOf:migrationStore.url.appendingPathExtension("bak1"))==oldBytes,
+                  "an atomic v0.12 save retains the exact legacy bytes as the first backup")
         try check(LifeHappinessContract.workModifierBP(happiness:95,job:"miner") == 500 &&
                   LifeHappinessContract.workModifierBP(happiness:70,job:"miner") == 0 &&
                   LifeHappinessContract.workModifierBP(happiness:50,job:"miner") == -500 &&

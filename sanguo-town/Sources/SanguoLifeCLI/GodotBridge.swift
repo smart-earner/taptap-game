@@ -59,7 +59,7 @@ enum GodotBridge {
             try runtime.enableSharedCourtyards()
             let beforeWarClock=runtime.world
             if runtime.world.isFormalHeroTown {
-                try runtime.enableWar(realUTC:input.realUTC ?? Int64(Date().timeIntervalSince1970))
+                try runtime.enableFormalV12(realUTC:input.realUTC ?? Int64(Date().timeIntervalSince1970))
                 runtime.advanceWarClock(realUTC:input.realUTC ?? Int64(Date().timeIntervalSince1970))
             }
             guard (0...86400).contains(input.seconds) else{throw LifeError.invalid("单次推进超出样板限制")}

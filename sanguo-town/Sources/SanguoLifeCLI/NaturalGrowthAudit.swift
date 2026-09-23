@@ -8,7 +8,7 @@ import SanguoLife
 /// claim: a stalled city must be visible in the printed ledger.
 enum NaturalGrowthAudit {
     // Bump this when simulation rules change; never resume a mixed-rule trace.
-    private static let checkpointRevision=25
+    private static let checkpointRevision=26
     static func run(seed:UInt64,days:Int,checkpointDirectory:String?=nil,linkedWarClock:Bool=false,
                     dailyDrawLimit:Int?=nil) throws {
         // At the default 2× town speed, 1,800 simulation days cover 30 real
@@ -28,7 +28,7 @@ enum NaturalGrowthAudit {
         let restored=try checkpoint?.load()
         var town:LifeRuntime
         if let restored {
-            guard restored.isFormalHeroTown,restored.campaign != nil,
+            guard restored.isCurrentHeroTown,restored.campaign != nil,
                   restored.wallUTC==(linkedWarClock ? restored.time/2:0),
                   restored.time%2_880==0,restored.time<=Int64(days)*2_880 else {
                 throw LifeError.invalid("审计检查点不属于当前战役时钟模式或已经超过目标天数")
@@ -36,8 +36,7 @@ enum NaturalGrowthAudit {
             town=try LifeRuntime(catalog:catalog,world:restored)
         } else {
             town=try LifeRuntime(catalog:catalog,wallUTC:0,formalHeroTown:true,rngSeed:seed)
-            try town.enableSharedCourtyards()
-            try town.enableWar(realUTC:0)
+            try town.enableFormalV12(realUTC:0)
         }
         var draws=Int(town.world.gacha?.drawCount ?? 0)
         var previousStudy=town.world.counters["study_completed",default:0]

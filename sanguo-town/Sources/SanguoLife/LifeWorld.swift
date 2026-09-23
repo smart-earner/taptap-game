@@ -139,7 +139,8 @@ public struct LifeWorld: Codable, Equatable, Sendable {
     public var treeReady: [Int64] = Array(repeating:0,count:24)
     public var cleanedSites: [String] = []
     public var tradePeriod: Int64 = 0, tradedAmount: Int64 = 0
-    public var isFormalHeroTown:Bool {rules == LifeHeroTownContract.rules}
+    public var isFormalHeroTown:Bool {rules == LifeHeroTownContract.rules || rules == LifeV12Contract.rules}
+    public var isCurrentHeroTown:Bool {rules == LifeV12Contract.rules}
     public var isGacha:Bool {rules == "hero-town-0.9-preview1" || isFormalHeroTown}
     public var isHeroPreview: Bool { rules == "hero-town-0.8-preview1" || isGacha }
     public var housing: Int {

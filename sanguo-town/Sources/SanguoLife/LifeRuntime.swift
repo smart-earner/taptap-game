@@ -254,7 +254,7 @@ public struct LifeRuntime: Sendable {
             if world.isFormalHeroTown,let star=world.gacha?.stars[a.id],let skills=definition?.hero(a.id)?.skills {
                 let active=skills.filter{$0.unlock_star<=star && $0.jobs?.contains(job)==true}.map(\.id)
                 let retained=max(0,r-10000)
-                let snapshot=LifeSkillSnapshot(id:"skill-\(id)",contentHash:LifeHeroTownContract.contentHash,heroID:a.id,star:star,skillIDs:active,metric:"work_rate_bp",value:r,retainedValue:retained,eventID:id)
+                let snapshot=LifeSkillSnapshot(id:"skill-\(id)",contentHash:world.heroTown!.contentHash,heroID:a.id,star:star,skillIDs:active,metric:"work_rate_bp",value:r,retainedValue:retained,eventID:id)
                 world.tasks[id]!.skillSnapshot=snapshot
                 world.heroTown!.skillSnapshots.append(snapshot)
                 if world.heroTown!.skillSnapshots.count>10000 {world.heroTown!.skillSnapshots.removeFirst(world.heroTown!.skillSnapshots.count-10000)}

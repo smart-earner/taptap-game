@@ -51,11 +51,19 @@ extension LifeWorld {
     public func validate() throws {
         func check(_ b:Bool,_ text:String) throws {if !b{throw LifeError.invalid(text)}}
         try validateWar()
-        try check((format==1 && rules=="life-0.7.2-v1" && husbandry==nil && gacha==nil) || (format==2 && rules=="life-0.7.2-v2" && husbandry != nil && gacha==nil) || (format==3 && rules=="hero-town-0.8-preview1" && husbandry==nil && gacha==nil) || (format==4 && isGacha && gacha != nil && husbandry==nil),"存档版本不受支持，未重建存档")
+        try check((format==1 && rules=="life-0.7.2-v1" && husbandry==nil && gacha==nil) ||
+                  (format==2 && rules=="life-0.7.2-v2" && husbandry != nil && gacha==nil) ||
+                  (format==3 && rules=="hero-town-0.8-preview1" && husbandry==nil && gacha==nil) ||
+                  (format==4 && isGacha && !isCurrentHeroTown && gacha != nil && husbandry==nil) ||
+                  (format==LifeV12Contract.format && isCurrentHeroTown && gacha != nil && husbandry==nil &&
+                   heroTown?.courtyard != nil && campaign != nil),"存档版本不受支持，未重建存档")
         if isGacha {try validateGacha()}
         if isFormalHeroTown {
             guard let formal=heroTown else{throw LifeError.invalid("正式v0.9存档缺少规则身份")}
-            try check(formal.contentHash==LifeHeroTownContract.contentHash && formal.authority==LifeHeroTownContract.authority,"正式v0.9内容哈希或自动治理授权不匹配")
+            let expectedHash=isCurrentHeroTown ? LifeV12Contract.contentHash:LifeHeroTownContract.contentHash
+            let expectedAuthority=isCurrentHeroTown ? LifeV12Contract.authority:LifeHeroTownContract.authority
+            try check(formal.contentHash==expectedHash && formal.authority==expectedAuthority,
+                      "正式城镇内容哈希或自动治理授权不匹配")
             let courtyard=formal.courtyard
             try check(!formal.saveID.isEmpty && formal.city.layoutVersion==(courtyard == nil ? LifeHeroTownContract.layout : 7),"正式存档或布局版本无效")
             let plotCount=courtyard == nil ? 18:29
