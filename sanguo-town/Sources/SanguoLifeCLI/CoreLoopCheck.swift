@@ -52,6 +52,15 @@ enum CoreLoopCheck {
         try check(try migrationStore.load()==promotedWorld &&
                   Data(contentsOf:migrationStore.url.appendingPathExtension("bak1"))==oldBytes,
                   "an atomic v0.12 save retains the exact legacy bytes as the first backup")
+        let archiveName="world.json.pre-v012-"
+        let archives=try FileManager.default.contentsOfDirectory(at:migrationDirectory,includingPropertiesForKeys:nil)
+            .filter{$0.lastPathComponent.hasPrefix(archiveName)}
+        try check(archives.count==1 && Data(contentsOf:archives[0])==oldBytes,
+                  "the version-four bytes are durably archived outside the rotating backup slots")
+        for _ in 0..<4 {try migrationStore.save(promotedWorld)}
+        try check(Data(contentsOf:archives[0])==oldBytes &&
+                  Data(contentsOf:migrationStore.url.appendingPathExtension("bak1")) != oldBytes,
+                  "ordinary v0.12 autosaves cannot overwrite the pre-upgrade archive")
         var futureWorld=promotedWorld
         futureWorld.format=8
         try check((try? LifeSaveStore.encode(futureWorld))==nil,

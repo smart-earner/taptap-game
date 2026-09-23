@@ -29,9 +29,22 @@ public struct LifeSaveStore: LifePersistence, Sendable {
         let bytes=try Self.encode(world),fm=FileManager.default
         try fm.createDirectory(at:url.deletingLastPathComponent(),withIntermediateDirectories:true)
         if fm.fileExists(atPath:url.path) {
-            _=try load()
+            let previousBytes=try Data(contentsOf:url)
+            let previous=try Self.decode(previousBytes)
+            if previous.isFormalHeroTown && !previous.isCurrentHeroTown && world.isCurrentHeroTown {
+                // Rotating backups are overwritten by ordinary autosaves. Keep the exact
+                // pre-upgrade bytes in a content-addressed archive that rotation never touches.
+                let archive=url.appendingPathExtension("pre-v012-\(Self.checksum(previousBytes))")
+                if fm.fileExists(atPath:archive.path) {
+                    guard try Data(contentsOf:archive)==previousBytes else {
+                        throw LifeError.invalid("旧版存档归档校验失败，未覆盖原档")
+                    }
+                } else {
+                    try previousBytes.write(to:archive,options:.atomic)
+                }
+            }
             for i in stride(from:2,through:1,by:-1) {let source=url.appendingPathExtension("bak\(i)");if fm.fileExists(atPath:source.path){try Data(contentsOf:source).write(to:url.appendingPathExtension("bak\(i+1)"),options:.atomic)}}
-            try Data(contentsOf:url).write(to:url.appendingPathExtension("bak1"),options:.atomic)
+            try previousBytes.write(to:url.appendingPathExtension("bak1"),options:.atomic)
         }
         try bytes.write(to:url,options:.atomic)
     }
