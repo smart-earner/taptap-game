@@ -5,6 +5,7 @@ extends Control
 var town: Node
 var font: Font
 var animation_time := 0.0
+var ambient_time := 0.0
 var drives_visual_walks := false
 var is_night := false
 var show_hud := true
@@ -80,6 +81,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	animation_time += delta
+	# The walking clock stays live, but optional environmental motion stops at
+	# its current pose when the accessibility setting is enabled.
+	if is_instance_valid(town) and town.get("reduce_motion")!=true: ambient_time += delta
 	if drives_visual_walks and is_instance_valid(town) and not town.snapshot.is_empty():
 		_advance_visual_walks(delta)
 	queue_redraw()
@@ -113,7 +117,7 @@ func _draw() -> void:
 		_draw_world_rect(Rect2(1740,0,180,1080),Color(WATER,0.96),origin,scale)
 		_draw_world_rect(Rect2(1715,0,25,1080),Color(BANK,0.96),origin,scale)
 		for i in range(12):
-			var wave_y=fposmod(float(i)*96.0+animation_time*42.0,1080.0)
+			var wave_y=fposmod(float(i)*96.0+ambient_time*42.0,1080.0)
 			_draw_world_line(Vector2(1768,wave_y),Vector2(1838,wave_y+22),5,Color("d8ebe0",.72),origin,scale)
 			_draw_world_line(Vector2(1840,wave_y+38),Vector2(1895,wave_y+55),4,Color("d8ebe0",.58),origin,scale)
 		for y in SANDBOX_ROAD_Y:
@@ -169,9 +173,9 @@ func _draw() -> void:
 	if night:
 		for i in range(18):
 			var base=Vector2(250+float((i*137)%1320),250+float((i*83)%650))
-			var drift=Vector2(sin(animation_time*.9+float(i))*18.0,cos(animation_time*.7+float(i)*.71)*12.0)
+			var drift=Vector2(sin(ambient_time*.9+float(i))*18.0,cos(ambient_time*.7+float(i)*.71)*12.0)
 			var glow=_screen(base+drift,origin,scale)
-			var pulse=3.5+sin(animation_time*4.0+float(i))*1.4
+			var pulse=3.5+sin(ambient_time*4.0+float(i))*1.4
 			draw_circle(glow,maxf(2.0,pulse*scale),Color("f0d978",.78))
 
 	# Actual residents only; identity remains in the roster, never overhead.
@@ -442,14 +446,14 @@ func _draw_building(plot: Dictionary,origin: Vector2,scale: float) -> void:
 		draw_rect(Rect2(sign_center+Vector2(-8,-3)*art_scale,Vector2(16,6)*art_scale),Color("a85b4c"))
 	for side in [-1,1]:
 		var window_color=Color("efd278") if is_night else Color("90aaa0")
-		if is_night: window_color=window_color.lightened((sin(animation_time*3.2+float(plot.index)+float(side))+1.0)*.06)
+		if is_night: window_color=window_color.lightened((sin(ambient_time*3.2+float(plot.index)+float(side))+1.0)*.06)
 		draw_rect(Rect2(p+Vector2(float(side)*25-6,-1)*art_scale,Vector2(12,11)*art_scale),window_color)
 	if kind in ["house","hall","tavern"]:
 		var chimney=p+Vector2(wide*.55,-32)*art_scale
 		draw_rect(Rect2(chimney+Vector2(-3,-8)*art_scale,Vector2(7,13)*art_scale),Color("796b56"))
 		for puff in range(3):
-			var rise=fposmod(animation_time*22.0+float(puff)*17.0+float(plot.index)*3.0,52.0)
-			var smoke_p=chimney+Vector2(sin(animation_time*1.8+float(puff))*5.0,-10.0-rise)*art_scale
+			var rise=fposmod(ambient_time*22.0+float(puff)*17.0+float(plot.index)*3.0,52.0)
+			var smoke_p=chimney+Vector2(sin(ambient_time*1.8+float(puff))*5.0,-10.0-rise)*art_scale
 			draw_circle(smoke_p,(7.0+float(puff)*2.0)*art_scale,Color("e5e5d6",.48-float(puff)*.08))
 	var title=_building_title(kind)
 	draw_string(font,p+Vector2(-wide,50)*art_scale,title,HORIZONTAL_ALIGNMENT_CENTER,wide*2*art_scale,maxi(10,int(14*scale)),INK)
@@ -595,7 +599,7 @@ func _draw_project_site(project: Dictionary,data: Dictionary,origin: Vector2,sca
 		var work_point=_display_world_point(Vector2(float(hero.x),float(hero.y)))
 		if work_point.distance_to(point)>125.0: continue
 		for fleck in range(3):
-			var spark=p+Vector2(-23+float(fleck)*20,-10+sin(animation_time*5.0+float(fleck))*4.0)*scale
+			var spark=p+Vector2(-23+float(fleck)*20,-10+sin(ambient_time*5.0+float(fleck))*4.0)*scale
 			draw_circle(spark,2.0*scale,Color("bd9866",.76))
 		break
 	draw_string(font,p+Vector2(-52,55)*scale,"营造 %d%%" % progress,HORIZONTAL_ALIGNMENT_CENTER,104*scale,maxi(9,int(12*scale)),MUTED)
@@ -610,16 +614,16 @@ func _draw_workplace_activity(data: Dictionary,origin: Vector2,scale: float) -> 
 		var p=_screen(_plot_display_point(plot),origin,scale)
 		if kind=="tavern" and kitchen_phase in ["prepare","passive","finish"]:
 			for i in range(4):
-				var rise=fposmod(animation_time*26.0+float(i)*14.0,58.0)
-				var steam=p+Vector2(-22+float(i%2)*13+sin(animation_time*2.1+float(i))*3.0,-24-rise)*scale
+				var rise=fposmod(ambient_time*26.0+float(i)*14.0,58.0)
+				var steam=p+Vector2(-22+float(i%2)*13+sin(ambient_time*2.1+float(i))*3.0,-24-rise)*scale
 				draw_circle(steam,(5.0+float(i%2)*2.0)*scale,Color("eee9d5",.54))
 			for i in range(3):
 				draw_arc(p+Vector2(37+float(i)*9,24)*scale,5*scale,0,PI,10,Color("a16f4b"),maxf(1,2*scale))
 		elif kind=="smelter" and smelter_phase in ["prepare","passive","finish"]:
 			var glow=p+Vector2(0,17)*scale
-			draw_circle(glow,(8.0+sin(animation_time*7.0)*2.0)*scale,Color("e88943",.76))
+			draw_circle(glow,(8.0+sin(ambient_time*7.0)*2.0)*scale,Color("e88943",.76))
 			for i in range(5):
-				var spark=glow+Vector2(sin(animation_time*5.0+float(i))*15.0,-fposmod(animation_time*31.0+float(i)*9.0,38.0))*scale
+				var spark=glow+Vector2(sin(ambient_time*5.0+float(i))*15.0,-fposmod(ambient_time*31.0+float(i)*9.0,38.0))*scale
 				draw_circle(spark,maxf(1,2*scale),Color("f4c66b",.82))
 
 func _draw_mine(world: Vector2,origin: Vector2,scale: float) -> void:
@@ -773,7 +777,7 @@ func _nearest_lane(value: float,lanes: Array) -> float:
 func _draw_tree(world: Vector2,origin: Vector2,scale: float,phase: float) -> void:
 	var p=_screen(world,origin,scale)
 	draw_rect(Rect2(p+Vector2(-3,5)*scale,Vector2(6,18)*scale),Color("7d6848"))
-	var crown=p+Vector2(sin(animation_time*1.55+phase)*2.8,0)*scale
+	var crown=p+Vector2(sin(ambient_time*1.55+phase)*2.8,0)*scale
 	draw_circle(crown,17*scale,Color("668963"))
 	draw_circle(crown+Vector2(-9,-3)*scale,12*scale,Color("78996b"))
 	draw_circle(crown+Vector2(9,-4)*scale,12*scale,Color("89a46f"))
@@ -785,9 +789,9 @@ func _hero_look(hero_id: String,profile: String) -> Dictionary:
 	return {"coat":FALLBACK_COATS[signature%FALLBACK_COATS.size()],"trim":FALLBACK_TRIMS[(signature/FALLBACK_COATS.size())%FALLBACK_TRIMS.size()],"head":head,"beard":signature%4,"build":1.0+float(signature%5-2)*.045}
 
 func _draw_hero(world: Vector2,hero_id: String,profile: String,star: int,walking: bool,motion: String,health_condition: String,task_kind: String,task_resource: String,cargo: String,origin: Vector2,scale: float,phase: float) -> void:
-	var step=sin(animation_time*(5.5 if walking else 7.0)+phase)
+	var step=sin(animation_time*(5.5 if walking else 7.0)+phase) if walking or town.get("reduce_motion")!=true else 0.0
 	var working=not walking and (motion in ["hammer","chop","cultivate","carry"] or task_kind in ["eat","prepare","finish","administration","survey"]) and int(town.speed)>0
-	var bob=absf(step)*1.8 if walking else (sin(animation_time*4.5+phase)*.8 if working else 0.0)
+	var bob=absf(step)*1.8 if walking else (sin(ambient_time*4.5+phase)*.8 if working else 0.0)
 	var p=_screen(world,origin,scale)+Vector2(0,-bob)*scale
 	var art_scale=scale*1.12
 	var look=_hero_look(hero_id,profile)
@@ -879,7 +883,7 @@ func _draw_activity_prop(p: Vector2,task_kind: String,task_resource: String,carg
 		var bowl=p+Vector2(13,11)*scale
 		draw_arc(bowl,6*scale,0,PI,12,Color("9b6848"),maxf(1,2*scale))
 		for i in range(2):
-			var drift=sin(animation_time*2.8+phase+float(i))*2.0
+			var drift=sin(ambient_time*2.8+phase+float(i))*2.0
 			draw_line(bowl+Vector2(-2+float(i)*4,-3)*scale,bowl+Vector2(drift,-11)*scale,Color("e7e2cb",.76),maxf(1,scale))
 	elif cargo!="":
 		var cargo_color={"grain":"c6aa58","wood":"856344","stone":"8a9088","iron":"667477","tools":"78644e","gold_ore":"b58c42","gold_ingot":"d6ae49","meal":"b87552"}.get(cargo,"8d7657")
@@ -941,7 +945,7 @@ func _draw_hud(data: Dictionary,night: bool) -> void:
 	# when TextServer's constrained ellipsis shaping is used. Clip before drawing.
 	var short_status: String=status.left(18)+"…" if status.length()>18 else status
 	draw_string(font,Vector2(58,144),short_status,HORIZONTAL_ALIGNMENT_LEFT,-1,15,MUTED)
-	var pulse_color=Color("78a66d",.55+.35*(sin(animation_time*4.5)+1.0)*.5)
+	var pulse_color=Color("78a66d",.55+.35*(sin(ambient_time*4.5)+1.0)*.5)
 	draw_circle(Vector2(64,178),6,pulse_color)
 	draw_string(font,Vector2(78,184),"城务时钟 %d× 运行中" % int(town.speed),HORIZONTAL_ALIGNMENT_LEFT,-1,14,MUTED)
 	draw_string(font,Vector2(34,size.y-34),_resource_summary(data),HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color(MUTED,.82))
