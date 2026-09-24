@@ -60,7 +60,8 @@ func run() -> void:
 			var difference=absf(before_color.r-after_color.r)+absf(before_color.g-after_color.g)+absf(before_color.b-after_color.b)+absf(before_color.a-after_color.a)
 			if difference>.02: changed_pixels+=1
 	if not require(changed_pixels>20,"desktop 2D layer visibly animates between frames ("+str(changed_pixels)+" changed sample pixels)"): return
-	var output=ProjectSettings.globalize_path("res://../dist/godot-desktop-tests")
+	var output=OS.get_environment("SANGUO_SMOKE_OUTPUT")
+	if output=="": output=ProjectSettings.globalize_path("res://../dist/godot-desktop-tests")
 	DirAccess.make_dir_recursive_absolute(output)
 	rendered.save_png(output+"/desktop-layer.png")
 	var before=int(scene.snapshot.time)

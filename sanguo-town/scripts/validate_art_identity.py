@@ -9,7 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SWIFT = ROOT / "Sources/SanguoLifeVisual/LifeHeroArt.swift"
 GODOT = ROOT / "godot/scripts/desktop_map_2d.gd"
-CATALOG = ROOT / "Sources/SanguoLife/Resources/hero-town-v0.9.json"
+CATALOGS = (
+    ROOT / "Sources/SanguoLife/Resources/hero-town-v0.9.json",
+    ROOT / "Sources/SanguoLife/Resources/hero-town-v0.12-roster.json",
+)
 
 SWIFT_ROW = re.compile(
     r'\("(?P<id>[a-z]+)","#(?P<coat>[0-9A-Fa-f]{6})","#(?P<trim>[0-9A-Fa-f]{6})",'
@@ -37,7 +40,12 @@ def looks(path: Path, pattern: re.Pattern[str]) -> dict[str, tuple]:
 def main() -> None:
     swift = looks(SWIFT, SWIFT_ROW)
     godot = looks(GODOT, GODOT_ROW)
-    catalog = {hero["id"] for hero in json.loads(CATALOG.read_text())["heroes"]}
+    catalog_groups = [
+        {hero["id"] for hero in json.loads(path.read_text())["heroes"]}
+        for path in CATALOGS
+    ]
+    assert len(set.union(*catalog_groups)) == sum(map(len, catalog_groups)), "catalog IDs overlap"
+    catalog = set.union(*catalog_groups)
     assert set(swift) == catalog, f"Swift appearance roster differs from catalog: {set(swift) ^ catalog}"
     assert set(godot) == catalog, f"Godot appearance roster differs from catalog: {set(godot) ^ catalog}"
     mismatches = [hero_id for hero_id in sorted(catalog) if swift[hero_id] != godot[hero_id]]

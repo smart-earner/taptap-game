@@ -55,7 +55,37 @@ const HERO_LOOKS={
 	"huangzhong":{"coat":"b78d51","trim":"d9d2b5","head":3,"beard":4,"build":1.1},
 	"weiyan":{"coat":"865d50","trim":"b7aa7e","head":2,"beard":2,"build":1.13},
 	"ganning":{"coat":"408b89","trim":"d6bc73","head":2,"beard":0,"build":1.06},
-	"lvbu":{"coat":"805264","trim":"d0af6e","head":6,"beard":0,"build":1.16}
+	"lvbu":{"coat":"805264","trim":"d0af6e","head":6,"beard":0,"build":1.16},
+	"dianwei":{"coat":"6b5547","trim":"d2a979","head":2,"beard":2,"build":1.31},
+	"huanggai":{"coat":"8a7658","trim":"dac697","head":3,"beard":4,"build":1.12},
+	"taishici":{"coat":"4e7b83","trim":"d3c28e","head":3,"beard":0,"build":1.09},
+	"sunce":{"coat":"986746","trim":"e0b875","head":3,"beard":0,"build":1.13},
+	"sunshangxiang":{"coat":"ad785b","trim":"e0c5a1","head":4,"beard":0,"build":.99},
+	"zhoutai":{"coat":"556f5d","trim":"bea77b","head":2,"beard":2,"build":1.19},
+	"chengpu":{"coat":"7a6953","trim":"d3bd92","head":3,"beard":3,"build":1.1},
+	"jiangwan":{"coat":"697d72","trim":"d8c7a2","head":0,"beard":1,"build":1.02},
+	"feiyi":{"coat":"98a284","trim":"5f7771","head":5,"beard":0,"build":.94},
+	"wangping":{"coat":"677b8d","trim":"d0b791","head":2,"beard":1,"build":1.08},
+	"dingfeng":{"coat":"8a594b","trim":"d2bd95","head":2,"beard":2,"build":1.07},
+	"handang":{"coat":"8c885f","trim":"d9c79e","head":3,"beard":3,"build":1.07},
+	"jiangwei":{"coat":"557c76","trim":"d7d2b0","head":3,"beard":0,"build":1.08},
+	"dengai":{"coat":"718b80","trim":"d7b98a","head":3,"beard":1,"build":1.05},
+	"zhonghui":{"coat":"745f89","trim":"d6c2a2","head":0,"beard":0,"build":.98},
+	"liaohua":{"coat":"7b8a64","trim":"d4bd83","head":2,"beard":2,"build":1.07},
+	"masu":{"coat":"a38769","trim":"cfccad","head":5,"beard":1,"build":.97},
+	"caopi":{"coat":"5b687d","trim":"dab882","head":0,"beard":1,"build":1.04},
+	"caoren":{"coat":"596f71","trim":"cbb991","head":3,"beard":2,"build":1.17},
+	"caohong":{"coat":"9a7055","trim":"d2c09b","head":2,"beard":1,"build":1.12},
+	"yujin":{"coat":"6b7579","trim":"c8c2a7","head":3,"beard":1,"build":1.1},
+	"lejin":{"coat":"a16953","trim":"dfc083","head":3,"beard":0,"build":1.05},
+	"lidian":{"coat":"748463","trim":"e2ce9d","head":1,"beard":2,"build":1.01},
+	"zhanghe":{"coat":"547a83","trim":"d4b9a0","head":3,"beard":1,"build":1.09},
+	"xiahouyuan":{"coat":"74715e","trim":"d6b482","head":3,"beard":2,"build":1.13},
+	"xusheng":{"coat":"628c80","trim":"e0caa0","head":2,"beard":1,"build":1.08},
+	"zhuhuan":{"coat":"955f59","trim":"d3bb96","head":3,"beard":1,"build":1.07},
+	"zhugejin":{"coat":"718e88","trim":"decda8","head":0,"beard":2,"build":1.03},
+	"buzhi":{"coat":"8b8d72","trim":"d2c2a0","head":5,"beard":1,"build":.98},
+	"yangxiu":{"coat":"947580","trim":"e5cba0","head":0,"beard":0,"build":.95}
 }
 const FALLBACK_COATS=["536f6a","8b7056","68788c","9b6a59","678767","7b6d86","628a85","a3835e"]
 const FALLBACK_TRIMS=["d2bc86","d3c7a3","b3cdb8","d8aa79","b7c6a9","cfc0a8"]
@@ -107,9 +137,9 @@ func _draw() -> void:
 	var grass=Color("71877c") if night else GRASS
 	# A translucent full-screen ground keeps the wallpaper present while making
 	# the city read as one continuous desktop map rather than a floating window.
-	draw_rect(Rect2(Vector2.ZERO,size),Color(grass,1.0 if solid_background else 0.90))
+	draw_rect(Rect2(Vector2.ZERO,size),Color(grass,1.0 if solid_background else 0.72))
 	var map_rect=Rect2(origin,display_world_size*scale)
-	draw_rect(map_rect,Color(grass,1.0 if solid_background else 0.98))
+	draw_rect(map_rect,Color(grass,1.0 if solid_background else 0.80))
 	if courtyard_mode:
 		_draw_courtyard_parcels(data,origin,scale)
 	else:
@@ -182,6 +212,12 @@ func _draw() -> void:
 	var hero_index=0
 	var sleeping_slots: Dictionary={}
 	var stationary_slots: Dictionary={}
+	var clinic_plot: Dictionary={}
+	var clinic_patients=0
+	for plot in data.get("plots",[]):
+		if str(plot.kind)=="clinic" and int(plot.level)>0:
+			clinic_plot=plot
+			break
 	for hero in data.get("heroes",[]):
 		if not hero.has("x"): continue
 		if bool(hero.get("sleeping",false)):
@@ -203,6 +239,12 @@ func _draw() -> void:
 			var station_key="%d:%d" % [int(hero.x),int(hero.y)]
 			var station_slot=int(stationary_slots.get(station_key,0))
 			stationary_slots[station_key]=station_slot+1
+			var phase=str(hero.get("treatmentPhase",""))
+			if not clinic_plot.is_empty() and str(hero.get("healthCondition",""))!="" and phase in ["waiting_doctor","preparing","treating","rest_ready","resting","finish_ready","finishing"] and Vector2(float(hero.x),float(hero.y)).distance_to(Vector2(float(clinic_plot.point.x),float(clinic_plot.point.y)))<1.0:
+				_draw_clinic_patient(_plot_display_point(clinic_plot),clinic_patients,str(hero.get("id","")),origin,scale)
+				clinic_patients+=1
+				hero_index+=1
+				continue
 			position+=_stationary_offset(station_slot)
 		_draw_hero(position,str(hero.get("id","")),str(hero.get("profile","balanced")),int(hero.get("star",1)),walking,str(hero.get("motion","")),str(hero.get("healthCondition","")),str(hero.get("taskKind","")),str(hero.get("taskResource","")),str(hero.get("cargo","")),origin,scale,float(hero_index)*.83)
 		hero_index+=1
@@ -308,7 +350,7 @@ func _draw_courtyard_road(a: Vector2,b: Vector2,origin: Vector2,scale: float,pla
 		return
 	_draw_world_line(a+Vector2(4,-4),b+Vector2(4,-4),48,SHADOW,origin,scale)
 	_draw_world_line(a,b,42,Color("ae926d",.60),origin,scale)
-	_draw_world_line(a,b,34,ROAD,origin,scale)
+	_draw_world_line(a,b,34,Color("b9aa8b") if is_night else ROAD,origin,scale)
 	# Warm irregular stepping-stone marks, not traffic lane markings or a tile grid.
 	var length=a.distance_to(b)
 	for index in range(1,int(length/96.0)):
@@ -414,14 +456,22 @@ func _draw_world_line(a: Vector2,b: Vector2,width: float,color: Color,origin: Ve
 func _draw_building(plot: Dictionary,origin: Vector2,scale: float) -> void:
 	var p=_screen(Vector2(float(plot.point.x),float(plot.point.y)),origin,scale)
 	var kind=str(plot.kind)
-	if kind=="house" and int(town.snapshot.get("layoutVersion",6))>=7:
-		_draw_shared_courtyard(plot,origin,scale)
-		return
-	if int(town.snapshot.get("layoutVersion",6))>=7 and kind=="tavern":
-		_draw_open_tavern(p,scale)
-		return
-	if int(town.snapshot.get("layoutVersion",6))>=7 and kind=="workshop":
-		_draw_open_workshop(p,scale)
+	if int(town.snapshot.get("layoutVersion",6))>=7:
+		match kind:
+			"house": _draw_shared_courtyard(plot,origin,scale)
+			"hall": _draw_open_hall(p,scale)
+			"farm": _draw_open_farm(p,scale)
+			"granary": _draw_open_granary(p,scale)
+			"market": _draw_open_market(p,scale)
+			"workshop": _draw_open_workshop(p,scale)
+			"tavern": _draw_open_tavern(p,scale)
+			"stable": _draw_open_stable(p,scale)
+			"station": _draw_open_station(p,scale)
+			"barracks": _draw_open_barracks(p,scale)
+			"goldmine": _draw_open_goldmine(p,scale)
+			"smelter": _draw_open_smelter(p,scale)
+			"clinic": _draw_open_clinic(p,scale,int(plot.level))
+			_: _draw_open_generic(p,scale,_building_title(kind))
 		return
 	var art_scale=scale*1.22
 	var wide=54.0 if kind=="hall" else 43.0
@@ -562,6 +612,161 @@ func _draw_open_workshop(p: Vector2,scale: float) -> void:
 		draw_line(peg_p,peg_p+Vector2(0,11)*scale,Color("556b63"),maxf(1,2*scale))
 	draw_string(font,p+Vector2(-55,-57)*scale,"工造院",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),INK)
 
+func _draw_open_label(p: Vector2,scale: float,title: String) -> void:
+	draw_string(font,p+Vector2(-60,-57)*scale,title,HORIZONTAL_ALIGNMENT_CENTER,120*scale,maxi(11,int(15*scale)),INK)
+
+func _draw_open_hall(p: Vector2,scale: float) -> void:
+	var s=scale*1.13
+	_draw_open_room_base(p,s,Color("d9dfc2"))
+	# Long council table and three independent writing places; documents are
+	# furniture, while a working hero still needs a real administration task.
+	draw_rect(Rect2(p+Vector2(-49,-27)*s,Vector2(98,21)*s),Color("7d694b"))
+	draw_line(p+Vector2(-44,-22)*s,p+Vector2(44,-22)*s,Color("ba9e70"),maxf(1,2*s))
+	for seat in range(3):
+		var x=-31.0+float(seat)*31.0
+		draw_rect(Rect2(p+Vector2(x,-18)*s,Vector2(17,10)*s),Color("eee0b9"))
+		draw_line(p+Vector2(x+4,-13)*s,p+Vector2(x+12,-13)*s,Color("8b765c"),maxf(1,s))
+		draw_rect(Rect2(p+Vector2(x+3,17)*s,Vector2(12,6)*s),Color("9b7b55"))
+	var seal=p+Vector2(0,23)*s
+	draw_circle(seal,10*s,Color("bc9c6b"))
+	draw_circle(seal,6*s,Color("a65d4b"))
+	for side in [-1.0,1.0]:
+		var shelf=p+Vector2(side*51,5)*s
+		draw_line(shelf+Vector2(0,-16)*s,shelf+Vector2(0,21)*s,TIMBER,maxf(1,3*s))
+		draw_line(shelf+Vector2(-8,15)*s,shelf+Vector2(8,15)*s,TIMBER,maxf(1,3*s))
+	_draw_open_label(p,s,"官署")
+
+func _draw_open_farm(p: Vector2,scale: float) -> void:
+	var s=scale*1.12
+	_draw_open_room_base(p,s,Color("cbd6a9"))
+	# The actual crop sprites are drawn only from snapshot fields. These are
+	# permanent bare beds, a well and tool hooks, never a fake harvest.
+	for bed in range(3):
+		var bed_rect=Rect2(p+Vector2(-54+float(bed)*37,-27)*s,Vector2(29,25)*s)
+		draw_rect(bed_rect,Color("ad9469"))
+		for furrow in range(3):
+			draw_line(bed_rect.position+Vector2(4,6+float(furrow)*6)*s,bed_rect.position+Vector2(25,6+float(furrow)*6)*s,Color("d3b783"),maxf(1,2*s))
+	var basin=p+Vector2(39,19)*s
+	draw_circle(basin,17*s,Color("967c5d"))
+	draw_circle(basin,12*s,Color("7daaa4"))
+	for hook in range(2):
+		var x=-40.0+float(hook)*23.0
+		draw_line(p+Vector2(x,13)*s,p+Vector2(x+5,34)*s,TIMBER,maxf(1,3*s))
+		draw_line(p+Vector2(x+1,31)*s,p+Vector2(x+11,31)*s,Color("6e7a66"),maxf(1,2*s))
+	_draw_open_label(p,s,"农庄")
+
+func _draw_open_granary(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("e0d5ae"))
+	# Empty wooden compartments stay legible even when the warehouse has zero
+	# stock; sacks appear only as a carried lot on a real worker.
+	for bin_index in range(3):
+		var x=-54.0+float(bin_index)*36.0
+		var bin_rect=Rect2(p+Vector2(x,-30)*scale,Vector2(29,30)*scale)
+		draw_rect(bin_rect,Color("9e805a"))
+		draw_rect(Rect2(bin_rect.position+Vector2(4,5)*scale,Vector2(21,20)*scale),Color("d2bd91"))
+		draw_line(bin_rect.position+Vector2(3,24)*scale,bin_rect.position+Vector2(27,24)*scale,Color("735c42"),maxf(1,3*scale))
+	for rail in range(2):
+		var y=13.0+float(rail)*16.0
+		draw_line(p+Vector2(-49,y)*scale,p+Vector2(49,y)*scale,TIMBER,maxf(1,4*scale))
+	_draw_open_label(p,scale,"粮仓")
+
+func _draw_open_market(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("e4d5ae"))
+	for stall in range(2):
+		var x=-49.0+float(stall)*57.0
+		draw_rect(Rect2(p+Vector2(x,-25)*scale,Vector2(42,17)*scale),Color("a67a54"))
+		draw_line(p+Vector2(x,-28)*scale,p+Vector2(x+42,-28)*scale,Color("d4a275"),maxf(1,3*scale))
+		for leg in [5.0,37.0]:
+			draw_line(p+Vector2(x+leg,-8)*scale,p+Vector2(x+leg,2)*scale,TIMBER,maxf(1,3*scale))
+		var basket=p+Vector2(x+21,23)*scale
+		draw_arc(basket,12*scale,0,PI,12,Color("9e7c58"),maxf(1,3*scale))
+		draw_line(basket+Vector2(-11,0)*scale,basket+Vector2(11,0)*scale,Color("9e7c58"),maxf(1,3*scale))
+	_draw_open_label(p,scale,"集市")
+
+func _draw_open_stable(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("d4c49d"))
+	for stall in range(3):
+		var x=-50.0+float(stall)*34.0
+		draw_line(p+Vector2(x,-35)*scale,p+Vector2(x,16)*scale,TIMBER,maxf(1,4*scale))
+		draw_rect(Rect2(p+Vector2(x+5,-20)*scale,Vector2(22,12)*scale),Color("8c7656"))
+		draw_rect(Rect2(p+Vector2(x+8,-17)*scale,Vector2(16,6)*scale),Color("aa9971"))
+	draw_line(p+Vector2(-54,25)*scale,p+Vector2(53,25)*scale,Color("9d8058"),maxf(1,5*scale))
+	# No horse silhouette unless an actual animal entity is supplied later.
+	_draw_open_label(p,scale,"马厩")
+
+func _draw_open_station(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("d3dbc0"))
+	var table=Rect2(p+Vector2(-49,-26)*scale,Vector2(96,19)*scale)
+	draw_rect(table,Color("947758"))
+	draw_line(table.position+Vector2(4,4)*scale,table.position+Vector2(91,4)*scale,Color("cab18a"),maxf(1,2*scale))
+	var route_board=Rect2(p+Vector2(-35,9)*scale,Vector2(70,24)*scale)
+	draw_rect(route_board,Color("ece1bf"))
+	draw_rect(route_board,Color("9b896a"),false,maxf(1,2*scale))
+	for line_index in range(3):
+		draw_line(route_board.position+Vector2(8,6+float(line_index)*6)*scale,route_board.position+Vector2(59,6+float(line_index)*6)*scale,Color("8ba494"),maxf(1,2*scale))
+	_draw_open_label(p,scale,"驿站")
+
+func _draw_open_barracks(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("c7d2b3"))
+	var ring=p+Vector2(-20,10)*scale
+	draw_arc(ring,22*scale,0,TAU,24,Color("a28b64"),maxf(1,4*scale))
+	draw_arc(ring,15*scale,0,TAU,24,Color("d7c79e"),maxf(1,2*scale))
+	var target=p+Vector2(39,-12)*scale
+	draw_circle(target,17*scale,Color("9b7954"))
+	draw_circle(target,12*scale,Color("e4d3ad"))
+	draw_circle(target,5*scale,Color("a76550"))
+	draw_line(p+Vector2(-53,-29)*scale,p+Vector2(48,-29)*scale,TIMBER,maxf(1,3*scale))
+	_draw_open_label(p,scale,"营地")
+
+func _draw_open_goldmine(p: Vector2,scale: float) -> void:
+	var ground=Rect2(p+Vector2(-66,-45)*scale,Vector2(132,90)*scale)
+	draw_rect(Rect2(ground.position+Vector2(5,6)*scale,ground.size),SHADOW)
+	draw_rect(ground,Color("c8c9a5"))
+	draw_rect(ground,Color("8d9276"),false,maxf(1,3*scale))
+	var pit=p+Vector2(-7,0)*scale
+	draw_circle(pit,37*scale,Color("a39f78"))
+	draw_circle(pit,28*scale,Color("777d69"))
+	draw_circle(pit,19*scale,Color("3e5650"))
+	draw_line(p+Vector2(33,-33)*scale,p+Vector2(33,27)*scale,TIMBER,maxf(1,4*scale))
+	draw_line(p+Vector2(45,-33)*scale,p+Vector2(45,27)*scale,TIMBER,maxf(1,4*scale))
+	for rung in range(4):
+		var y=-25.0+float(rung)*15.0
+		draw_line(p+Vector2(33,y)*scale,p+Vector2(45,y)*scale,Color("c0a477"),maxf(1,3*scale))
+	_draw_open_label(p,scale,"金矿")
+
+func _draw_open_smelter(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("d7c59f"))
+	var furnace=p+Vector2(0,17)*scale
+	draw_circle(furnace,25*scale,Color("896c55"))
+	draw_circle(furnace,18*scale,Color("544f43"))
+	draw_circle(furnace,10*scale,Color("3c514a"))
+	for side in [-1.0,1.0]:
+		var vent=p+Vector2(side*42,-19)*scale
+		draw_rect(Rect2(vent-Vector2(12,10)*scale,Vector2(24,20)*scale),Color("8e7355"))
+		draw_line(vent+Vector2(-7,-5)*scale,vent+Vector2(7,-5)*scale,Color("d0ab7a"),maxf(1,2*scale))
+	_draw_open_label(p,scale,"冶金坊")
+
+func _draw_open_clinic(p: Vector2,scale: float,level: int) -> void:
+	_draw_open_room_base(p,scale,Color("dce0c3"))
+	var count=clampi(level,1,3)*2
+	for bed in range(count):
+		var x=-52.0+float(bed%3)*39.0
+		var y=-31.0+float(bed/3)*34.0
+		var mat=Rect2(p+Vector2(x,y)*scale,Vector2(31,21)*scale)
+		draw_rect(mat,Color("9eaf9c"))
+		draw_rect(Rect2(mat.position+Vector2(3,3)*scale,Vector2(25,14)*scale),Color("e8e4cf"))
+		draw_rect(Rect2(mat.position+Vector2(4,4)*scale,Vector2(9,5)*scale),Color("b8cab5"))
+	var sign=p+Vector2(49,-30)*scale
+	draw_circle(sign,10*scale,Color("f2ecd8"))
+	draw_line(sign+Vector2(-5,0)*scale,sign+Vector2(5,0)*scale,Color("a46a58"),maxf(1,3*scale))
+	draw_line(sign+Vector2(0,-5)*scale,sign+Vector2(0,5)*scale,Color("a46a58"),maxf(1,3*scale))
+	_draw_open_label(p,scale,"医舍")
+
+func _draw_open_generic(p: Vector2,scale: float,title: String) -> void:
+	_draw_open_room_base(p,scale,Color("d9ddbe"))
+	draw_rect(Rect2(p+Vector2(-39,-20)*scale,Vector2(78,31)*scale),Color("a68a62"))
+	_draw_open_label(p,scale,title)
+
 func _draw_project_site(project: Dictionary,data: Dictionary,origin: Vector2,scale: float) -> void:
 	var point=Vector2.ZERO
 	var found=false
@@ -615,7 +820,7 @@ func _draw_workplace_activity(data: Dictionary,origin: Vector2,scale: float) -> 
 		if kind=="tavern" and kitchen_phase in ["prepare","passive","finish"]:
 			for i in range(4):
 				var rise=fposmod(ambient_time*26.0+float(i)*14.0,58.0)
-				var steam=p+Vector2(-22+float(i%2)*13+sin(ambient_time*2.1+float(i))*3.0,-24-rise)*scale
+				var steam=p+Vector2(35+float(i%2)*12+sin(ambient_time*2.1+float(i))*3.0,-24-rise)*scale
 				draw_circle(steam,(5.0+float(i%2)*2.0)*scale,Color("eee9d5",.54))
 			for i in range(3):
 				draw_arc(p+Vector2(37+float(i)*9,24)*scale,5*scale,0,PI,10,Color("a16f4b"),maxf(1,2*scale))
@@ -641,11 +846,10 @@ func _building_title(kind: String) -> String:
 	return {"hall":"官署","house":"民居","farm":"农庄","granary":"粮仓","market":"集市","workshop":"工造院","tavern":"酒馆","stable":"马厩","station":"驿站","barracks":"营地","goldmine":"金矿","smelter":"冶金坊","clinic":"医舍"}.get(kind,kind)
 
 func _stationary_offset(slot: int) -> Vector2:
-	# Shared simulation nodes (home, tavern, work yard) are entrances rather than
-	# a single pixel. Spread only the presentation pose into the nearby courtyard;
-	# path length and authoritative position remain unchanged.
-	var columns=[-70.0,-35.0,0.0,35.0,70.0]
-	return Vector2(columns[slot%columns.size()],-88.0-float(slot/columns.size())*42.0)
+	# Simulation nodes identify buildings, not exact chair/workbench positions.
+	# Spread poses inside open courtyards; the simulation position is unchanged.
+	var columns=[-48.0,-24.0,0.0,24.0,48.0]
+	return Vector2(columns[slot%columns.size()],-17.0-float(slot/columns.size())*20.0)
 
 func _hero_position(hero: Dictionary) -> Vector2:
 	var target=_display_world_point(Vector2(float(hero.x),float(hero.y)))
@@ -793,7 +997,7 @@ func _draw_hero(world: Vector2,hero_id: String,profile: String,star: int,walking
 	var working=not walking and (motion in ["hammer","chop","cultivate","carry"] or task_kind in ["eat","prepare","finish","administration","survey"]) and int(town.speed)>0
 	var bob=absf(step)*1.8 if walking else (sin(ambient_time*4.5+phase)*.8 if working else 0.0)
 	var p=_screen(world,origin,scale)+Vector2(0,-bob)*scale
-	var art_scale=scale*1.12
+	var art_scale=scale*(0.80 if int(town.snapshot.get("layoutVersion",6))>=7 else 1.12)
 	var look=_hero_look(hero_id,profile)
 	var coat=Color(str(look.get("coat","536f6a")))
 	var trim=Color(str(look.get("trim","d2bc86")))
@@ -929,6 +1133,14 @@ func _draw_sleeping_resident(world: Vector2,slot: int,hero_id: String,origin: Ve
 	draw_rect(Rect2(p+Vector2(-4,0)*scale,Vector2(8,8)*scale),Color(blanket,.82))
 	if slot==0:
 		draw_string(font,p+Vector2(31,-8)*scale,"眠",HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(8,int(10*scale)),Color(MUTED,.72))
+
+func _draw_clinic_patient(world: Vector2,slot: int,hero_id: String,origin: Vector2,scale: float) -> void:
+	# A real admitted patient occupies one of the clinic's 2/4/6 visible mats.
+	var p=_screen(world,origin,scale)+Vector2(-52.0+float(slot%3)*39.0,-31.0+float(slot/3)*34.0)*scale
+	var coat=Color(str(_hero_look(hero_id,"balanced").get("coat","536f6a")))
+	draw_circle(p+Vector2(7,10)*scale,4*scale,Color("dfb58e"))
+	draw_rect(Rect2(p+Vector2(11,7)*scale,Vector2(17,9)*scale),coat)
+	draw_line(p+Vector2(13,13)*scale,p+Vector2(25,13)*scale,Color("efe9d7"),maxf(1,scale))
 
 func _draw_hud(data: Dictionary,night: bool) -> void:
 	var panel=Rect2(34,30,360,172)
