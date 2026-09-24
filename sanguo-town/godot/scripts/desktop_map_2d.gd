@@ -9,16 +9,29 @@ var drives_visual_walks := false
 var is_night := false
 var show_hud := true
 var solid_background := false
+var preview_camera := false
 
 const WORLD_SIZE=Vector2(1920,1080)
 const COURTYARD_WORLD_SIZE=Vector2(2640,1535)
 const MAP_ZOOM=1.07
-const INK=Color("27443b")
-const MUTED=Color("66776b")
-const GRASS=Color("dfe9bd")
-const ROAD=Color("e4d3a9")
+const INK=Color("304a40")
+const MUTED=Color("66766b")
+const GRASS=Color("d6dfbd")
+const ROAD=Color("dfc9a0")
 const WATER=Color("8ec3b7")
 const BANK=Color("b7d1ad")
+const TIMBER=Color("806648")
+const PLASTER=Color("f2e5c7")
+const SHADOW=Color("546954",.17)
+const HERO_LOOKS={
+	"xunyu":{"coat":"416d72","trim":"cfbe83","head":0,"beard":1,"build":1.0},
+	"liubei":{"coat":"648365","trim":"dccc9a","head":1,"beard":1,"build":1.0},
+	"zhangfei":{"coat":"8d483b","trim":"c9a36b","head":2,"beard":3,"build":1.23},
+	"zhaoyun":{"coat":"c8d8d1","trim":"668d96","head":3,"beard":0,"build":.98},
+	"huangyueying":{"coat":"cc9f53","trim":"547f74","head":4,"beard":0,"build":.96}
+}
+const FALLBACK_COATS=["536f6a","8b7056","68788c","9b6a59","678767","7b6d86","628a85","a3835e"]
+const FALLBACK_TRIMS=["d2bc86","d3c7a3","b3cdb8","d8aa79","b7c6a9","cfc0a8"]
 const COURTYARD_ROAD_X=[235.0,675.0,1115.0,1555.0,1995.0,2435.0]
 const COURTYARD_ROAD_Y=[432.5,740.0,1252.5]
 const VISUAL_WALK_SPEED=90.0
@@ -55,9 +68,13 @@ func _draw() -> void:
 	var view_size=_opened_view_size(data) if courtyard_mode else display_world_size
 	var scale=minf(size.x/view_size.x,size.y/view_size.y)*(1.0 if courtyard_mode else MAP_ZOOM)
 	var origin=(size-view_size*scale)*.5
+	if preview_camera and courtyard_mode:
+		# Art-review close-up only. The live desktop camera remains unchanged.
+		scale=minf(size.x/900.0,size.y/520.0)
+		origin=size*.5-Vector2(345.0,display_world_size.y-1255.0)*scale
 	var night=bool(data.get("night",false))
 	is_night=night
-	var grass=Color("829483") if night else GRASS
+	var grass=Color("71877c") if night else GRASS
 	# A translucent full-screen ground keeps the wallpaper present while making
 	# the city read as one continuous desktop map rather than a floating window.
 	draw_rect(Rect2(Vector2.ZERO,size),Color(grass,1.0 if solid_background else 0.90))
@@ -141,7 +158,7 @@ func _draw() -> void:
 			var home_key="%d:%d" % [int(hero.x),int(hero.y)]
 			var sleep_slot=int(sleeping_slots.get(home_key,0))
 			sleeping_slots[home_key]=sleep_slot+1
-			_draw_sleeping_resident(_display_world_point(Vector2(float(hero.x),float(hero.y))),sleep_slot,origin,scale)
+			_draw_sleeping_resident(_display_world_point(Vector2(float(hero.x),float(hero.y))),sleep_slot,str(hero.get("id","")),origin,scale)
 			hero_index+=1
 			continue
 		var route: Array=hero.get("route",[])
@@ -157,7 +174,7 @@ func _draw() -> void:
 			var station_slot=int(stationary_slots.get(station_key,0))
 			stationary_slots[station_key]=station_slot+1
 			position+=_stationary_offset(station_slot)
-		_draw_hero(position,str(hero.get("profile","balanced")),walking,str(hero.get("motion","")),str(hero.get("healthCondition","")),str(hero.get("taskKind","")),str(hero.get("taskResource","")),str(hero.get("cargo","")),origin,scale,float(hero_index)*.83)
+		_draw_hero(position,str(hero.get("id","")),str(hero.get("profile","balanced")),int(hero.get("star",1)),walking,str(hero.get("motion","")),str(hero.get("healthCondition","")),str(hero.get("taskKind","")),str(hero.get("taskResource","")),str(hero.get("cargo","")),origin,scale,float(hero_index)*.83)
 		hero_index+=1
 
 	if show_hud: _draw_hud(data,night)
@@ -191,15 +208,21 @@ func _draw_courtyard_parcels(data: Dictionary,origin: Vector2,scale: float) -> v
 	# Broad, irregular ground patches read as neighborhoods; narrow continuous
 	# streets separate them. An I parcel is open civic ground, never a road tile.
 	var patches=[
-		[Vector2(390,1170),Vector2(680,340),Color("b9d69e",.26)],
-		[Vector2(1080,1110),Vector2(720,420),Color("e6d5a9",.24)],
-		[Vector2(530,520),Vector2(760,530),Color("c8dca0",.29)],
-		[Vector2(1400,560),Vector2(600,440),Color("e8d6ad",.18)],
-		[Vector2(2180,1090),Vector2(700,610),Color("b9d9af",.18)],
-		[Vector2(2060,270),Vector2(940,460),Color("c7dcb2",.19)]
+		[Vector2(390,1170),Vector2(680,340),Color("99b883",.20)],
+		[Vector2(1080,1110),Vector2(720,420),Color("e9d6a9",.25)],
+		[Vector2(530,520),Vector2(760,530),Color("adc79b",.22)],
+		[Vector2(1400,560),Vector2(600,440),Color("e2cba0",.20)],
+		[Vector2(2180,1090),Vector2(700,610),Color("a8c5a2",.20)],
+		[Vector2(2060,270),Vector2(940,460),Color("b7cfaa",.19)]
 	]
 	for patch in patches:
 		_draw_ground_patch(patch[0],patch[1],patch[2],origin,scale)
+	# Sparse ground marks add hand-drawn texture without a per-frame noise pass.
+	for mark in range(36):
+		var x=75.0+float((mark*347)%2370)
+		var y=90.0+float((mark*193)%1360)
+		var tint=Color("839e78",.20) if mark%3 else Color("ede3bc",.35)
+		_draw_world_line(Vector2(x-7,y),Vector2(x+5,y+2),2,tint,origin,scale)
 	var grid: Dictionary=data.get("unlockedGrid",{"columns":8,"rows":5})
 	var open_columns=int(grid.get("columns",8))
 	var open_rows=int(grid.get("rows",5))
@@ -251,16 +274,18 @@ func _draw_ground_patch(center: Vector2,extent: Vector2,color: Color,origin: Vec
 
 func _draw_courtyard_road(a: Vector2,b: Vector2,origin: Vector2,scale: float,planned: bool=false) -> void:
 	if planned:
-		_draw_world_line(a,b,7,Color("a8bda0"),origin,scale)
+		_draw_world_line(a,b,5,Color("8da58c",.48),origin,scale)
 		return
-	_draw_world_line(a,b,42,Color("c4b58d",.75),origin,scale)
-	_draw_world_line(a,b,32,Color("e8d9b4"),origin,scale)
-	# Occasional stone seams give the path texture without modern lane markings.
+	_draw_world_line(a+Vector2(4,-4),b+Vector2(4,-4),48,SHADOW,origin,scale)
+	_draw_world_line(a,b,42,Color("ae926d",.60),origin,scale)
+	_draw_world_line(a,b,34,ROAD,origin,scale)
+	# Warm irregular stepping-stone marks, not traffic lane markings or a tile grid.
 	var length=a.distance_to(b)
-	for index in range(1,int(length/155.0)):
-		var mark=a.lerp(b,float(index)*155.0/length)
+	for index in range(1,int(length/96.0)):
+		var mark=a.lerp(b,float(index)*96.0/length)
 		var side=Vector2(1,0) if absf(a.x-b.x)<1.0 else Vector2(0,1)
-		_draw_world_line(mark-side*11,mark+side*11,1,Color("b9a983",.35),origin,scale)
+		var shift=sin(float(index)*2.71)*4.0
+		_draw_world_line(mark-side*(9+shift),mark+side*(7-shift),1.5,Color("b29c76",.43),origin,scale)
 
 func _draw_courtyard_access(point: Vector2,kind: String,origin: Vector2,scale: float) -> void:
 	var road_x=_nearest_lane(point.x,COURTYARD_ROAD_X)
@@ -362,6 +387,12 @@ func _draw_building(plot: Dictionary,origin: Vector2,scale: float) -> void:
 	if kind=="house" and int(town.snapshot.get("layoutVersion",6))>=7:
 		_draw_shared_courtyard(plot,origin,scale)
 		return
+	if int(town.snapshot.get("layoutVersion",6))>=7 and kind=="tavern":
+		_draw_open_tavern(p,scale)
+		return
+	if int(town.snapshot.get("layoutVersion",6))>=7 and kind=="workshop":
+		_draw_open_workshop(p,scale)
+		return
 	var art_scale=scale*1.22
 	var wide=54.0 if kind=="hall" else 43.0
 	var body=Rect2(p+Vector2(-wide,-16)*art_scale,Vector2(wide*2,46)*art_scale)
@@ -400,27 +431,106 @@ func _draw_building(plot: Dictionary,origin: Vector2,scale: float) -> void:
 func _draw_shared_courtyard(plot: Dictionary,origin: Vector2,scale: float) -> void:
 	var center=_screen(Vector2(float(plot.point.x),float(plot.point.y)),origin,scale)
 	var outer=Rect2(center+Vector2(-82,-61)*scale,Vector2(164,122)*scale)
-	draw_rect(outer,Color("e7dcba"))
-	draw_rect(outer,Color("8a997f"),false,maxf(1,3*scale))
-	var court=Rect2(center+Vector2(-35,-29)*scale,Vector2(70,57)*scale)
-	draw_rect(court,Color("cbd9ab"))
-	draw_rect(court,Color("abbc92"),false,maxf(1,scale))
+	draw_rect(Rect2(outer.position+Vector2(5,6)*scale,outer.size),SHADOW)
+	draw_rect(outer,Color("e9d6ad"))
+	var court=Rect2(center+Vector2(-72,-20)*scale,Vector2(144,70)*scale)
+	draw_rect(court,Color("c5d0a7"))
+	for step in range(5):
+		var stone=center+Vector2(-55+float(step)*28,25+sin(float(step)*2.3)*5)*scale
+		draw_circle(stone,5*scale,Color("e9dfbd",.88))
+	# Three low walls leave the near side and gate open; this is a floor plan,
+	# never a roof covering residents.
+	for side in [-1.0,1.0]:
+		draw_line(center+Vector2(side*79,-59)*scale,center+Vector2(side*79,54)*scale,TIMBER,maxf(2,6*scale))
+	draw_line(center+Vector2(-80,-59)*scale,center+Vector2(80,-59)*scale,TIMBER,maxf(2,7*scale))
+	draw_line(center+Vector2(-80,57)*scale,center+Vector2(-18,57)*scale,TIMBER,maxf(2,5*scale))
+	draw_line(center+Vector2(18,57)*scale,center+Vector2(80,57)*scale,TIMBER,maxf(2,5*scale))
+	var planter=center+Vector2(52,21)*scale
+	draw_circle(planter,11*scale,Color("a77b54"))
+	draw_circle(planter,8*scale,Color("71966a"))
+	draw_circle(planter+Vector2(-4,-3)*scale,4*scale,Color("9fbd82"))
 	var count=[0,2,3,4][clampi(int(plot.level),0,3)]
 	var occupied=0
 	for unit in town.snapshot.get("courtyardUnits",{}).values():
 		if str(unit.get("plotID",""))==str(plot.id) and unit.get("occupantHouseholdID")!=null: occupied+=1
 	for index in range(count):
 		var x=-74.0+float(index)*39.0
-		var room=Rect2(center+Vector2(x,-53)*scale,Vector2(34,28)*scale)
-		draw_rect(room,Color("f4dfb7") if index<occupied else Color("ded9b8"))
-		draw_rect(room,Color("9a9d7f"),false,maxf(1,scale))
-		var window=room.position+Vector2(17,24)*scale
-		if is_night and index<occupied: draw_circle(window,11*scale,Color("efc779",.19))
-		draw_rect(Rect2(window-Vector2(4,3.5)*scale,Vector2(8,7)*scale),Color("eec77a") if is_night and index<occupied else Color("617b6d"))
+		var room=Rect2(center+Vector2(x,-51)*scale,Vector2(34,31)*scale)
+		var inhabited=index<occupied
+		draw_rect(room,Color("f3e3bf") if inhabited else Color("ded4b1"))
+		draw_line(room.position,room.position+Vector2(0,30)*scale,Color("927352"),maxf(1,3*scale))
+		draw_line(room.position,room.position+Vector2(34,0)*scale,Color("927352"),maxf(1,3*scale))
+		draw_line(room.position+Vector2(34,0)*scale,room.position+Vector2(34,30)*scale,Color("927352"),maxf(1,3*scale))
+		var mat=Rect2(room.position+Vector2(4,6)*scale,Vector2(14,9)*scale)
+		draw_rect(mat,Color("9eaa89") if inhabited else Color("b5b89f"))
+		draw_line(mat.position+Vector2(3,3)*scale,mat.position+Vector2(11,3)*scale,Color("e5dec5"),maxf(1,scale))
+		var lantern=room.position+Vector2(27,11)*scale
+		if is_night and inhabited: draw_circle(lantern,11*scale,Color("efc779",.23))
+		draw_circle(lantern,3*scale,Color("efc779") if is_night and inhabited else Color("a7845d"))
+		var curtain=room.position+Vector2(21,30)*scale
+		draw_rect(Rect2(curtain,Vector2(11,6)*scale),Color("a77556") if inhabited else Color("b1a48b"))
 	var legacy=maxi(0,int(plot.get("occupancy",0))-occupied)
 	var label="共居院  %d/%d户" % [occupied,count]
 	if legacy>0: label+="  旧住%d" % legacy
-	draw_string(font,center+Vector2(-80,83)*scale,label,HORIZONTAL_ALIGNMENT_CENTER,160*scale,maxi(10,int(14*scale)),INK)
+	draw_string(font,center+Vector2(-80,-68)*scale,label,HORIZONTAL_ALIGNMENT_CENTER,160*scale,maxi(10,int(14*scale)),INK)
+
+func _draw_open_room_base(p: Vector2,scale: float,floor_tint: Color) -> void:
+	var floor=Rect2(p+Vector2(-69,-46)*scale,Vector2(138,92)*scale)
+	draw_rect(Rect2(floor.position+Vector2(5,6)*scale,floor.size),SHADOW)
+	draw_rect(floor,PLASTER)
+	draw_rect(Rect2(p+Vector2(-62,-39)*scale,Vector2(124,77)*scale),floor_tint)
+	for side in [-1.0,1.0]:
+		draw_line(p+Vector2(side*68,-45)*scale,p+Vector2(side*68,44)*scale,TIMBER,maxf(2,7*scale))
+	draw_line(p+Vector2(-69,-45)*scale,p+Vector2(69,-45)*scale,TIMBER,maxf(2,8*scale))
+	draw_line(p+Vector2(-69,45)*scale,p+Vector2(-20,45)*scale,TIMBER,maxf(2,6*scale))
+	draw_line(p+Vector2(20,45)*scale,p+Vector2(69,45)*scale,TIMBER,maxf(2,6*scale))
+	for corner in [-1.0,1.0]:
+		draw_circle(p+Vector2(corner*65,-42)*scale,4*scale,Color("ac845b"))
+
+func _draw_open_tavern(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("e8d0a9"))
+	# A preparation counter, round dining tables and visible hearth replace the
+	# old sealed roof; steam is added separately only by the real kitchen phase.
+	draw_rect(Rect2(p+Vector2(-56,-30)*scale,Vector2(65,15)*scale),Color("9b7150"))
+	draw_line(p+Vector2(-53,-27)*scale,p+Vector2(5,-27)*scale,Color("d5a777"),maxf(1,2*scale))
+	for bowl in range(3):
+		var bowl_p=p+Vector2(-44+float(bowl)*19,-23)*scale
+		draw_circle(bowl_p,4*scale,Color("f4e8cd"))
+		draw_circle(bowl_p,2*scale,Color("b5764f"))
+	var hearth=p+Vector2(41,-21)*scale
+	draw_circle(hearth,17*scale,Color("b0936e"))
+	draw_circle(hearth,12*scale,Color("5a5d4c"))
+	draw_circle(hearth,7*scale,Color("a87045"))
+	for table_x in [-29.0,24.0]:
+		var table=p+Vector2(table_x,18)*scale
+		draw_circle(table+Vector2(2,3)*scale,16*scale,Color("6c5947",.18))
+		draw_circle(table,15*scale,Color("a87951"))
+		draw_circle(table,11*scale,Color("c79d69"))
+		draw_circle(table+Vector2(2,-2)*scale,3*scale,Color("f0e2bd"))
+		draw_rect(Rect2(table+Vector2(-5,17)*scale,Vector2(10,5)*scale),Color("806a4f"))
+	draw_rect(Rect2(p+Vector2(-67,-53)*scale,Vector2(27,8)*scale),Color("a25e4a"))
+	draw_string(font,p+Vector2(-55,-57)*scale,"酒馆",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),INK)
+
+func _draw_open_workshop(p: Vector2,scale: float) -> void:
+	_draw_open_room_base(p,scale,Color("dccca8"))
+	var bench=Rect2(p+Vector2(-55,-26)*scale,Vector2(94,18)*scale)
+	draw_rect(Rect2(bench.position+Vector2(3,4)*scale,bench.size),SHADOW)
+	draw_rect(bench,Color("97714d"))
+	for plank in range(3):
+		var y=-22.0+float(plank)*5.0
+		draw_line(p+Vector2(-50,y)*scale,p+Vector2(34,y)*scale,Color("c49766",.78),maxf(1,scale))
+	var anvil=p+Vector2(-28,18)*scale
+	draw_rect(Rect2(anvil+Vector2(-15,-2)*scale,Vector2(30,13)*scale),Color("4f6763"))
+	draw_rect(Rect2(anvil+Vector2(-7,10)*scale,Vector2(14,8)*scale),Color("59675e"))
+	draw_line(anvil+Vector2(-14,0)*scale,anvil+Vector2(14,0)*scale,Color("a7ada0"),maxf(1,2*scale))
+	for log_index in range(3):
+		var log=p+Vector2(34,14+float(log_index)*10)*scale
+		draw_rect(Rect2(log,Vector2(22,7)*scale),Color("b68655"))
+		draw_circle(log+Vector2(22,3.5)*scale,4*scale,Color("d2ac77"))
+	for peg in range(3):
+		var peg_p=p+Vector2(-44+float(peg)*21,-36)*scale
+		draw_line(peg_p,peg_p+Vector2(0,11)*scale,Color("556b63"),maxf(1,2*scale))
+	draw_string(font,p+Vector2(-55,-57)*scale,"工造院",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),INK)
 
 func _draw_project_site(project: Dictionary,data: Dictionary,origin: Vector2,scale: float) -> void:
 	var point=Vector2.ZERO
@@ -642,29 +752,88 @@ func _draw_tree(world: Vector2,origin: Vector2,scale: float,phase: float) -> voi
 	draw_circle(crown+Vector2(-9,-3)*scale,12*scale,Color("78996b"))
 	draw_circle(crown+Vector2(9,-4)*scale,12*scale,Color("89a46f"))
 
-func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,health_condition: String,task_kind: String,task_resource: String,cargo: String,origin: Vector2,scale: float,phase: float) -> void:
-	var step=sin(animation_time*(5.5 if walking else 9.0)+phase)
+func _hero_look(hero_id: String,profile: String) -> Dictionary:
+	if HERO_LOOKS.has(hero_id): return HERO_LOOKS[hero_id]
+	var signature=posmod(hero_id.hash(),FALLBACK_COATS.size()*FALLBACK_TRIMS.size())
+	var head=3 if profile=="martial" else (0 if profile in ["command","civic"] else 1+signature%2)
+	return {"coat":FALLBACK_COATS[signature%FALLBACK_COATS.size()],"trim":FALLBACK_TRIMS[(signature/FALLBACK_COATS.size())%FALLBACK_TRIMS.size()],"head":head,"beard":signature%4,"build":1.0+float(signature%5-2)*.045}
+
+func _draw_hero(world: Vector2,hero_id: String,profile: String,star: int,walking: bool,motion: String,health_condition: String,task_kind: String,task_resource: String,cargo: String,origin: Vector2,scale: float,phase: float) -> void:
+	var step=sin(animation_time*(5.5 if walking else 7.0)+phase)
 	var working=not walking and (motion in ["hammer","chop","cultivate","carry"] or task_kind in ["eat","prepare","finish","administration","survey"]) and int(town.speed)>0
-	var bob=absf(step)*2.0 if walking else (sin(animation_time*5.0+phase)*1.2 if working else 0.0)
+	var bob=absf(step)*1.8 if walking else (sin(animation_time*4.5+phase)*.8 if working else 0.0)
 	var p=_screen(world,origin,scale)+Vector2(0,-bob)*scale
-	var robe={"command":"4d6b63","martial":"6f6046","civic":"627568","craft":"775f4f","balanced":"536c62"}.get(profile,"536c62")
-	draw_circle(p+Vector2(0,-12)*scale,7*scale,Color("d5a66d"))
-	draw_rect(Rect2(p+Vector2(-7,-5)*scale,Vector2(14,21)*scale),Color(robe))
-	draw_rect(Rect2(p+Vector2(-8,-21)*scale,Vector2(16,6)*scale),Color("263d39"))
-	var leg_swing=step*5.0 if walking else 0.0
-	draw_line(p+Vector2(-4,16)*scale,p+Vector2(-5-leg_swing,26)*scale,Color("293e38"),maxf(1,3*scale))
-	draw_line(p+Vector2(4,16)*scale,p+Vector2(5+leg_swing,26)*scale,Color("293e38"),maxf(1,3*scale))
-	var arm_swing=step*6.0 if walking else 0.0
-	draw_line(p+Vector2(-7,0)*scale,p+Vector2(-11-arm_swing,12)*scale,Color(robe),maxf(1,3*scale))
-	var hand=Vector2(13+arm_swing,10)
-	if working: hand=Vector2(11+step*8,-6+absf(step)*12)
-	draw_line(p+Vector2(7,0)*scale,p+hand*scale,Color(robe),maxf(1,3*scale))
-	_draw_activity_prop(p,task_kind,task_resource,cargo,motion,not walking and int(town.speed)>0,scale,phase)
+	var art_scale=scale*1.12
+	var look=_hero_look(hero_id,profile)
+	var coat=Color(str(look.get("coat","536f6a")))
+	var trim=Color(str(look.get("trim","d2bc86")))
+	var build=float(look.get("build",1.0))
+	var width=11.0*build
+	var dark=Color("293e3a")
+	var skin=Color("dfb58e")
+	# Identity is a stable layered silhouette. Task tools are drawn afterward and
+	# never replace coat, headgear, beard or personal accessories.
+	draw_circle(p+Vector2(0,24)*art_scale,12*art_scale,SHADOW)
+	var leg_swing=step*4.5 if walking else 0.0
+	draw_line(p+Vector2(-5,15)*art_scale,p+Vector2(-6-leg_swing,28)*art_scale,dark,maxf(1,4*art_scale))
+	draw_line(p+Vector2(5,15)*art_scale,p+Vector2(6+leg_swing,28)*art_scale,dark,maxf(1,4*art_scale))
+	var robe_points=PackedVector2Array([
+		p+Vector2(-width,-5)*art_scale,p+Vector2(width,-5)*art_scale,
+		p+Vector2(width+4,20)*art_scale,p+Vector2(-width-4,20)*art_scale])
+	draw_colored_polygon(robe_points,coat)
+	var border=robe_points.duplicate()
+	border.append(robe_points[0])
+	draw_polyline(border,dark,maxf(1,art_scale),true)
+	draw_line(p+Vector2(-width+2,5)*art_scale,p+Vector2(width-2,5)*art_scale,trim,maxf(1,3*art_scale))
+	draw_line(p+Vector2(0,-4)*art_scale,p+Vector2(0,19)*art_scale,trim.darkened(.15),maxf(1,2*art_scale))
+	var arm_swing=step*5.0 if walking else 0.0
+	draw_line(p+Vector2(-width,-2)*art_scale,p+Vector2(-width-6-arm_swing,12)*art_scale,coat.darkened(.12),maxf(1,7*art_scale))
+	var hand=Vector2(width+6+arm_swing,12)
+	if working: hand=Vector2(width+5+step*7,-4+absf(step)*13)
+	draw_line(p+Vector2(width,-2)*art_scale,p+hand*art_scale,coat.darkened(.08),maxf(1,7*art_scale))
+	draw_circle(p+hand*art_scale,2.7*art_scale,skin)
+	draw_circle(p+Vector2(0,-17)*art_scale,8*art_scale,skin)
+	for eye in [-3.0,3.0]: draw_circle(p+Vector2(eye,-18)*art_scale,1.0*art_scale,dark)
+	var head_kind=int(look.get("head",1))
+	match head_kind:
+		0:
+			var crown=PackedVector2Array([p+Vector2(-9,-23)*art_scale,p+Vector2(-7,-36)*art_scale,p+Vector2(7,-36)*art_scale,p+Vector2(9,-23)*art_scale])
+			draw_colored_polygon(crown,dark)
+			draw_line(p+Vector2(-10,-25)*art_scale,p+Vector2(10,-25)*art_scale,trim,maxf(1,3*art_scale))
+		1:
+			draw_circle(p+Vector2(0,-28)*art_scale,6*art_scale,dark)
+			draw_line(p+Vector2(-11,-24)*art_scale,p+Vector2(11,-24)*art_scale,trim,maxf(1,3*art_scale))
+			draw_line(p+Vector2(-10,-24)*art_scale,p+Vector2(-16,-18)*art_scale,coat,maxf(1,3*art_scale))
+		2:
+			draw_circle(p+Vector2(0,-29)*art_scale,7*art_scale,dark)
+			draw_line(p+Vector2(-12,-25)*art_scale,p+Vector2(12,-25)*art_scale,trim,maxf(1,4*art_scale))
+		3:
+			var helm=PackedVector2Array([p+Vector2(-11,-22)*art_scale,p+Vector2(-10,-30)*art_scale,p+Vector2(0,-37)*art_scale,p+Vector2(10,-30)*art_scale,p+Vector2(11,-22)*art_scale])
+			draw_colored_polygon(helm,coat.darkened(.22))
+			draw_line(p+Vector2(0,-34)*art_scale,p+Vector2(0,-44)*art_scale,trim,maxf(1,3*art_scale))
+			draw_line(p+Vector2(0,-44)*art_scale,p+Vector2(6,-39)*art_scale,Color("a85d4d"),maxf(1,3*art_scale))
+		4:
+			draw_circle(p+Vector2(-9,-27)*art_scale,6*art_scale,dark)
+			draw_line(p+Vector2(-15,-29)*art_scale,p+Vector2(4,-28)*art_scale,trim,maxf(1,2*art_scale))
+			draw_circle(p+Vector2(-15,-29)*art_scale,2*art_scale,Color("659789"))
+	var beard=int(look.get("beard",0))
+	if beard>0:
+		var beard_length=7.0+float(beard)*3.5
+		var beard_shape=PackedVector2Array([p+Vector2(-4,-10)*art_scale,p+Vector2(4,-10)*art_scale,p+Vector2(1,-10+beard_length)*art_scale,p+Vector2(-2,-10+beard_length*.75)*art_scale])
+		draw_colored_polygon(beard_shape,dark)
+	if hero_id=="huangyueying":
+		draw_rect(Rect2(p+Vector2(-width-9,2)*art_scale,Vector2(9,12)*art_scale),Color("705b42"))
+		draw_line(p+Vector2(-width-8,-2)*art_scale,p+Vector2(8,12)*art_scale,trim,maxf(1,2*art_scale))
+	if hero_id=="liubei":
+		draw_line(p+Vector2(-width,7)*art_scale,p+Vector2(width,7)*art_scale,Color("d4b879"),maxf(1,2*art_scale))
+	if star>=3:
+		draw_circle(p+Vector2(-width+2,-1)*art_scale,3*art_scale,trim.lightened(.15))
+	_draw_activity_prop(p,task_kind,task_resource,cargo,motion,not walking and int(town.speed)>0,art_scale,phase)
 	if health_condition!="":
-		var badge=p+Vector2(13,-27)*scale
-		draw_circle(badge,6*scale,Color("f2ecd8"))
-		draw_rect(Rect2(badge-Vector2(1.5,4)*scale,Vector2(3,8)*scale),Color("a85b4c"))
-		draw_rect(Rect2(badge-Vector2(4,1.5)*scale,Vector2(8,3)*scale),Color("a85b4c"))
+		var badge=p+Vector2(17,-34)*art_scale
+		draw_circle(badge,6*art_scale,Color("f2ecd8"))
+		draw_rect(Rect2(badge-Vector2(1.5,4)*art_scale,Vector2(3,8)*art_scale),Color("a85b4c"))
+		draw_rect(Rect2(badge-Vector2(4,1.5)*art_scale,Vector2(8,3)*art_scale),Color("a85b4c"))
 
 func _draw_activity_prop(p: Vector2,task_kind: String,task_resource: String,cargo: String,motion: String,active: bool,scale: float,phase: float) -> void:
 	var beat=sin(animation_time*5.0+phase) if active and town.get("reduce_motion")!=true else 0.0
@@ -706,15 +875,16 @@ func _draw_activity_prop(p: Vector2,task_kind: String,task_resource: String,carg
 		draw_line(scroll+Vector2(3,4)*scale,scroll+Vector2(8,4)*scale,Color("8e7758"),maxf(1,scale))
 		draw_line(scroll+Vector2(3,8)*scale,scroll+Vector2(8,8)*scale,Color("8e7758"),maxf(1,scale))
 
-func _draw_sleeping_resident(world: Vector2,slot: int,origin: Vector2,scale: float) -> void:
+func _draw_sleeping_resident(world: Vector2,slot: int,hero_id: String,origin: Vector2,scale: float) -> void:
 	# Sleeping residents remain visible as quiet indoor silhouettes. Slots are
 	# deterministic per home, so multiple newly recruited heroes never collapse
 	# into one marker and no anonymous resident is invented.
 	var column=slot%4
 	var row=slot/4
 	var p=_screen(world,origin,scale)+Vector2(-27.0+float(column)*18.0,-1.0+float(row)*15.0)*scale
+	var blanket=Color(str(_hero_look(hero_id,"balanced").get("coat","536f6a")))
 	draw_circle(p+Vector2(0,-4)*scale,3.5*scale,Color("30483f",.72))
-	draw_rect(Rect2(p+Vector2(-4,0)*scale,Vector2(8,8)*scale),Color("405b50",.66))
+	draw_rect(Rect2(p+Vector2(-4,0)*scale,Vector2(8,8)*scale),Color(blanket,.82))
 	if slot==0:
 		draw_string(font,p+Vector2(31,-8)*scale,"眠",HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(8,int(10*scale)),Color(MUTED,.72))
 
