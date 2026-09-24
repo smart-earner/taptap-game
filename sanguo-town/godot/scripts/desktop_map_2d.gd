@@ -552,7 +552,7 @@ func _draw_shared_courtyard(plot: Dictionary,origin: Vector2,scale: float) -> vo
 	var legacy=maxi(0,int(plot.get("occupancy",0))-occupied)
 	var label="共居院  %d/%d户" % [occupied,count]
 	if legacy>0: label+="  旧住%d" % legacy
-	draw_string(font,center+Vector2(-80,-68)*scale,label,HORIZONTAL_ALIGNMENT_CENTER,160*scale,maxi(10,int(14*scale)),INK)
+	draw_string(font,center+Vector2(-80,-68)*scale,label,HORIZONTAL_ALIGNMENT_CENTER,160*scale,maxi(10,int(14*scale)),Color("f4ebd0") if is_night else INK)
 
 func _draw_open_room_base(p: Vector2,scale: float,floor_tint: Color) -> void:
 	var floor=Rect2(p+Vector2(-69,-46)*scale,Vector2(138,92)*scale)
@@ -589,7 +589,7 @@ func _draw_open_tavern(p: Vector2,scale: float) -> void:
 		draw_circle(table+Vector2(2,-2)*scale,3*scale,Color("f0e2bd"))
 		draw_rect(Rect2(table+Vector2(-5,17)*scale,Vector2(10,5)*scale),Color("806a4f"))
 	draw_rect(Rect2(p+Vector2(-67,-53)*scale,Vector2(27,8)*scale),Color("a25e4a"))
-	draw_string(font,p+Vector2(-55,-57)*scale,"酒馆",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),INK)
+	draw_string(font,p+Vector2(-55,-57)*scale,"酒馆",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),Color("f4ebd0") if is_night else INK)
 
 func _draw_open_workshop(p: Vector2,scale: float) -> void:
 	_draw_open_room_base(p,scale,Color("dccca8"))
@@ -610,10 +610,10 @@ func _draw_open_workshop(p: Vector2,scale: float) -> void:
 	for peg in range(3):
 		var peg_p=p+Vector2(-44+float(peg)*21,-36)*scale
 		draw_line(peg_p,peg_p+Vector2(0,11)*scale,Color("556b63"),maxf(1,2*scale))
-	draw_string(font,p+Vector2(-55,-57)*scale,"工造院",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),INK)
+	draw_string(font,p+Vector2(-55,-57)*scale,"工造院",HORIZONTAL_ALIGNMENT_CENTER,110*scale,maxi(11,int(15*scale)),Color("f4ebd0") if is_night else INK)
 
 func _draw_open_label(p: Vector2,scale: float,title: String) -> void:
-	draw_string(font,p+Vector2(-60,-57)*scale,title,HORIZONTAL_ALIGNMENT_CENTER,120*scale,maxi(11,int(15*scale)),INK)
+	draw_string(font,p+Vector2(-60,-57)*scale,title,HORIZONTAL_ALIGNMENT_CENTER,120*scale,maxi(11,int(15*scale)),Color("f4ebd0") if is_night else INK)
 
 func _draw_open_hall(p: Vector2,scale: float) -> void:
 	var s=scale*1.13
