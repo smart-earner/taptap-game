@@ -6,6 +6,19 @@ final class LifeTests: XCTestCase {
 }
 extension LifeTests {
     func make() throws -> LifeRuntime {try .init(catalog:.bundled(),wallUTC:0)}
+    func testWarCasualtiesAreProportionalAndOrderIndependent() {
+        let squads=[
+            LifeWarSquad(id:"a",kind:"infantry",survivors:10,cityID:"00",gearOrigin:"test"),
+            LifeWarSquad(id:"b",kind:"archer",survivors:6,cityID:"00",gearOrigin:"test"),
+            LifeWarSquad(id:"c",kind:"sapper",survivors:3,cityID:"00",gearOrigin:"test")
+        ]
+        XCTAssertEqual(LifeWarContract.casualtyShares(squads,losses:5),["a":3,"b":1,"c":1])
+        XCTAssertEqual(LifeWarContract.casualtyShares(Array(squads.reversed()),losses:5),["a":3,"b":1,"c":1])
+        XCTAssertEqual(LifeWarContract.casualtyShares(squads,losses:19),["a":10,"b":6,"c":3])
+        XCTAssertEqual(LifeWarContract.casualtyShares(squads,losses:0),[:])
+        let tie=[squads[0],LifeWarSquad(id:"d",kind:"infantry",survivors:10,cityID:"00",gearOrigin:"test")]
+        XCTAssertEqual(LifeWarContract.casualtyShares(Array(tie.reversed()),losses:1),["a":1,"d":0])
+    }
     func testSeedHasSixteenRealResidentsAndExactAssets() throws {let e=try make();XCTAssertEqual(e.world.agents.count,16);XCTAssertEqual(e.world.amount(.grain),64000);XCTAssertEqual(e.world.amount(.meal),32000);XCTAssertEqual(e.world.owned,["xunyu"]);try e.world.validate()}
     func testFirstHarvestAndFirstMeal() throws {var e=try make();try e.advance(to:900);XCTAssertGreaterThan(e.world.counters["harvests",default:0],0);XCTAssertEqual(e.world.counters["resident_meals_consumed"],16);XCTAssertTrue(e.world.discovered.contains("zhaoyun"));try e.world.validate()}
     func testFullFoodChain() throws {var e=try make();try e.advance(to:7200);XCTAssertGreaterThan(e.world.produced["grain",default:0],0);XCTAssertGreaterThan(e.world.produced["meal",default:0],0);XCTAssertGreaterThan(e.world.counters["deliveries",default:0],0);XCTAssertEqual(e.world.foodCoverage,10000);try e.world.validate()}

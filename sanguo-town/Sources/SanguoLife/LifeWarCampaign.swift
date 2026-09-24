@@ -95,6 +95,25 @@ public enum LifeWarContract {
         }
         return selected
     }
+    /// Both expedition and raid losses use largest-remainder apportionment.
+    /// Equal fractional shares break by squad ID, independent of dictionary order.
+    static func casualtyShares(_ squads:[LifeWarSquad],losses:Int) -> [String:Int] {
+        let total=squads.reduce(0){$0+$1.survivors}
+        guard total>0 else{return [:]}
+        let budget=min(max(0,losses),total)
+        guard budget>0 else{return [:]}
+        var shares:[String:Int]=[:],assigned=0
+        for squad in squads {
+            let base=budget*squad.survivors/total
+            shares[squad.id]=base;assigned+=base
+        }
+        let byRemainder=squads.sorted { left,right in
+            let lhs=(budget*left.survivors)%total,rhs=(budget*right.survivors)%total
+            return lhs==rhs ? left.id<right.id:lhs>rhs
+        }
+        for squad in byRemainder.prefix(budget-assigned) {shares[squad.id,default:0]+=1}
+        return shares
+    }
     public static func loot(_ point:String) -> [LifeResource:Int64] {
         switch point {
         case "outer": return [.wood:2_000,.stone:2_000]
@@ -1225,20 +1244,8 @@ extension LifeRuntime {
             let percent=won ? [5,8,12,20][mission.pointIndex]:25
             let soldiers=mission.squadIDs.reduce(0){$0+(war.squads[$1]?.survivors ?? 0)}
             let losses=min(soldiers,(soldiers*percent+99)/100)
-            var remaining=losses
-            let squadOrder=mission.squadIDs.sorted { left,right in
-                let a=war.squads[left]?.survivors ?? 0,b=war.squads[right]?.survivors ?? 0
-                let ar=(losses*a)%max(1,soldiers),br=(losses*b)%max(1,soldiers)
-                return ar==br ? left<right:ar>br
-            }
-            for id in mission.squadIDs {
-                guard let squad=war.squads[id] else{continue}
-                let n=losses*squad.survivors/max(1,soldiers)
-                war.squads[id]!.survivors-=n;remaining-=n
-            }
-            for id in squadOrder where remaining>0 && war.squads[id] != nil {
-                if war.squads[id]!.survivors>0 {war.squads[id]!.survivors-=1;remaining-=1}
-            }
+            let shares=LifeWarContract.casualtyShares(mission.squadIDs.compactMap{war.squads[$0]},losses:losses)
+            for id in shares.keys.sorted() {war.squads[id]!.survivors-=shares[id]!}
             for id in mission.squadIDs where war.squads[id]?.survivors==0 {war.squads[id]=nil}
             mission.squadIDs.removeAll{war.squads[$0]==nil}
             var granted:[String:Int64]=[:]
@@ -1407,11 +1414,8 @@ extension LifeRuntime {
         let win=defense>=attack
         let number=defenders.reduce(0){$0+$1.survivors}
         let casualtyTotal=min(number,(number*(win ? 5:25)+99)/100)
-        var casualties=casualtyTotal
-        for squad in defenders.sorted(by:{$0.id<$1.id}) where casualties>0 {
-            let n=min(casualties,war.squads[squad.id]!.survivors)
-            war.squads[squad.id]!.survivors-=n;casualties-=n
-        }
+        let shares=LifeWarContract.casualtyShares(defenders,losses:casualtyTotal)
+        for id in shares.keys.sorted() {war.squads[id]!.survivors-=shares[id]!}
         for id in war.squads.keys.sorted() where war.squads[id]?.survivors==0 {war.squads[id]=nil}
         if win {
             war.raidLossStreak=0
