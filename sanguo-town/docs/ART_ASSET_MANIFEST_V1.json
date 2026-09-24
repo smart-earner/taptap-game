@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "art_direction_brief": "ART_DIRECTION_V1.md",
+  "status": "pilot_pending_player_approval",
+  "technical_frame": {
+    "engine": "Godot 4.7.2 CanvasItem",
+    "world_units": "layout7 2640x1535; 12x7 parcels",
+    "camera": "orthographic flat 2D, no roofs over occupants",
+    "target_views": "desktop 15 FPS; management 30 FPS; power-save 8 FPS",
+    "source_format": "code-native vector drawing; no external textures",
+    "filtering": "not applicable until raster assets are approved",
+    "identity_key": "heroID, independent of current job or task",
+    "simulation_source": "committed Swift snapshot only"
+  },
+  "assets": [
+    {"id":"building-house","role":"shared courtyard with 2/3/4 rooms and real sleeping residents","path":"godot/scripts/desktop_map_2d.gd::_draw_shared_courtyard","status":"pilot_review","variants":["level_1","level_2","level_3","day","night","occupied","empty"],"world_extent":"190x125","pivot":"center","collision_role":"existing plot pad; art adds none"},
+    {"id":"building-tavern","role":"open tavern and kitchen","path":"godot/scripts/desktop_map_2d.gd::_draw_open_tavern","status":"pilot_review","variants":["day","night","idle","prepare","passive","finish"],"world_extent":"175x118","pivot":"center","collision_role":"existing plot pad; art adds none"},
+    {"id":"building-workshop","role":"open timber and tool yard","path":"godot/scripts/desktop_map_2d.gd::_draw_open_workshop","status":"pilot_review","variants":["day","night","idle","working"],"world_extent":"175x118","pivot":"center","collision_role":"existing plot pad; art adds none"},
+    {"id":"building-hall","role":"prefect administration courtyard","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","administration","idle"],"world_extent":"210x145","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-farm","role":"farmyard and real crop beds","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","sowing","growing","mature","harvest"],"world_extent":"200x150","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-granary","role":"grain storage and delivery entrance","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","receiving","idle"],"world_extent":"175x118","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-market","role":"public market courtyard","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","active","idle"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-stable","role":"stable courtyard; no invented horses","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","active","idle"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-station","role":"courier station courtyard","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","active","idle"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-barracks","role":"guard and training yard","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","patrol","training","idle"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-goldmine","role":"gold ore mine; ore and ingots not interchangeable","path":"godot/scripts/desktop_map_2d.gd::_draw_mine","status":"placeholder","variants":["day","night","mining","idle"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-smelter","role":"furnace and ingot collection","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["day","night","prepare","passive","finish","waiting_unload"],"world_extent":"160x110","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"building-clinic","role":"treatment courtyard with real patient and doctor only","path":"godot/scripts/desktop_map_2d.gd::_draw_building","status":"placeholder","variants":["level_1","level_2","level_3","day","night","waiting","treatment","resting"],"world_extent":"175x118","pivot":"center","collision_role":"existing plot pad"},
+    {"id":"hero-roster","role":"stable silhouette/palette/headgear for 30 catalog heroes","path":"godot/scripts/desktop_map_2d.gd::HERO_LOOKS","status":"identity_data_aligned; five_visual_pilots_only","variants":["idle","walk","work","eat","rest","injured","star_3_plus"],"members_source":"Sources/SanguoLife/Resources/hero-town-v0.9.json::heroes","reference":"Sources/SanguoLifeVisual/LifeHeroArt.swift::appearances","pivot":"ground contact at feet","collision_role":"none; follows existing hero position"},
+    {"id":"hero-future-capacity","role":"visual identity for a city of about 60 simultaneous residents","path":"godot/scripts/desktop_map_2d.gd::_hero_look","status":"planned; only 30 canonical IDs exist in the current catalog","variants":["same role, different identity","recruitment","home","work"],"pivot":"ground contact at feet","collision_role":"none"},
+    {"id":"town-ground-and-streets","role":"continuous streets, green blocks, short plot access","path":"godot/scripts/desktop_map_2d.gd::_draw_courtyard_parcels","status":"pilot_review","variants":["unlocked","planned","day","night","focus","full_map"],"world_extent":"2640x1535","pivot":"world origin","collision_role":"existing road topology"},
+    {"id":"task-props","role":"real cargo, meal, tool and document cues","path":"godot/scripts/desktop_map_2d.gd::_draw_activity_prop","status":"partial","variants":["grain","wood","stone","iron","tools","gold_ore","gold_ingot","meal","empty_crate","farming","mining","building","paperwork"],"pivot":"attached to hero","collision_role":"none"},
+    {"id":"civic-feedback","role":"construction stages, public duty and clinic state","path":"godot/scripts/desktop_map_2d.gd::_draw_project_site","status":"partial","variants":["site_waiting_materials","clearing","posts","beam","finish","patrol","training","treatment"],"pivot":"existing plot or task point","collision_role":"none"}
+  ],
+  "provenance": {
+    "kind": "original_code_authored_in_project",
+    "external_sources": [],
+    "copyright_or_license": "project source license; no third-party art introduced",
+    "review_requirement": "any future raster or licensed asset needs a per-file source/license record before merge"
+  },
+  "verification": {
+    "pilot_native_scale_reviewed": true,
+    "pilot_in_engine_reviewed": true,
+    "pilot_approved_by_player": false,
+    "roster_identity_contract": "scripts/validate_art_identity.py",
+    "full_catalog_in_engine_reviewed": false,
+    "desktop_layer_rechecked_after_rollout": false,
+    "low_load_60_person_check_passed": false
+  }
+}

@@ -28,7 +28,33 @@ const HERO_LOOKS={
 	"liubei":{"coat":"648365","trim":"dccc9a","head":1,"beard":1,"build":1.0},
 	"zhangfei":{"coat":"8d483b","trim":"c9a36b","head":2,"beard":3,"build":1.23},
 	"zhaoyun":{"coat":"c8d8d1","trim":"668d96","head":3,"beard":0,"build":.98},
-	"huangyueying":{"coat":"cc9f53","trim":"547f74","head":4,"beard":0,"build":.96}
+	"huangyueying":{"coat":"cc9f53","trim":"547f74","head":4,"beard":0,"build":.96},
+	# Keep the town projection in step with LifeHeroArt's roster/card identity.
+	"liang":{"coat":"b7c4a1","trim":"577a75","head":5,"beard":2,"build":1.0},
+	"guanyu":{"coat":"427362","trim":"d1b177","head":2,"beard":4,"build":1.14},
+	"lusu":{"coat":"a08566","trim":"dfcb9b","head":0,"beard":2,"build":1.08},
+	"caocao":{"coat":"435969","trim":"bf9a5c","head":0,"beard":2,"build":1.08},
+	"sunquan":{"coat":"886949","trim":"ddc18b","head":1,"beard":2,"build":1.06},
+	"simayi":{"coat":"645b72","trim":"bdbaa1","head":0,"beard":1,"build":.98},
+	"guojia":{"coat":"7e9695","trim":"ddd0aa","head":5,"beard":0,"build":.96},
+	"jiaxu":{"coat":"72624f","trim":"c5ac7a","head":0,"beard":2,"build":1.0},
+	"pangtong":{"coat":"97775d","trim":"c6c7a2","head":5,"beard":3,"build":1.06},
+	"xunyou":{"coat":"546e62","trim":"c0b58c","head":0,"beard":1,"build":1.02},
+	"chenqun":{"coat":"717d8b","trim":"d7c39b","head":1,"beard":1,"build":1.0},
+	"manchong":{"coat":"7b735c","trim":"c6b27c","head":2,"beard":1,"build":1.08},
+	"zhangzhao":{"coat":"89795d","trim":"e0d0ad","head":0,"beard":4,"build":.98},
+	"zhouyu":{"coat":"a45447","trim":"d8bd83","head":3,"beard":0,"build":1.0},
+	"luxun":{"coat":"73a08b","trim":"e2caa0","head":1,"beard":0,"build":.97},
+	"lumeng":{"coat":"537b82","trim":"ccad71","head":2,"beard":1,"build":1.1},
+	"zhangliao":{"coat":"52738c","trim":"c6bea3","head":3,"beard":2,"build":1.1},
+	"xuhuang":{"coat":"9b9c88","trim":"5f796b","head":2,"beard":2,"build":1.12},
+	"xiahoudun":{"coat":"556169","trim":"bb9e73","head":3,"beard":2,"build":1.12},
+	"xuchu":{"coat":"976449","trim":"dcc088","head":2,"beard":0,"build":1.28},
+	"machao":{"coat":"d2d4bf","trim":"a77c4c","head":3,"beard":0,"build":1.06},
+	"huangzhong":{"coat":"b78d51","trim":"d9d2b5","head":3,"beard":4,"build":1.1},
+	"weiyan":{"coat":"865d50","trim":"b7aa7e","head":2,"beard":2,"build":1.13},
+	"ganning":{"coat":"408b89","trim":"d6bc73","head":2,"beard":0,"build":1.06},
+	"lvbu":{"coat":"805264","trim":"d0af6e","head":6,"beard":0,"build":1.16}
 }
 const FALLBACK_COATS=["536f6a","8b7056","68788c","9b6a59","678767","7b6d86","628a85","a3835e"]
 const FALLBACK_TRIMS=["d2bc86","d3c7a3","b3cdb8","d8aa79","b7c6a9","cfc0a8"]
@@ -816,11 +842,23 @@ func _draw_hero(world: Vector2,hero_id: String,profile: String,star: int,walking
 			draw_circle(p+Vector2(-9,-27)*art_scale,6*art_scale,dark)
 			draw_line(p+Vector2(-15,-29)*art_scale,p+Vector2(4,-28)*art_scale,trim,maxf(1,2*art_scale))
 			draw_circle(p+Vector2(-15,-29)*art_scale,2*art_scale,Color("659789"))
+		5:
+			var cap=PackedVector2Array([p+Vector2(-11,-23)*art_scale,p+Vector2(-8,-35)*art_scale,p+Vector2(0,-39)*art_scale,p+Vector2(10,-33)*art_scale,p+Vector2(12,-23)*art_scale])
+			draw_colored_polygon(cap,coat.darkened(.2))
+			draw_line(p+Vector2(-12,-24)*art_scale,p+Vector2(12,-24)*art_scale,trim,maxf(1,2*art_scale))
+		6:
+			var helm=PackedVector2Array([p+Vector2(-11,-22)*art_scale,p+Vector2(-10,-30)*art_scale,p+Vector2(0,-37)*art_scale,p+Vector2(10,-30)*art_scale,p+Vector2(11,-22)*art_scale])
+			draw_colored_polygon(helm,coat.darkened(.22))
+			draw_line(p+Vector2(0,-34)*art_scale,p+Vector2(0,-47)*art_scale,trim,maxf(1,3*art_scale))
+			draw_line(p+Vector2(-2,-43)*art_scale,p+Vector2(-15,-54)*art_scale,trim,maxf(1,2*art_scale))
+			draw_line(p+Vector2(2,-43)*art_scale,p+Vector2(15,-54)*art_scale,trim,maxf(1,2*art_scale))
 	var beard=int(look.get("beard",0))
 	if beard>0:
 		var beard_length=7.0+float(beard)*3.5
 		var beard_shape=PackedVector2Array([p+Vector2(-4,-10)*art_scale,p+Vector2(4,-10)*art_scale,p+Vector2(1,-10+beard_length)*art_scale,p+Vector2(-2,-10+beard_length*.75)*art_scale])
-		draw_colored_polygon(beard_shape,dark)
+		draw_colored_polygon(beard_shape,Color("d4d1b9") if hero_id in ["huangzhong","zhangzhao"] else dark)
+	if hero_id=="xiahoudun":
+		draw_line(p+Vector2(-7,-17)*art_scale,p+Vector2(7,-19)*art_scale,dark,maxf(1,2*art_scale))
 	if hero_id=="huangyueying":
 		draw_rect(Rect2(p+Vector2(-width-9,2)*art_scale,Vector2(9,12)*art_scale),Color("705b42"))
 		draw_line(p+Vector2(-width-8,-2)*art_scale,p+Vector2(8,12)*art_scale,trim,maxf(1,2*art_scale))
