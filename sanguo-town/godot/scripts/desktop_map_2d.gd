@@ -50,8 +50,11 @@ func _draw() -> void:
 	var data: Dictionary=town.snapshot
 	var courtyard_mode=int(data.get("layoutVersion",6))>=7
 	display_world_size=COURTYARD_WORLD_SIZE if courtyard_mode else WORLD_SIZE
-	var scale=minf(size.x/display_world_size.x,size.y/display_world_size.y)*(1.0 if courtyard_mode else MAP_ZOOM)
-	var origin=(size-display_world_size*scale)*.5
+	# Frame the opened town, not all 84 future parcels. The world coordinates
+	# remain unchanged, so roads, workers and the desktop layer still agree.
+	var view_size=_opened_view_size(data) if courtyard_mode else display_world_size
+	var scale=minf(size.x/view_size.x,size.y/view_size.y)*(1.0 if courtyard_mode else MAP_ZOOM)
+	var origin=(size-view_size*scale)*.5
 	var night=bool(data.get("night",false))
 	is_night=night
 	var grass=Color("829483") if night else GRASS
@@ -154,13 +157,20 @@ func _draw() -> void:
 			var station_slot=int(stationary_slots.get(station_key,0))
 			stationary_slots[station_key]=station_slot+1
 			position+=_stationary_offset(station_slot)
-		_draw_hero(position,str(hero.get("profile","balanced")),walking,str(hero.get("motion","")),str(hero.get("healthCondition","")),str(hero.get("taskKind","")),str(hero.get("cargo","")),origin,scale,float(hero_index)*.83)
+		_draw_hero(position,str(hero.get("profile","balanced")),walking,str(hero.get("motion","")),str(hero.get("healthCondition","")),str(hero.get("taskKind","")),str(hero.get("taskResource","")),str(hero.get("cargo","")),origin,scale,float(hero_index)*.83)
 		hero_index+=1
 
 	if show_hud: _draw_hud(data,night)
 
 func _screen(world: Vector2,origin: Vector2,scale: float) -> Vector2:
 	return origin+Vector2(world.x,display_world_size.y-world.y)*scale
+
+func _opened_view_size(data: Dictionary) -> Vector2:
+	var grid: Dictionary=data.get("unlockedGrid",{"columns":8,"rows":5})
+	var columns=clampi(int(grid.get("columns",8)),1,12)
+	var rows=clampi(int(grid.get("rows",5)),1,7)
+	# Include the outer streets and a little landscape around the last parcel.
+	return Vector2(minf(COURTYARD_WORLD_SIZE.x,360.0+float(columns)*220.0),minf(COURTYARD_WORLD_SIZE.y,355.0+float(rows)*205.0))
 
 func _plot_display_point(plot: Dictionary) -> Vector2:
 	if int(town.snapshot.get("layoutVersion",6))>=7:
@@ -203,6 +213,14 @@ func _draw_courtyard_parcels(data: Dictionary,origin: Vector2,scale: float) -> v
 		_draw_courtyard_road(Vector2(28,road_y),Vector2(2612,road_y),origin,scale,true)
 		if road_y>=open_bottom:
 			_draw_courtyard_road(Vector2(28,road_y),Vector2(minf(2612.0,open_right),road_y),origin,scale)
+	if is_night:
+		for road_x in COURTYARD_ROAD_X:
+			if road_x>open_right: continue
+			for road_y in COURTYARD_ROAD_Y:
+				if road_y<open_bottom: continue
+				var lamp=_screen(Vector2(road_x+22,road_y+17),origin,scale)
+				draw_circle(lamp,16*scale,Color("efc67d",.11))
+				draw_circle(lamp,4*scale,Color("f4d395",.86))
 	# The infrastructure band becomes a planted civic promenade around the
 	# central road, with only a few paths and benches rather than paving every lot.
 	var rows: Array=data.get("parcelRows",[])
@@ -396,7 +414,9 @@ func _draw_shared_courtyard(plot: Dictionary,origin: Vector2,scale: float) -> vo
 		var room=Rect2(center+Vector2(x,-53)*scale,Vector2(34,28)*scale)
 		draw_rect(room,Color("f4dfb7") if index<occupied else Color("ded9b8"))
 		draw_rect(room,Color("9a9d7f"),false,maxf(1,scale))
-		draw_rect(Rect2(room.position+Vector2(13,21)*scale,Vector2(8,7)*scale),Color("617b6d"))
+		var window=room.position+Vector2(17,24)*scale
+		if is_night and index<occupied: draw_circle(window,11*scale,Color("efc779",.19))
+		draw_rect(Rect2(window-Vector2(4,3.5)*scale,Vector2(8,7)*scale),Color("eec77a") if is_night and index<occupied else Color("617b6d"))
 	var legacy=maxi(0,int(plot.get("occupancy",0))-occupied)
 	var label="共居院  %d/%d户" % [occupied,count]
 	if legacy>0: label+="  旧住%d" % legacy
@@ -432,6 +452,16 @@ func _draw_project_site(project: Dictionary,data: Dictionary,origin: Vector2,sca
 		draw_line(p+Vector2(0,-44)*scale,p+Vector2(50,-24)*scale,Color("607b6d"),maxf(1,6*scale))
 	if bool(project.get("stageStarted",false)) or int(project.get("completedWork",0))>0:
 		for i in range(3): draw_line(p+Vector2(-51,18+float(i)*5)*scale,p+Vector2(-25,18+float(i)*5)*scale,Color("9b7145"),maxf(1,3*scale))
+	# Only show fresh sawdust when a real builder is working at this project.
+	for hero in data.get("heroes",[]):
+		if str(hero.get("taskKind",""))!="build" or str(hero.get("taskJob",""))=="carpenter" or bool(hero.get("sleeping",false)) or not hero.get("route",[]).is_empty(): continue
+		if not hero.has("x") or int(town.speed)<=0: continue
+		var work_point=_display_world_point(Vector2(float(hero.x),float(hero.y)))
+		if work_point.distance_to(point)>125.0: continue
+		for fleck in range(3):
+			var spark=p+Vector2(-23+float(fleck)*20,-10+sin(animation_time*5.0+float(fleck))*4.0)*scale
+			draw_circle(spark,2.0*scale,Color("bd9866",.76))
+		break
 	draw_string(font,p+Vector2(-52,55)*scale,"营造 %d%%" % progress,HORIZONTAL_ALIGNMENT_CENTER,104*scale,maxi(9,int(12*scale)),MUTED)
 
 func _draw_workplace_activity(data: Dictionary,origin: Vector2,scale: float) -> void:
@@ -474,8 +504,8 @@ func _stationary_offset(slot: int) -> Vector2:
 	# Shared simulation nodes (home, tavern, work yard) are entrances rather than
 	# a single pixel. Spread only the presentation pose into the nearby courtyard;
 	# path length and authoritative position remain unchanged.
-	var columns=[-48.0,-24.0,0.0,24.0,48.0]
-	return Vector2(columns[slot%columns.size()],-95.0-float(slot/columns.size())*38.0)
+	var columns=[-70.0,-35.0,0.0,35.0,70.0]
+	return Vector2(columns[slot%columns.size()],-88.0-float(slot/columns.size())*42.0)
 
 func _hero_position(hero: Dictionary) -> Vector2:
 	var target=_display_world_point(Vector2(float(hero.x),float(hero.y)))
@@ -612,9 +642,9 @@ func _draw_tree(world: Vector2,origin: Vector2,scale: float,phase: float) -> voi
 	draw_circle(crown+Vector2(-9,-3)*scale,12*scale,Color("78996b"))
 	draw_circle(crown+Vector2(9,-4)*scale,12*scale,Color("89a46f"))
 
-func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,health_condition: String,task_kind: String,cargo: String,origin: Vector2,scale: float,phase: float) -> void:
+func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,health_condition: String,task_kind: String,task_resource: String,cargo: String,origin: Vector2,scale: float,phase: float) -> void:
 	var step=sin(animation_time*(5.5 if walking else 9.0)+phase)
-	var working=(motion in ["hammer","chop","cultivate"] or task_kind in ["eat","prepare","finish","administration","survey"]) and int(town.speed)>0
+	var working=not walking and (motion in ["hammer","chop","cultivate","carry"] or task_kind in ["eat","prepare","finish","administration","survey"]) and int(town.speed)>0
 	var bob=absf(step)*2.0 if walking else (sin(animation_time*5.0+phase)*1.2 if working else 0.0)
 	var p=_screen(world,origin,scale)+Vector2(0,-bob)*scale
 	var robe={"command":"4d6b63","martial":"6f6046","civic":"627568","craft":"775f4f","balanced":"536c62"}.get(profile,"536c62")
@@ -629,14 +659,15 @@ func _draw_hero(world: Vector2,profile: String,walking: bool,motion: String,heal
 	var hand=Vector2(13+arm_swing,10)
 	if working: hand=Vector2(11+step*8,-6+absf(step)*12)
 	draw_line(p+Vector2(7,0)*scale,p+hand*scale,Color(robe),maxf(1,3*scale))
-	_draw_activity_prop(p,task_kind,cargo,motion,scale,phase)
+	_draw_activity_prop(p,task_kind,task_resource,cargo,motion,not walking and int(town.speed)>0,scale,phase)
 	if health_condition!="":
 		var badge=p+Vector2(13,-27)*scale
 		draw_circle(badge,6*scale,Color("f2ecd8"))
 		draw_rect(Rect2(badge-Vector2(1.5,4)*scale,Vector2(3,8)*scale),Color("a85b4c"))
 		draw_rect(Rect2(badge-Vector2(4,1.5)*scale,Vector2(8,3)*scale),Color("a85b4c"))
 
-func _draw_activity_prop(p: Vector2,task_kind: String,cargo: String,motion: String,scale: float,phase: float) -> void:
+func _draw_activity_prop(p: Vector2,task_kind: String,task_resource: String,cargo: String,motion: String,active: bool,scale: float,phase: float) -> void:
+	var beat=sin(animation_time*5.0+phase) if active and town.get("reduce_motion")!=true else 0.0
 	if task_kind=="eat":
 		var bowl=p+Vector2(13,11)*scale
 		draw_arc(bowl,6*scale,0,PI,12,Color("9b6848"),maxf(1,2*scale))
@@ -645,8 +676,30 @@ func _draw_activity_prop(p: Vector2,task_kind: String,cargo: String,motion: Stri
 			draw_line(bowl+Vector2(-2+float(i)*4,-3)*scale,bowl+Vector2(drift,-11)*scale,Color("e7e2cb",.76),maxf(1,scale))
 	elif cargo!="":
 		var cargo_color={"grain":"c6aa58","wood":"856344","stone":"8a9088","iron":"667477","tools":"78644e","gold_ore":"b58c42","gold_ingot":"d6ae49","meal":"b87552"}.get(cargo,"8d7657")
-		draw_rect(Rect2(p+Vector2(10,4)*scale,Vector2(12,12)*scale),Color(cargo_color))
-		draw_line(p+Vector2(10,4)*scale,p+Vector2(22,16)*scale,Color("493f33"),maxf(1,scale))
+		var load=p+Vector2(12,4+beat*1.5)*scale
+		draw_rect(Rect2(load,Vector2(16,14)*scale),Color(cargo_color))
+		draw_rect(Rect2(load,Vector2(16,14)*scale),Color("493f33"),false,maxf(1,scale))
+		draw_line(load,load+Vector2(16,14)*scale,Color("493f33"),maxf(1,scale))
+	elif task_kind=="haul" and active:
+		# Loading/unloading is a real assigned task even when no cargo is in hand.
+		# An open empty crate shows that work without inventing resources.
+		var crate=p+Vector2(13,11-beat*2)*scale
+		draw_rect(Rect2(crate,Vector2(16,8)*scale),Color("c5a777"))
+		draw_rect(Rect2(crate,Vector2(16,8)*scale),Color("755c42"),false,maxf(1,scale))
+		draw_line(crate+Vector2(2,2)*scale,crate+Vector2(14,2)*scale,Color("ead5a9"),maxf(1,scale))
+	elif motion=="cultivate" and active:
+		var grip=p+Vector2(10,-1)*scale
+		var tip=p+Vector2(21+beat*3,23)*scale
+		draw_line(grip,tip,Color("795e3e"),maxf(1,3*scale))
+		draw_line(tip+Vector2(-5,0)*scale,tip+Vector2(6,1)*scale,Color("64796e"),maxf(1,3*scale))
+	elif motion in ["hammer","chop"] and active:
+		var grip=p+Vector2(10,5)*scale
+		var tip=p+Vector2(20+beat*5,-11+absf(beat)*10)*scale
+		draw_line(grip,tip,Color("795e3e"),maxf(1,3*scale))
+		var head_color=Color("827e67") if task_resource in ["stone","iron","gold_ore"] else Color("656e60")
+		draw_line(tip+Vector2(-6,-2)*scale,tip+Vector2(6,2)*scale,head_color,maxf(1,5*scale))
+		if absf(beat)>.82:
+			draw_circle(p+Vector2(24,20)*scale,2.5*scale,Color("d6b36b",.76))
 	elif motion=="read":
 		var scroll=p+Vector2(11,4)*scale
 		draw_rect(Rect2(scroll,Vector2(10,12)*scale),Color("e8d7a9"))

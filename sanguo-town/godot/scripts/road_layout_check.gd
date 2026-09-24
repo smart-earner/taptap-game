@@ -26,6 +26,11 @@ func run() -> void:
 	root.add_child(map)
 	assert(map._parcel_unlocked(14,town.snapshot))
 	assert(not map._parcel_unlocked(20,town.snapshot))
+	var opened_view: Vector2=map._opened_view_size(town.snapshot)
+	assert(opened_view.x<map.COURTYARD_WORLD_SIZE.x and opened_view.y<map.COURTYARD_WORLD_SIZE.y)
+	town.snapshot.unlockedGrid={"columns":12,"rows":7}
+	assert(map._opened_view_size(town.snapshot)==map.COURTYARD_WORLD_SIZE)
+	town.snapshot.unlockedGrid={"columns":8,"rows":5}
 	var route=map._sandbox_route([
 		{"x":910.0,"y":760.0},{"x":570.0,"y":730.0}
 	])
